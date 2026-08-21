@@ -1,1 +1,10 @@
+node_modules/
+.pnpm-store/
+pnpm-debug.log*
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
 .DS_Store
+.env*.local
+apps/mobile/expo-env.d.ts
