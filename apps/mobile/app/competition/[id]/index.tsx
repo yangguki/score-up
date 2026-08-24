@@ -1,7 +1,7 @@
 import { Link, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { rulesSummary } from "@score-up/domain";
-import { Btn, Card, H, P, Pill, Screen } from "@/components/ui";
+import { Btn, Card, H, P, Pill, Screen, SectionHead } from "@/components/ui";
 import { matchHref, statusLabel } from "@/lib/labels";
 import { useAppStore } from "@/store/app-store";
 import { space } from "@/theme/tokens";
@@ -29,10 +29,12 @@ export default function CompetitionOverview() {
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Pill label="농구" tone="home" />
-          <Pill label={competition.status === "prep" ? "준비" : competition.status === "completed" ? "종료" : "진행"} />
+          <Pill
+            label={competition.status === "prep" ? "준비" : competition.status === "completed" ? "종료" : "진행"}
+            tone={competition.status === "completed" ? "ok" : competition.status === "prep" ? "muted" : "live"}
+          />
         </View>
-        <H>{competition.name}</H>
-        <P muted>{rulesSummary(competition.rules)}</P>
+        <SectionHead title={competition.name} hint={rulesSummary(competition.rules)} />
         <P muted>
           종료 {done} / {matches.length || 0} · 참가 팀 {teams.length}
         </P>

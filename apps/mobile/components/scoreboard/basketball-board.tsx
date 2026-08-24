@@ -223,7 +223,7 @@ export function BasketballScoreboard() {
             {formatClock(snap.timeoutClockMs)}
           </Text>
           <Pressable onPress={() => finishTimeout(match.id)} style={startBtn}>
-            <Text style={{ color: colors.bg, fontSize: 16, fontWeight: "800" }}>타임아웃 종료</Text>
+            <Text style={{ color: colors.primaryFg, fontSize: 16, fontWeight: "800" }}>타임아웃 종료</Text>
           </Pressable>
         </View>
       ) : null}
@@ -231,12 +231,12 @@ export function BasketballScoreboard() {
       {!snap.started && match.status === "in_progress" ? (
         <View pointerEvents="box-none" style={overlayBox}>
           <Pressable onPress={() => resume(match.id)} style={startBtn}>
-            <Text style={{ color: colors.bg, fontSize: 22, fontWeight: "900" }}>경기 시작</Text>
+            <Text style={{ color: colors.primaryFg, fontSize: 22, fontWeight: "900" }}>경기 시작</Text>
           </Pressable>
         </View>
       ) : null}
 
-      <View style={{ backgroundColor: "#0B0E13", paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10, gap: 8 }}>
+      <View style={{ backgroundColor: colors.bg, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10, gap: 8 }}>
         <View style={{ flexDirection: stacked ? "column" : "row", gap: 8 }}>
           {actionRow("home")}
           {actionRow("away")}
@@ -398,7 +398,7 @@ function MiniKey({
         justifyContent: "center",
       }}
     >
-      <Text style={{ color: emphasize ? "#0B0E13" : colors.text, fontWeight: "800", fontSize: 13 }}>{label}</Text>
+      <Text style={{ color: emphasize ? colors.primaryFg : colors.text, fontWeight: "800", fontSize: 13 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -427,7 +427,7 @@ const overlayBox = {
   backgroundColor: "#0007",
 };
 const startBtn = {
-  backgroundColor: "#E8EEF7",
+  backgroundColor: colors.primary,
   paddingHorizontal: 28,
   paddingVertical: 16,
   borderRadius: 16,

@@ -8,15 +8,23 @@ export default function TabLayout() {
       screenOptions={{
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
-        tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.line },
-        tabBarActiveTintColor: colors.text,
+        headerTitleStyle: { fontWeight: "800" },
+        headerShadowVisible: false,
+        tabBarStyle: {
+          backgroundColor: colors.bg,
+          borderTopColor: colors.line,
+          borderTopWidth: 1,
+        },
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
+        tabBarLabelStyle: { fontWeight: "700", fontSize: 11 },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "홈",
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <SymbolView name={{ ios: "house.fill", android: "home", web: "home" }} tintColor={color} size={24} />
           ),

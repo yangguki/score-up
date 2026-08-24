@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SCORE UP 홈 — 브랜드 + 종목 허브 (기획 와이어)</title>
+  <style>
+    :root {
+      --bg: #f4f4f5;
+      --card: #fff;
+      --text: #18181b;
+      --muted: #71717a;
+      --line: #e4e4e7;
+      --accent: #18181b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding: 24px 16px 64px;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; margin: 0 0 8px; }
+    h2 { font-size: 1.15rem; margin: 32px 0 12px; }
+    .lead { color: var(--muted); margin: 0 0 16px; }
+    .note {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+    .phones {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .phone {
+      width: 100%;
+      max-width: 340px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      overflow: hidden;
+    }
+    .notch {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--line);
+    }
+    .notch span {
+      width: 72px;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--line);
+    }
+    .screen { padding: 16px; min-height: 520px; }
+    .tabs {
+      display: flex;
+      border-top: 1px solid var(--line);
+      padding: 10px 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .tabs span { flex: 1; text-align: center; }
+    .tabs .on { color: var(--text); font-weight: 600; }
+    .brand { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+    .sub { color: var(--muted); font-size: 0.875rem; margin-top: 6px; }
+    .box {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fafafa;
+      font-size: 0.85rem;
+    }
+    .box strong { display: block; margin-bottom: 8px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 8px;
+      font-size: 0.8rem;
+      min-height: 64px;
+      opacity: 0.55;
+    }
+    .chip.on {
+      opacity: 1;
+      border-color: var(--text);
+      background: #fff;
+    }
+    .chip b { display: block; margin-bottom: 4px; }
+    .chip .meta { color: var(--muted); }
+    .btn {
+      margin-top: 12px;
+      border-radius: 10px;
+      padding: 12px 14px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+    }
+    .btn.primary { background: var(--accent); color: #fff; }
+    .btn.ghost { border: 1px solid var(--line); margin-top: 8px; }
+    .sec { font-weight: 600; font-size: 0.875rem; margin: 16px 0 8px; }
+    .match {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.875rem;
+    }
+    .row { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 0.8rem; }
+    .pill {
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { background: #fafafa; font-weight: 600; }
+    tr:last-child td { border-bottom: 0; }
+    .path {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.8rem;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      word-break: break-all;
+      margin: 12px 0 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>SCORE UP 홈 — 브랜드 + 종목 허브</h1>
+    <p class="lead">기획 와이어 (브라우저에서 바로 확인). Canvas 링크가 안 열릴 때 이 파일을 쓰세요.</p>
+
+    <div class="note">
+      <strong>제품 제약:</strong> 종목 그리드에는 여러 종목을 보여 주지만, MVP에서 선택·대회 생성·보드는 <b>농구만</b> 가능합니다. 나머지는 「준비 중」입니다.
+    </div>
+
+    <p class="lead">원래 Canvas 경로 (탐색기에서 열기):</p>
+    <div class="path">C:\Users\yangg\.cursor\projects\c-Users-yangg-ormakgil-omg-proj-score-up-workspace-score-up\canvases\home-brand-sport-hub.canvas.tsx</div>
+
+    <h2>폰 와이어</h2>
+    <div class="phones">
+      <div>
+        <p class="lead" style="text-align:center;margin-bottom:8px">S1 · 진행 중 시드</p>
+        <div class="phone">
+          <div class="notch"><span></span></div>
+          <div class="screen">
+            <div style="color:var(--muted);font-size:0.8rem">운영자</div>
+            <div class="brand" style="margin-top:10px">SCORE UP</div>
+            <div class="sub">종목 룰로 대회를 만들고, 현장에서 스코어를 이어 갑니다.</div>
+
+            <div class="box">
+              <strong>이런 서비스입니다</strong>
+              1. 종목 프리셋으로 대회·친선 시작<br />
+              2. 선수·대진·스코어가 한 흐름<br />
+              3. 파울·세트 종료는 앱이 제안
+            </div>
+
+            <div class="sec" style="display:flex;justify-content:space-between">
+              <span>종목 고르기</span>
+              <span style="color:var(--muted);font-weight:400">1차: 농구만</span>
+            </div>
+            <div class="grid">
+              <div class="chip on"><b>농구</b><span class="meta">시간 + 파울</span><br /><span>선택 가능</span></div>
+              <div class="chip"><b>배구</b><span class="meta">세트 + 서브</span><br /><span class="meta">준비 중</span></div>
+              <div class="chip"><b>탁구</b><span class="meta">개인 세트제</span><br /><span class="meta">준비 중</span></div>
+              <div class="chip"><b>축구</b><span class="meta">전후반 + 카드</span><br /><span class="meta">준비 중</span></div>
+              <div class="chip"><b>야구</b><span class="meta">이닝제</span><br /><span class="meta">준비 중</span></div>
+              <div class="chip"><b>배드민턴</b><span class="meta">세트 + 서브</span><br /><span class="meta">준비 중</span></div>
+              <div class="chip"><b>스쿼시</b><span class="meta">랠리 점수</span><br /><span class="meta">준비 중</span></div>
+              <div class="chip"><b>풋살</b><span class="meta">전후반</span><br /><span class="meta">준비 중</span></div>
+            </div>
+
+            <div class="btn primary">농구로 대회 만들기</div>
+            <div class="btn ghost">빠른 친선경기</div>
+
+            <div class="sec">지금 할 일</div>
+            <div class="match">
+              <div class="row"><span>농구 · 4강 · 오늘 14:00</span><span class="pill">진행</span></div>
+              <div style="font-weight:700;margin-top:8px">호랑이 24 - 18 독수리</div>
+              <div class="sub">Q2 05:32 · 이어하기</div>
+            </div>
+          </div>
+          <div class="tabs"><span class="on">홈</span><span>대회</span><span>설정</span></div>
+        </div>
+      </div>
+
+      <div>
+        <p class="lead" style="text-align:center;margin-bottom:8px">S0 · 빈 홈</p>
+        <div class="phone">
+          <div class="notch"><span></span></div>
+          <div class="screen">
+            <div class="brand">SCORE UP</div>
+            <div class="sub">종목 룰로 대회를 만들고, 현장에서 스코어를 이어 갑니다.</div>
+            <div class="box" style="border-style:dashed">
+              <strong>첫 대회를 만들면</strong>
+              선수, 대진, 스코어가 하나로 이어집니다. 아래 종목을 고른 뒤 시작하세요.
+            </div>
+            <div class="sec">종목 고르기</div>
+            <div class="grid">
+              <div class="chip on"><b>농구</b><span class="meta">시간 + 파울</span><br /><span>선택 가능</span></div>
+              <div class="chip"><b>배구</b><span class="meta">세트 + 서브</span><br /><span class="meta">준비 중</span></div>
+              <div class="chip"><b>탁구</b><span class="meta">개인 세트제</span><br /><span class="meta">준비 중</span></div>
+              <div class="chip"><b>축구</b><span class="meta">전후반 + 카드</span><br /><span class="meta">준비 중</span></div>
+              <div class="chip"><b>야구</b><span class="meta">이닝제</span><br /><span class="meta">준비 중</span></div>
+              <div class="chip"><b>배드민턴</b><span class="meta">세트 + 서브</span><br /><span class="meta">준비 중</span></div>
+            </div>
+            <div class="btn primary">농구로 대회 만들기</div>
+          </div>
+          <div class="tabs"><span class="on">홈</span><span>대회</span><span>설정</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h2>스크롤 순서</h2>
+    <table>
+      <thead>
+        <tr><th>순위</th><th>블록</th><th>역할</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>브랜드 히어로</td><td>SCORE UP + 한 줄 정의</td></tr>
+        <tr><td>2</td><td>가치 3줄</td><td>무엇을 하는 서비스인지</td></tr>
+        <tr><td>3</td><td>종목 그리드</td><td>농구 활성 / 나머지 준비 중</td></tr>
+        <tr><td>4</td><td>Primary CTA</td><td>농구로 대회 만들기</td></tr>
+        <tr><td>5</td><td>Secondary CTA</td><td>빠른 친선경기</td></tr>
+        <tr><td>6</td><td>지금 할 일</td><td>진행 중 경기 카드</td></tr>
+        <tr><td>7</td><td>내 대회</td><td>빈 홈이면 숨김</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

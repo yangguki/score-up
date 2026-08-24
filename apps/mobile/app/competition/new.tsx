@@ -86,13 +86,13 @@ export default function NewCompetitionScreen() {
           <>
             <H>형식</H>
             <Pressable onPress={() => setFormat("tournament")}>
-              <Card style={{ borderColor: format === "tournament" ? colors.home : colors.line }}>
+              <Card style={{ borderColor: format === "tournament" ? colors.primary : colors.line }}>
                 <H style={{ fontSize: 18 }}>토너먼트</H>
                 <P muted>싱글 엘리미네이션</P>
               </Card>
             </Pressable>
             <Pressable onPress={() => setFormat("league")}>
-              <Card style={{ borderColor: format === "league" ? colors.home : colors.line }}>
+              <Card style={{ borderColor: format === "league" ? colors.primary : colors.line }}>
                 <H style={{ fontSize: 18 }}>리그</H>
                 <P muted>MVP는 승 3 / 패 0</P>
               </Card>

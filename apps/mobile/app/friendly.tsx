@@ -10,7 +10,7 @@ import {
 import { PlayerDraftList, type DraftPlayer } from "@/components/player-draft-list";
 import { RulesEditor } from "@/components/rules-editor";
 import { TeamEditor } from "@/components/team-editor";
-import { Btn, Card, H, P, Screen } from "@/components/ui";
+import { Btn, Card, H, P, Screen, SectionHead } from "@/components/ui";
 import { scoreboardHref } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
 import { space } from "@/theme/tokens";
@@ -51,8 +51,7 @@ export default function FriendlyScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: 48 }}>
-        <H>빠른 친선경기</H>
-        <P muted>룰을 정하고 팀을 만든 뒤, 필요하면 선수를 넣습니다.</P>
+        <SectionHead title="빠른 친선경기" hint="룰을 정하고 팀을 만든 뒤, 필요하면 선수를 넣습니다." />
 
         <H style={{ fontSize: 18 }}>룰</H>
         <RulesEditor rules={rules} official={official} onRules={setRules} onOfficial={setOfficial} />

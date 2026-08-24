@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SCORE UP 홈 H1~H4 비교</title>
+  <style>
+    :root {
+      --bg: #121721;
+      --card: #1a222f;
+      --text: #f8fafc;
+      --muted: #a8b4c4;
+      --line: rgba(248,250,252,.14);
+      --accent: #f5a623;
+      --home: #3d8bff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(420px 280px at 92% -8%, rgba(245,166,35,.22), transparent 58%),
+        radial-gradient(360px 240px at 0% 28%, rgba(61,139,255,.14), transparent 55%),
+        var(--bg);
+      color: var(--text);
+      padding: 24px 16px 64px;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; }
+    h1 { font-size: 1.55rem; margin: 0 0 8px; letter-spacing: -0.03em; font-weight: 800; }
+    .lead { color: var(--muted); margin: 0 0 20px; }
+    .note {
+      background: rgba(245,166,35,.12);
+      border: 1px solid rgba(245,166,35,.35);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: .9rem;
+      margin-bottom: 20px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    }
+    .card.h1 { border-color: var(--accent); border-width: 1.5px; }
+    .card h2 { font-size: 1rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+    .card p { margin: 0; font-size: .85rem; color: var(--muted); line-height: 1.45; }
+    .tag {
+      display: inline-block;
+      font-size: .7rem;
+      font-weight: 700;
+      background: #242d3c;
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin-bottom: 8px;
+    }
+    .tag.on { background: var(--accent); color: #0b1220; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 24px;
+    }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { background: #151c2a; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>홈 구성 비교 — H1 기준 + H5 트렌드</h1>
+    <p class="lead">앱에서 <b>H1</b>·<b>H5</b>·<b>H6</b>를 전환해 비교하세요. H6은 Arena가 아닌 <b>Strava식 라이트</b>입니다.</p>
+    <div class="note"><b>공통 제약:</b> MVP 대회·보드는 <b>농구만</b>. 상세 벤치마크: <code>docs/SCORE-UP-홈-벤치마크.md</code></div>
+    <div class="grid">
+      <div class="card h1">
+        <span class="tag on">H1 · 확정</span>
+        <h2>브랜드 허브 (Arena)</h2>
+        <p>다크 · 앰버 · 가치 01/02/03 · 종목 2열. 전광판/코트 톤.</p>
+      </div>
+      <div class="card">
+        <span class="tag">H5 · 트렌드</span>
+        <h2>벤토 2026</h2>
+        <p>H1과 <b>색 동일</b> · 벤토·sticky만. 그래서 비슷해 보일 수 있음.</p>
+      </div>
+      <div class="card" style="border-color:#fc4c02">
+        <span class="tag on" style="background:#fc4c02;color:#fff">H6 · 반대축</span>
+        <h2>라이트 데스크</h2>
+        <p>흰 캔버스 · 오렌지 하나 · 3-up 스탯 · 리스트 행. Strava+Linear.</p>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>축</th><th>H1</th><th>H6</th></tr></thead>
+      <tbody>
+        <tr><td>밝기</td><td>다크 아레나</td><td>라이트 데스크</td></tr>
+        <tr><td>색</td><td>앰버+삼색</td><td>펌프킨 오렌지 단일</td></tr>
+        <tr><td>브랜드</td><td>히어로</td><td>얇은 탑바</td></tr>
+        <tr><td>라이브</td><td>팀 카드</td><td>3-up 스탯</td></tr>
+        <tr><td>CTA</td><td>큰 버튼</td><td>텍스트 행 →</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

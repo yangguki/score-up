@@ -14,6 +14,7 @@ const EAGLE = "team-eagle";
 const SHARK = "team-shark";
 const WOLF = "team-wolf";
 const COMP = "comp-weekend";
+const OFFICE = "comp-office";
 const SF1 = "match-sf1";
 const SF2 = "match-sf2";
 const FINAL = "match-final";
@@ -109,6 +110,16 @@ export function createSeedState(): AppData {
         status: "in_progress",
         format: "tournament",
         dateLabel: "2026-08-22",
+        rules: RULES,
+        officialPreset: false,
+      },
+      {
+        id: OFFICE,
+        name: "사내 농구 대회",
+        sportId: "basketball",
+        status: "prep",
+        format: "league",
+        dateLabel: "2026-08-29",
         rules: RULES,
         officialPreset: false,
       },
@@ -215,4 +226,4 @@ export function createSeedState(): AppData {
   };
 }
 
-export const SEED_IDS = { COMP, SF1, SF2, FINAL, TIGER, EAGLE, SHARK, WOLF };
+export const SEED_IDS = { COMP, OFFICE, SF1, SF2, FINAL, TIGER, EAGLE, SHARK, WOLF };

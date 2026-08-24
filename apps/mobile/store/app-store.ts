@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { AppData, BasketballRules, Match, Side } from "@score-up/domain";
+import type { HomeVersion } from "@/lib/home";
 import {
   addPlayer,
   addTeam,
@@ -67,6 +68,10 @@ type Store = AppData & {
     awayPlayers: { name: string; number: number }[];
   }) => string;
   reset: () => void;
+  homeVersion: HomeVersion;
+  homeEmptyPreview: boolean;
+  setHomeVersion: (version: HomeVersion) => void;
+  setHomeEmptyPreview: (value: boolean) => void;
 };
 
 function commitMatch(data: AppData, match: Match): AppData {
@@ -79,6 +84,10 @@ function commitMatch(data: AppData, match: Match): AppData {
 
 export const useAppStore = create<Store>((set, get) => ({
   ...createSeedState(),
+  homeVersion: "h1",
+  homeEmptyPreview: false,
+  setHomeVersion: (homeVersion) => set({ homeVersion }),
+  setHomeEmptyPreview: (homeEmptyPreview) => set({ homeEmptyPreview }),
   patchMatch: (id, fn) => {
     const match = getMatch(get(), id);
     if (!match) return;
@@ -177,5 +186,10 @@ export const useAppStore = create<Store>((set, get) => ({
     set(data);
     return matchId;
   },
-  reset: () => set({ ...createSeedState() }),
+  reset: () =>
+    set((state) => ({
+      ...createSeedState(),
+      homeVersion: state.homeVersion,
+      homeEmptyPreview: state.homeEmptyPreview,
+    })),
 }));

@@ -1,14 +1,9 @@
 import { Stack } from "expo-router";
+import { navScreenOptions } from "@/theme/arena";
 
 export default function MatchIdLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: "#0B0E13" },
-        headerTintColor: "#F5F7FA",
-        contentStyle: { backgroundColor: "#0B0E13" },
-      }}
-    >
+    <Stack screenOptions={navScreenOptions}>
       <Stack.Screen name="lineup" options={{ title: "출전 명단" }} />
       <Stack.Screen name="scoreboard" options={{ headerShown: false }} />
       <Stack.Screen name="basketball" options={{ headerShown: false, title: "농구 스코어보드" }} />
