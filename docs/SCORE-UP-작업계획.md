@@ -185,9 +185,11 @@ Manager는 배구·탁구 작업 요청이 와도 **농구 mock UX가 끝나기 
 
 ## 7. 다음 즉시 작업
 
-1. 홈 V1 검수 (`docs/SCORE-UP-홈-상세.md`, S0/S1). 확정 후 V2·V3·시안 바 제거
-2. Phase 4: 태블릿 가로 / 폰 세로에서 농구 보드(경기 시작·작전타임) UX 검수 — 체크리스트 `docs/SCORE-UP-스코어보드-레퍼런스-체크리스트.md`
-3. Basketball agent가 카피·잠금·쿼터/작전타임 설정이 명세서 v0.2와 같은지 검수
-4. 검수가 끝나면 Phase 5 룰 엔진. 그 전에는 배구/탁구 보드를 그리지 않는다
+1. 홈 **H1 Arena** 톤 검수 (`docs/SCORE-UP-홈-상세.md`). H7(상쾌 톤)과 비교 후 기본 확정. 확정 후 V1~V3·H2~H6 시안·시안 바 정리
+2. Phase 4: 태블릿 가로 / 폰 세로에서 농구 보드 UX 검수 — `docs/SCORE-UP-스코어보드-레퍼런스-체크리스트.md`
+3. Basketball agent가 카피·잠금·쿼터/작전타임이 명세서 v0.2와 같은지 검수
+4. 검수 끝나면 Phase 5 룰 엔진. 그 전 배구/탁구 보드 금지
+
+홈·전역 T&M: `theme/arena.ts`, 시안 비교 `docs/home-hub-versions.html` · `docs/SCORE-UP-홈-벤치마크.md`
 
 이 문서의 Phase 4 검수가 닫히기 전에는 다른 종목 구현을 시작하지 않는다.
