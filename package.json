@@ -9,6 +9,7 @@
   "scripts": {
     "start": "pnpm --filter mobile start",
     "web": "pnpm --filter mobile web",
+    "export:web": "pnpm --filter mobile export:web",
     "android": "pnpm --filter mobile android",
     "ios": "pnpm --filter mobile ios"
   }

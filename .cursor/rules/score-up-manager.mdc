@@ -8,9 +8,11 @@ alwaysApply: true
 새 요청이 오면 코딩 전에 이 순서를 따른다.
 
 1. `AGENTS.md`와 `docs/SCORE-UP-작업계획.md`를 기준으로 담당을 고른다.
-2. 농구 룰/스코어/파울 → `.cursor/skills/basketball-agent/SKILL.md`
-3. 화면, 네비게이션, mock UX → `.cursor/skills/frontend-ux-agent/SKILL.md`
-4. 공통 상태·이벤트·종료 함수 → `.cursor/skills/rule-engine-agent/SKILL.md`
-5. 배구/탁구 등 없는 종목 → Manager가 skill을 만든 뒤 분배. 지금은 농구 mock이 끝날 때까지 구현하지 않는다.
+2. 기획, IA, 화면 명세, 카피, MVP 범위, 기획 문서 정합 → `.cursor/skills/planner-agent/SKILL.md` (학습: `canon.md`)
+3. 농구 룰/스코어/파울 → `.cursor/skills/basketball-agent/SKILL.md`
+4. 화면 구현, 네비게이션, mock UX → `.cursor/skills/frontend-ux-agent/SKILL.md`
+5. 공통 상태·이벤트·종료 함수 → `.cursor/skills/rule-engine-agent/SKILL.md`
+6. 배구/탁구 등 없는 종목 → Manager가 skill을 만든 뒤 분배. 지금은 농구 mock이 끝날 때까지 구현하지 않는다.
+7. AWS/배포/호스팅/팀 공유 URL → `.cursor/skills/infra-agent/SKILL.md`. 개발·테스트 공유는 최소 비용(S3 정적, 월정액 컴퓨트 금지). API·RDS·Cognito·Amplify Git 빌드는 만들지 않는다.
 
 제약: Expo 단일 코드(앱+웹). mock 프론트 우선. 1차 종목은 농구만. 종목에 없는 UI를 그리지 않는다.

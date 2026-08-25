@@ -20,17 +20,20 @@ description: Orchestrates SCORE UP work across sport and platform agents. Use wh
 
 | 신호 | 담당 | Skill |
 | --- | --- | --- |
+| 기획, IA, 화면 명세, 카피, MVP 넣을지, 오픈 이슈, `docs/` 정합 | Planner | `planner-agent` |
 | 농구, 쿼터, 파울, +2/+3, 보너스, 샷클락(미구현) | Basketball | `basketball-agent` |
-| 화면, 라우팅, mock, 홈/대진/스코어보드 레이아웃 | Frontend UX | `frontend-ux-agent` |
+| 화면 구현, 라우팅, mock, 홈/대진/스코어보드 레이아웃 | Frontend UX | `frontend-ux-agent` |
 | MatchEvent, 스냅샷, canEndPeriod, 공통 상태머신 | Rule Engine | `rule-engine-agent` |
 | 배구, 탁구, 축구, 새 종목 프리셋 | 해당 종목 agent. 없으면 생성 | 이 스킬의 템플릿 |
+| AWS, S3, CloudFront, 배포, 호스팅, 팀 공유 URL | Infra | `infra-agent` |
 | 모노레포, Expo, 패키지 경계, 일정 | Manager가 직접 | — |
 
 농구 스코어보드처럼 화면+룰이 겹치면:
 
-1. Frontend UX가 mock으로 화면을 만든다.
-2. Basketball이 버튼·알림·잠금 조건을 맞춘다.
-3. Rule Engine은 **인터페이스만** 맞추고, Phase 5 전에는 실제 엔진을 넣지 않는다.
+1. Planner가 화면·카피·범위 명세를 고정한다 (`docs/` + `planner-agent/canon.md`).
+2. Frontend UX가 mock으로 화면을 만든다.
+3. Basketball이 버튼·알림·잠금 조건을 맞춘다.
+4. Rule Engine은 **인터페이스만** 맞추고, Phase 5 전에는 실제 엔진을 넣지 않는다.
 
 ## 새 agent 만들기
 
@@ -43,9 +46,12 @@ description: Orchestrates SCORE UP work across sport and platform agents. Use wh
 
 지금은 배구/탁구 agent를 **예약만** 하고 생성하지 않는다. 농구 mock UX 검수가 끝난 뒤 만든다.
 
+역할 agent(Infra 등)는 종목 템플릿을 복사하지 않고 `.cursor/skills/<name>-agent/SKILL.md`를 직접 만든다. AGENTS.md 표는 같이 갱신한다.
+
 ## 검수 (Manager가 직접)
 
 - 다른 종목 UI가 농구 화면에 섞이지 않았는가
 - mock 저장소 인터페이스가 나중에 API로 갈아끼울 수 있는가
 - 앱/웹이 같은 화면 컴포넌트를 쓰는가 (웹 전용 페이지를 따로 만들지 말 것)
 - 작업계획에 없는 Phase를 앞당기지 않았는가
+- 미리보기 호스팅에 EC2/ALB/NAT/Amplify Git 빌드처럼 월정액·빌드 과금이 붙지 않았는가

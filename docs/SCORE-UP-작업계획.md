@@ -21,7 +21,7 @@
 | 1차 종목 | **농구만** | 시간제+파울이라 엔진/UX 검증 밀도가 가장 높다. 기획서 권장 순서와 같다 |
 | 구현 순서 | **mock 프론트 → 룰 엔진 → 다른 종목** | 운영 흐름이 손에 잡혀야 버튼·상태 전이 스펙이 검증된다 |
 | 계정/백엔드 | 이번 단계 없음 | 로그인·API는 mock 화면 검수 후 |
-| Agent | Manager가 분배. 종목 agent는 농구만 생성. 배구/탁구는 이후 Manager가 생성 | 없는 agent를 미리 많이 두면 지시가 흩어진다 |
+| Agent | Manager가 분배. 기획은 Planner. 종목 agent는 농구만 생성. 배구/탁구는 이후 Manager가 생성 | 없는 agent를 미리 많이 두면 지시가 흩어진다 |
 | 스코어보드 라우트 | `/match/[id]/basketball` 등 종목 경로. `/scoreboard`는 `sportId`로 보냄 | 종목 레이아웃이 다름. 보드 컴포넌트 단위로 분리하고 버튼 if문을 흩뿌리지 않음 |
 | 농구 시계 | 보드 입장 시 정지. **경기 시작**을 눌러야 흐름 | 출전 확정과 쿼터 시계 시작을 나눔 |
 | 작전타임 | T/O 시 전용 카운트다운. 시간(초)은 대회/친선 룰에서 설정 | 횟수만 줄이고 멈추면 남은 작전 시간이 안 보임 |
@@ -63,7 +63,7 @@
 apps/mobile/          Expo 앱 (ios / android / web)
 packages/domain/      SportPreset, Match, MatchEvent, 판정 함수 타입
 packages/mock/        시드 데이터 + in-memory repo
-.cursor/skills/       Manager, Basketball, Frontend UX, Rule Engine
+.cursor/skills/       Manager, Planner, Basketball, Frontend UX, Rule Engine, Infra
 docs/                 기획·룰·화면·이 계획
 ```
 
@@ -74,13 +74,15 @@ docs/                 기획·룰·화면·이 계획
 ```text
 사용자 요청
     → Manager (분류, 범위, 새 agent 생성)
-         ├─ Frontend UX     화면, 라우팅, mock 동작
+         ├─ Planner         제품 정의, IA, 화면 명세, 카피, MVP 범위, docs 정합
+         ├─ Frontend UX     화면 구현, 라우팅, mock 동작
          ├─ Basketball      농구 버튼·파울·타이머·카피
          ├─ Rule Engine     공통 상태/이벤트 계약 (실구현은 Phase 5)
+         ├─ Infra           팀 공유 미리보기 (S3 정적, 최소 비용)
          └─ (이후) Volleyball / Table Tennis agent 생성 후 분배
 ```
 
-- 스킬 위치: `.cursor/skills/`
+- 스킬 위치: `.cursor/skills/` (기획 학습: `planner-agent/canon.md`)
 - 분배 규칙: `AGENTS.md`
 - 새 종목 agent 템플릿: `.cursor/skills/score-up-manager/sport-agent-template.md`
 
@@ -92,7 +94,7 @@ Manager는 배구·탁구 작업 요청이 와도 **농구 mock UX가 끝나기 
 
 ### Phase 0 — 운영 골격
 
-- [x] Manager / Basketball / Frontend UX / Rule Engine skill
+- [x] Manager / Planner / Basketball / Frontend UX / Rule Engine skill
 - [x] `AGENTS.md`, always-on Manager rule
 - [x] 이 작업 계획
 - [x] Expo 워크스페이스 스캐폴드
@@ -176,7 +178,7 @@ Manager는 배구·탁구 작업 요청이 와도 **농구 mock UX가 끝나기 
 ## 6. 명시적으로 안 하는 것 (이번 수직 슬라이스)
 
 - 배구·탁구 스코어보드 **본문**과 프리셋 (경로는 예약만)
-- 실서버, 인증, 실시간 동기화
+- 실서버(API/DB/인증), 실시간 동기화. **팀 공유용 S3 정적 웹은 허용.** Amplify Git 빌드·EC2·ALB·NAT·Route 53 존은 비용 때문에 쓰지 않음
 - 샷클락, 관중용 보드, 이미지/링크 공유
 - 리그 승점 세부, 조별+결선
 - 웹 전용 랜딩/마케팅 페이지

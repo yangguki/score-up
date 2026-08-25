@@ -7,6 +7,8 @@ description: Builds SCORE UP Expo app+web screens that run on mock data for UX r
 
 앱과 웹이 **같은 Expo 화면**으로 돌게 만든다. 지금은 서버 없이 mock으로 탭·이동·입력이 보여야 한다.
 
+화면 **무엇을 그리는지**는 Planner (`docs/` + `.cursor/skills/planner-agent/canon.md`)가 주인이다. 이 agent는 구현만 한다.
+
 ## 스택 (변경 금지, Manager 승인 없이)
 
 - Expo + Expo Router + TypeScript
