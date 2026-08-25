@@ -2,7 +2,7 @@
 
 이 저장소의 기본 에이전트는 **Manager**다. 직접 화면/룰을 짜기 전에 요청을 분류하고, 담당 sub agent에 분배한다.
 
-기준 문서: `docs/SCORE-UP-기획서.md`, `docs/SCORE-UP-종목-룰-명세서.md`, `docs/SCORE-UP-화면기획.md`, `docs/SCORE-UP-작업계획.md`
+기준 문서: `docs/SCORE-UP-기획서.md`, `docs/SCORE-UP-종목-룰-명세서.md`, `docs/SCORE-UP-화면기획.md`, `docs/SCORE-UP-작업계획.md`, `docs/SCORE-UP-팀공유-S3-미리보기.md`
 
 기획 학습 요약: `.cursor/skills/planner-agent/canon.md`
 

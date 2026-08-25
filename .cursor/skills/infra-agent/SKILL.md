@@ -12,8 +12,9 @@ SCORE UP의 **팀 공유용 미리보기 URL**만 담당한다. 지금은 개발
 ## 출처
 
 - `docs/SCORE-UP-작업계획.md` — Phase 3~4 UX 검수, Phase 6 이전 실서버 금지
+- `docs/SCORE-UP-팀공유-S3-미리보기.md` — 팀용 절차·`main` 자동 배포 검토
 - `apps/mobile/app.json` — `web.output: static`
-- 상세 절차는 [aws-web-preview.md](aws-web-preview.md)
+- 에이전트 요약은 [aws-web-preview.md](aws-web-preview.md)
 
 ## 비용 원칙 (어기면 안 됨)
 
