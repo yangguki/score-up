@@ -178,7 +178,7 @@ Manager는 배구·탁구 작업 요청이 와도 **농구 mock UX가 끝나기 
 ## 6. 명시적으로 안 하는 것 (이번 수직 슬라이스)
 
 - 배구·탁구 스코어보드 **본문**과 프리셋 (경로는 예약만)
-- 실서버(API/DB/인증), 실시간 동기화. **팀 공유용 S3 정적 웹은 허용** (`docs/SCORE-UP-팀공유-S3-미리보기.md`). Amplify Git 빌드·EC2·ALB·NAT·Route 53 존은 비용 때문에 쓰지 않음. `main` 자동 배포는 시놀로지 GitLab Runner + `.gitlab-ci.yml`
+- 실서버(API/DB/인증), 실시간 동기화. **팀 공유용 S3 정적 웹은 허용** (`docs/SCORE-UP-팀공유-S3-미리보기.md`). Amplify Git 빌드·EC2·ALB·NAT·Route 53 존은 비용 때문에 쓰지 않음. `main` 자동 배포는 GitHub Actions (`.github/workflows/deploy-s3.yml`, remote `origin-hub`)
 - 샷클락, 관중용 보드, 이미지/링크 공유
 - 리그 승점 세부, 조별+결선
 - 웹 전용 랜딩/마케팅 페이지

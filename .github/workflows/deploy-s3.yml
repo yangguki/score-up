@@ -1,0 +1,45 @@
+name: Deploy S3 preview
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-s3-preview
+  cancel-in-progress: true
+
+env:
+  AWS_DEFAULT_REGION: ap-northeast-2
+  S3_BUCKET: score-up-preview-211125640658-ap-northeast-2-an
+  EXPO_NO_TELEMETRY: "1"
+
+jobs:
+  deploy_s3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Export web
+        run: pnpm export:web
+      - name: Check dist
+        run: test -f apps/mobile/dist/index.html
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+      - name: Sync S3
+        run: aws s3 sync apps/mobile/dist "s3://${S3_BUCKET}" --delete --region "$AWS_DEFAULT_REGION"
+      - name: Preview URL
+        run: echo "http://${S3_BUCKET}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com/"
