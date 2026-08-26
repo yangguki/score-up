@@ -44,17 +44,17 @@ export function SportRulesEditor({
   if (sportId === "volleyball") {
     return <VolleyballRulesEditor rules={rules as VolleyballRules} onRules={onRules} />;
   }
-  if (sportId === "table-tennis") {
-    return <TableTennisRulesEditor rules={rules as TableTennisRules} onRules={onRules} />;
+  if (sportId === "basketball") {
+    return (
+      <RulesEditor
+        rules={rules as BasketballRules}
+        official={official}
+        onRules={onRules}
+        onOfficial={onOfficial}
+      />
+    );
   }
-  return (
-    <RulesEditor
-      rules={rules as BasketballRules}
-      official={official}
-      onRules={onRules}
-      onOfficial={onOfficial}
-    />
-  );
+  return <TableTennisRulesEditor sportId={sportId} rules={rules as TableTennisRules} onRules={onRules} />;
 }
 
 function VolleyballRulesEditor({
@@ -88,14 +88,21 @@ function VolleyballRulesEditor({
         label={`타임아웃 세트당 ${rules.timeoutsPerSet}회`}
         onPress={() => onRules({ ...rules, timeoutsPerSet: rules.timeoutsPerSet === 2 ? 1 : 2 })}
       />
+      <RowToggle
+        label={rules.rotationEnabled ? "로테이션 표시 켜짐" : "로테이션 표시 꺼짐"}
+        onPress={() => onRules({ ...rules, rotationEnabled: !rules.rotationEnabled })}
+      />
+      <P muted>로테이션은 전열 번호만 보여 줍니다. 반칙 판정은 없습니다.</P>
     </>
   );
 }
 
 function TableTennisRulesEditor({
+  sportId,
   rules,
   onRules,
 }: {
+  sportId: SportId;
   rules: TableTennisRules;
   onRules: (rules: TableTennisRules) => void;
 }) {
@@ -115,6 +122,15 @@ function TableTennisRulesEditor({
         label={`${rules.winBy}점 차`}
         onPress={() => onRules({ ...rules, winBy: rules.winBy === 2 ? 1 : 2 })}
       />
+      {sportId === "table-tennis" || sportId === "badminton" ? (
+        <RowToggle
+          label={rules.doubles ? "복식 (이름만)" : "단식"}
+          onPress={() => onRules({ ...rules, doubles: !rules.doubles })}
+        />
+      ) : null}
+      {rules.doubles ? (
+        <P muted>복식은 이름만 바꿉니다. 위치·서브 순서는 강제하지 않습니다.</P>
+      ) : null}
     </>
   );
 }

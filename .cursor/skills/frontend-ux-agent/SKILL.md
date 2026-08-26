@@ -32,7 +32,7 @@ description: Builds SCORE UP Expo app+web screens that run on mock data for UX r
 
 준비: 홈, 대회 만들기 1~4단계(농구·배구·탁구), 대회 개요, 참가 팀/선수, 대진 생성, 토너먼트 브래킷, 리그 순위, 출전 명단, 빠른 친선, 이 기기 로그인, 모임·회차·참석 투표(농구).
 
-기록: 농구 스코어보드(`/match/[id]/basketball`), 배구 mock 보드(`/match/[id]/volleyball`), 탁구 mock 보드(`/match/[id]/table-tennis`), 선수 피커, 교체 시트, 종료 확인 팝업, 타임라인, 결과.
+기록: 농구 스코어보드(`/match/[id]/basketball`), 배구 mock 보드(`/match/[id]/volleyball`), 탁구 mock 보드(`/match/[id]/table-tennis`), 배드민턴(`/match/[id]/badminton`), 스쿼시(`/match/[id]/squash`), 선수 피커, 교체 시트, 종료 확인 팝업, 타임라인, 결과.
 
 빼는 것: 관중용 큰 보드, 실 API/Cognito, 배구 세트 승점제, 자동 매칭. 리그 MVP는 승3/패0 순위표. `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다.
 

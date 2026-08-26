@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { accountName, canOperateClub, memberOf } from "@score-up/domain";
@@ -13,7 +13,8 @@ export default function ClubMembersScreen() {
   const accountId = useAppStore((s) => s.accountId);
   const club = useAppStore((s) => s.clubs.find((row) => row.id === id));
   const accounts = useAppStore((s) => s.accounts);
-  const members = useAppStore((s) => s.clubMembers.filter((row) => row.clubId === id));
+  const clubMembers = useAppStore((s) => s.clubMembers);
+  const members = useMemo(() => clubMembers.filter((row) => row.clubId === id), [clubMembers, id]);
   const decideJoinAt = useAppStore((s) => s.decideJoinAt);
   const [notice, setNotice] = useState("");
 

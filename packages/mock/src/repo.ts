@@ -4,7 +4,8 @@ import {
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
   isBasketballMatch,
-  isTableTennisMatch,
+  isRallySetMatch,
+  isRallySetSport,
   isVolleyballMatch,
   nextTeamColor,
   type BasketballRules,
@@ -180,8 +181,12 @@ function createSportMatch(input: BlankMatchInput): Match {
   if (input.sportId === "volleyball") {
     return createBlankVolleyballMatch({ ...input, rules: input.rules as VolleyballRules });
   }
-  if (input.sportId === "table-tennis") {
-    return createBlankTableTennisMatch({ ...input, rules: input.rules as TableTennisRules });
+  if (isRallySetSport(input.sportId)) {
+    return createBlankTableTennisMatch({
+      ...input,
+      sportId: input.sportId,
+      rules: input.rules as TableTennisRules,
+    });
   }
   return createBlankMatch({ ...input, rules: input.rules as BasketballRules });
 }
@@ -194,7 +199,7 @@ function markByeWinner(match: Match, teamId: string, teamName: string) {
     match.snapshot.setsWonHome = 1;
     match.snapshot.setHistory = [{ home: 1, away: 0, winner: "home" }];
   }
-  if (isTableTennisMatch(match)) {
+  if (isRallySetMatch(match)) {
     match.snapshot.setsWonHome = 1;
     match.snapshot.setHistory = [{ home: 1, away: 0, winner: "home" }];
   }

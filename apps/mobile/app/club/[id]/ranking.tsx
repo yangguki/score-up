@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { accountName, computeClubRanking } from "@score-up/domain";
@@ -14,10 +15,20 @@ export default function RankingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const club = useAppStore((s) => s.clubs.find((row) => row.id === id));
   const accounts = useAppStore((s) => s.accounts);
-  const members = useAppStore((s) => s.clubMembers.filter((row) => row.clubId === id && row.status === "active"));
-  const sessions = useAppStore((s) => s.sessions.filter((row) => row.clubId === id));
-  const matches = useAppStore((s) => s.matches.filter((row) => sessions.some((ses) => ses.id === row.sessionId)));
+  const clubMembers = useAppStore((s) => s.clubMembers);
+  const allSessions = useAppStore((s) => s.sessions);
+  const allMatches = useAppStore((s) => s.matches);
   const assignments = useAppStore((s) => s.sessionAssignments);
+  const members = useMemo(
+    () => clubMembers.filter((row) => row.clubId === id && row.status === "active"),
+    [clubMembers, id],
+  );
+  const sessions = useMemo(() => allSessions.filter((row) => row.clubId === id), [allSessions, id]);
+  const sessionIds = useMemo(() => new Set(sessions.map((row) => row.id)), [sessions]);
+  const matches = useMemo(
+    () => allMatches.filter((row) => row.sessionId && sessionIds.has(row.sessionId)),
+    [allMatches, sessionIds],
+  );
   const rows = computeClubRanking(
     members.map((row) => ({ accountId: row.accountId, name: accountName(accounts, row.accountId) })),
     matches,

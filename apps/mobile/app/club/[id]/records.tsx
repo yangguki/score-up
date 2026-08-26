@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 import { Card, H, P, Screen } from "@/components/ui";
@@ -8,8 +9,12 @@ import { space } from "@/theme/tokens";
 
 export default function RecordsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const sessions = useAppStore((s) => s.sessions.filter((row) => row.clubId === id && row.status === "completed"));
+  const allSessions = useAppStore((s) => s.sessions);
   const matches = useAppStore((s) => s.matches);
+  const sessions = useMemo(
+    () => allSessions.filter((row) => row.clubId === id && row.status === "completed"),
+    [allSessions, id],
+  );
 
   const rows = sessions
     .map((session) => ({ session, match: matches.find((row) => row.id === session.matchId) }))

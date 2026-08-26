@@ -156,11 +156,11 @@ export function HomeH1({
         </View>
 
         <Animated.View entering={FadeInDown.delay(120).duration(420).springify().damping(18)} style={{ gap: space.md }}>
-          <SectionTitle kit={kit} title="종목 고르기" hint="농구·배구·탁구로 대회를 만듭니다" />
+          <SectionTitle kit={kit} title="종목 고르기" hint="활성 종목으로 대회를 만듭니다" />
           <SportPicker
             kit={kit}
             onSelect={(sport: HomeSport) => {
-              if (sport.id === "basketball" || sport.id === "volleyball" || sport.id === "table-tennis") {
+              if (sport.active) {
                 router.push(`/competition/new?sport=${sport.id}` as Href);
               }
             }}

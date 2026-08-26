@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, TextInput, View } from "react-native";
-import { isBasketballMatch, isTableTennisMatch, isVolleyballMatch } from "@score-up/domain";
+import { isBasketballMatch, isRallySetMatch, isVolleyballMatch } from "@score-up/domain";
 import { Btn, Card, H, P, Screen } from "@/components/ui";
 import { scoreboardHref } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
@@ -39,7 +39,7 @@ export default function LineupScreen() {
     );
   }
 
-  if (isVolleyballMatch(match) || isTableTennisMatch(match)) {
+  if (isVolleyballMatch(match) || isRallySetMatch(match)) {
     return <Redirect href={scoreboardHref(match)} />;
   }
 

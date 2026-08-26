@@ -1,3 +1,4 @@
+import { isRallySetSport } from "@score-up/domain";
 import { useState } from "react";
 import { Link, useLocalSearchParams } from "expo-router";
 import { ScrollView, TextInput, View } from "react-native";
@@ -35,10 +36,10 @@ export default function RosterScreen() {
 
   const rosterHint =
     competition.sportId === "volleyball" ? 6 : competition.sportId === "basketball" ? 5 : 0;
-  const isTableTennis = competition.sportId === "table-tennis";
+  const isPlayerSport = isRallySetSport(competition.sportId);
   const isTournament = competition.format === "tournament";
   const canMakeBracket = teams.length >= 2;
-  const emptyHint = isTableTennis
+  const emptyHint = isPlayerSport
     ? isTournament
       ? "선수를 추가하세요. 토너먼트는 2명 이상이어야 대진을 만들 수 있습니다."
       : "선수를 추가하세요. 리그는 2명 이상이어야 일정을 만들 수 있습니다."
@@ -47,7 +48,7 @@ export default function RosterScreen() {
       : "팀을 추가하세요. 리그는 팀이 2개 이상이어야 일정을 만들 수 있습니다.";
   const footerHint = canMakeBracket
     ? "대진을 만들려면 대진 보기로 이동하세요."
-    : isTableTennis
+    : isPlayerSport
       ? isTournament
         ? "토너먼트 대진은 선수가 2명 이상일 때 만들 수 있습니다."
         : "리그 일정은 선수가 2명 이상일 때 만들 수 있습니다."
@@ -64,7 +65,7 @@ export default function RosterScreen() {
 
   const submitTeam = () => {
     if (!teamName.trim()) {
-      setTeamError(isTableTennis ? "선수 이름을 입력하세요." : "팀 이름을 입력하세요.");
+      setTeamError(isPlayerSport ? "선수 이름을 입력하세요." : "팀 이름을 입력하세요.");
       return;
     }
     addTeamTo(id!, teamName.trim(), teamColor);
@@ -97,7 +98,7 @@ export default function RosterScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
-        <H>{isTableTennis ? "참가 선수" : "참가 팀"}</H>
+        <H>{isPlayerSport ? "참가 선수" : "참가 팀"}</H>
         {teams.length === 0 ? <P muted>{emptyHint}</P> : null}
 
         {teams.map((team) => {
@@ -118,7 +119,7 @@ export default function RosterScreen() {
                 />
                 <H style={{ fontSize: 18 }}>{team.name}</H>
               </View>
-              {isTableTennis ? null : (
+              {isPlayerSport ? null : (
                 <>
               <P muted style={{ marginTop: 8 }}>
                 선수 {roster.length}명
@@ -146,7 +147,7 @@ export default function RosterScreen() {
                 </P>
               ) : null}
 
-              {isTableTennis ? null : addingPlayerFor === team.id ? (
+              {isPlayerSport ? null : addingPlayerFor === team.id ? (
                 <View style={{ marginTop: 10 }}>
                   <TextInput
                     value={playerName}
@@ -195,7 +196,7 @@ export default function RosterScreen() {
 
         {addingTeam ? (
           <Card>
-            <H style={{ fontSize: 16 }}>{isTableTennis ? "선수 추가" : "팀 추가"}</H>
+            <H style={{ fontSize: 16 }}>{isPlayerSport ? "선수 추가" : "팀 추가"}</H>
             <View style={{ marginTop: 8 }}>
               <TeamEditor
                 name={teamName}
@@ -228,7 +229,7 @@ export default function RosterScreen() {
             </View>
           </Card>
         ) : (
-          <Btn label={isTableTennis ? "선수 추가" : "팀 추가"} variant="ghost" onPress={() => setAddingTeam(true)} />
+          <Btn label={isPlayerSport ? "선수 추가" : "팀 추가"} variant="ghost" onPress={() => setAddingTeam(true)} />
         )}
 
         <P muted>{footerHint}</P>

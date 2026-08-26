@@ -5,6 +5,8 @@ export const SPORT_BOARD_SEGMENT: Record<SportId, string> = {
   basketball: "basketball",
   volleyball: "volleyball",
   "table-tennis": "table-tennis",
+  badminton: "badminton",
+  squash: "squash",
 };
 
 export function scoreboardHref(match: Pick<Match, "id" | "sportId">): Href {
@@ -19,5 +21,9 @@ export function sportLabel(sportId: SportId): string {
       return "배구";
     case "table-tennis":
       return "탁구";
+    case "badminton":
+      return "배드민턴";
+    case "squash":
+      return "스쿼시";
   }
 }

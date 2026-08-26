@@ -12,7 +12,7 @@ type Props = {
 
 const AMBER = "#F5A623";
 
-/** H1 종목 2열 모자이크. 농구·배구·탁구 활성. */
+/** H1 종목 2열 모자이크. 활성 종목만 선택. */
 export function SportPicker({ kit, selectedId, onSelect }: Props) {
   const accent = kit.accent ?? AMBER;
   return (

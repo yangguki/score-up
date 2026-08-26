@@ -13,6 +13,7 @@ export const VOLLEYBALL_CLUB_PRESET: SportPreset & { rules: VolleyballRules } = 
     lastSetTarget: 15,
     winBy: 2,
     timeoutsPerSet: 2,
+    rotationEnabled: false,
   },
 };
 
@@ -45,6 +46,9 @@ export function emptyVolleyballSnapshot(
     },
     started: false,
     deuce: false,
+    rotationHome: [...VOLLEYBALL_COURT_ORDER],
+    rotationAway: [...VOLLEYBALL_COURT_ORDER],
+    sanctions: [],
   };
 }
 
@@ -92,5 +96,23 @@ export function volleyballSetLabel(snapshot: VolleyballSnapshot): string {
 
 export function volleyballRulesSummary(rules: VolleyballRules): string {
   const bestOf = rules.setsToWin * 2 - 1;
-  return `${bestOf}판 ${rules.setsToWin}선 · ${rules.setTarget}점(최종 ${rules.lastSetTarget}) · ${rules.winBy}점 차`;
+  const rotation = rules.rotationEnabled ? " · 로테이션 표시" : "";
+  return `${bestOf}판 ${rules.setsToWin}선 · ${rules.setTarget}점(최종 ${rules.lastSetTarget}) · ${rules.winBy}점 차${rotation}`;
+}
+
+export const VOLLEYBALL_COURT_ORDER = [1, 2, 3, 4, 5, 6];
+
+export function rotateVolleyballCourt(order: number[]): number[] {
+  const row = order.length ? order : VOLLEYBALL_COURT_ORDER;
+  return [...row.slice(1), row[0]!];
+}
+
+export function unrotateVolleyballCourt(order: number[]): number[] {
+  const row = order.length ? order : VOLLEYBALL_COURT_ORDER;
+  return [row[row.length - 1]!, ...row.slice(0, -1)];
+}
+
+export function volleyballFrontLine(order: number[] | undefined): string {
+  const row = order?.length ? order : VOLLEYBALL_COURT_ORDER;
+  return `${row[0]}-${row[1]}-${row[2]}`;
 }

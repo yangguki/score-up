@@ -1,4 +1,4 @@
-import type { Match, MatchEvent, Side, TableTennisRules } from "@score-up/domain";
+import type { Match, MatchEvent, RallySetSportId, Side, TableTennisRules } from "@score-up/domain";
 import {
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
@@ -7,7 +7,7 @@ import {
   canEndTableTennisSet,
   emptyTableTennisSnapshot,
   isLastTableTennisSet,
-  isTableTennisMatch,
+  isRallySetMatch,
   tableTennisDeuce,
   tableTennisServeLimit,
   tableTennisSetPointSide,
@@ -28,7 +28,7 @@ function pushEvent(
   partial: Omit<MatchEvent, "id" | "matchId" | "createdAt" | "revoked" | "clockMs" | "quarter"> &
     Partial<Pick<MatchEvent, "clockMs" | "quarter">>,
 ): MatchEvent {
-  const set = isTableTennisMatch(match) ? match.snapshot.currentSet : 1;
+  const set = isRallySetMatch(match) ? match.snapshot.currentSet : 1;
   return {
     id: uid("ev"),
     matchId: match.id,
@@ -41,7 +41,7 @@ function pushEvent(
 }
 
 function cloneMatch(match: Match): Match {
-  if (!isTableTennisMatch(match)) return match;
+  if (!isRallySetMatch(match)) return match;
   return {
     ...match,
     snapshot: {
@@ -54,7 +54,8 @@ function cloneMatch(match: Match): Match {
 }
 
 function maybeEndChangeAtFive(next: Match): void {
-  if (!isTableTennisMatch(next)) return;
+  if (!isRallySetMatch(next)) return;
+  if (!next.rules.changeEndsAt) return;
   if (next.snapshot.endChangeAtFiveDone) return;
   if (!isLastTableTennisSet(next.snapshot, next.rules)) return;
   const at = next.rules.changeEndsAt;
@@ -66,6 +67,7 @@ function maybeEndChangeAtFive(next: Match): void {
 
 export function createBlankTableTennisMatch(input: {
   id?: string;
+  sportId?: RallySetSportId;
   competitionId?: string;
   homeTeamId?: string;
   awayTeamId?: string;
@@ -82,7 +84,7 @@ export function createBlankTableTennisMatch(input: {
   const id = input.id ?? uid("match");
   return {
     id,
-    sportId: "table-tennis",
+    sportId: input.sportId ?? "table-tennis",
     competitionId: input.competitionId,
     homeTeamId: input.homeTeamId,
     awayTeamId: input.awayTeamId,
@@ -101,9 +103,9 @@ export function createBlankTableTennisMatch(input: {
 }
 
 export function startTableTennisMatch(match: Match, openingServe: Side = "home"): Match {
-  if (!isTableTennisMatch(match)) return match;
+  if (!isRallySetMatch(match)) return match;
   const next = cloneMatch(match);
-  if (!isTableTennisMatch(next)) return match;
+  if (!isRallySetMatch(next)) return match;
   next.status = "in_progress";
   next.snapshot.started = true;
   next.snapshot.serveSide = openingServe;
@@ -113,10 +115,10 @@ export function startTableTennisMatch(match: Match, openingServe: Side = "home")
 }
 
 export function applyTableTennisPoint(match: Match, teamId: string): Match {
-  if (!isTableTennisMatch(match)) return match;
+  if (!isRallySetMatch(match)) return match;
   if (match.status !== "in_progress" || !match.snapshot.started) return match;
   const next = cloneMatch(match);
-  if (!isTableTennisMatch(next)) return match;
+  if (!isRallySetMatch(next)) return match;
   const side = sideOfTeam(next, teamId);
   const prevServeSide = next.snapshot.serveSide;
   const prevServeCount = next.snapshot.serveCount;
@@ -124,7 +126,12 @@ export function applyTableTennisPoint(match: Match, teamId: string): Match {
   else next.snapshot.awaySetPoints += 1;
   next.snapshot.deuce = tableTennisDeuce(next.snapshot, next.rules);
   next.snapshot.endChangeHint = false;
-  advanceTableTennisServe(next.snapshot, next.rules);
+  if (next.rules.serveMode === "scorer") {
+    next.snapshot.serveSide = side;
+    next.snapshot.serveCount = 1;
+  } else {
+    advanceTableTennisServe(next.snapshot, next.rules);
+  }
   maybeEndChangeAtFive(next);
   next.events.push(
     pushEvent(next, {
@@ -140,10 +147,10 @@ export function applyTableTennisPoint(match: Match, teamId: string): Match {
 }
 
 export function changeTableTennisServe(match: Match): Match {
-  if (!isTableTennisMatch(match)) return match;
+  if (!isRallySetMatch(match)) return match;
   if (match.status !== "in_progress" && match.status !== "paused") return match;
   const next = cloneMatch(match);
-  if (!isTableTennisMatch(next)) return match;
+  if (!isRallySetMatch(next)) return match;
   const prevServeSide = next.snapshot.serveSide;
   const prevServeCount = next.snapshot.serveCount;
   next.snapshot.serveSide = next.snapshot.serveSide === "home" ? "away" : "home";
@@ -159,29 +166,29 @@ export function changeTableTennisServe(match: Match): Match {
 }
 
 export function pauseTableTennisMatch(match: Match): Match {
-  if (!isTableTennisMatch(match)) return match;
+  if (!isRallySetMatch(match)) return match;
   if (match.status !== "in_progress") return match;
   const next = cloneMatch(match);
-  if (!isTableTennisMatch(next)) return match;
+  if (!isRallySetMatch(next)) return match;
   next.status = "paused";
   return next;
 }
 
 export function resumeTableTennisMatch(match: Match): Match {
-  if (!isTableTennisMatch(match)) return match;
+  if (!isRallySetMatch(match)) return match;
   if (match.status !== "paused") return match;
   const next = cloneMatch(match);
-  if (!isTableTennisMatch(next)) return match;
+  if (!isRallySetMatch(next)) return match;
   next.status = "in_progress";
   return next;
 }
 
 export function undoTableTennisLast(match: Match): Match {
-  if (!isTableTennisMatch(match)) return match;
+  if (!isRallySetMatch(match)) return match;
   const last = [...match.events].reverse().find((e) => !e.revoked);
   if (!last) return match;
   const next = cloneMatch(match);
-  if (!isTableTennisMatch(next)) return match;
+  if (!isRallySetMatch(next)) return match;
   const target = next.events.find((e) => e.id === last.id);
   if (target) target.revoked = true;
   next.events.push(pushEvent(next, { type: "revoke", payload: { targetEventId: last.id } }));
@@ -221,11 +228,11 @@ export function undoTableTennisLast(match: Match): Match {
 }
 
 export function confirmTableTennisSet(match: Match): Match {
-  if (!isTableTennisMatch(match)) return match;
+  if (!isRallySetMatch(match)) return match;
   if (match.status !== "confirm_period_end") return match;
   if (!canEndTableTennisSet(match.snapshot, match.rules)) return match;
   const next = cloneMatch(match);
-  if (!isTableTennisMatch(next)) return match;
+  if (!isRallySetMatch(next)) return match;
   const homeWins = next.snapshot.homeSetPoints > next.snapshot.awaySetPoints;
   const winner: Side = homeWins ? "home" : "away";
   next.events.push(
@@ -267,9 +274,9 @@ export function confirmTableTennisSet(match: Match): Match {
 }
 
 export function confirmTableTennisMatch(match: Match): Match {
-  if (!isTableTennisMatch(match)) return match;
+  if (!isRallySetMatch(match)) return match;
   const next = cloneMatch(match);
-  if (!isTableTennisMatch(next)) return match;
+  if (!isRallySetMatch(next)) return match;
   const homeWins = next.snapshot.setsWonHome > next.snapshot.setsWonAway;
   next.status = "completed";
   next.winnerTeamId = homeWins ? next.homeTeamId : next.awayTeamId;
@@ -285,9 +292,9 @@ export function confirmTableTennisMatch(match: Match): Match {
 }
 
 export function forfeitTableTennisMatch(match: Match, winnerSide: Side): Match {
-  if (!isTableTennisMatch(match)) return match;
+  if (!isRallySetMatch(match)) return match;
   const next = cloneMatch(match);
-  if (!isTableTennisMatch(next)) return match;
+  if (!isRallySetMatch(next)) return match;
   if (winnerSide === "home") {
     next.snapshot.setsWonHome = next.rules.setsToWin;
     next.snapshot.setsWonAway = 0;
@@ -311,7 +318,7 @@ export function forfeitTableTennisMatch(match: Match, winnerSide: Side): Match {
 }
 
 export function tableTennisNotice(match: Match): string {
-  if (!isTableTennisMatch(match)) return "";
+  if (!isRallySetMatch(match)) return "";
   const { snapshot, rules, status } = match;
   if (status === "confirm_match_end") {
     const home = snapshot.setsWonHome > snapshot.setsWonAway;
@@ -330,7 +337,7 @@ export function tableTennisNotice(match: Match): string {
 }
 
 export function tableTennisServeLine(match: Match, playerLabel: string): string {
-  if (!isTableTennisMatch(match)) return "";
+  if (!isRallySetMatch(match)) return "";
   const limit = tableTennisServeLimit(match.snapshot, match.rules);
   return `${playerLabel} 서브 ${match.snapshot.serveCount}/${limit}`;
 }

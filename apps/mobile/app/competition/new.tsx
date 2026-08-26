@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, TextInput, View } from "react-native";
 import {
-  BASKETBALL_CLUB_PRESET,
-  TABLE_TENNIS_CLUB_PRESET,
-  VOLLEYBALL_CLUB_PRESET,
+  clubRulesFor,
+  type BasketballRules,
   type SportId,
   type SportRules,
 } from "@score-up/domain";
@@ -21,13 +20,9 @@ const CREATE_SPORTS: { id: SportId; line: string }[] = [
   { id: "basketball", line: "시간+파울" },
   { id: "volleyball", line: "세트+서브" },
   { id: "table-tennis", line: "개인 세트제" },
+  { id: "badminton", line: "랠리 세트제" },
+  { id: "squash", line: "랠리 점수" },
 ];
-
-function clubRules(sportId: SportId): SportRules {
-  if (sportId === "volleyball") return VOLLEYBALL_CLUB_PRESET.rules;
-  if (sportId === "table-tennis") return TABLE_TENNIS_CLUB_PRESET.rules;
-  return BASKETBALL_CLUB_PRESET.rules;
-}
 
 function defaultName(sportId: SportId) {
   return `새 ${sportLabel(sportId)} 대회`;
@@ -35,7 +30,15 @@ function defaultName(sportId: SportId) {
 
 function parseSport(value?: string | string[]): SportId {
   const raw = Array.isArray(value) ? value[0] : value;
-  if (raw === "volleyball" || raw === "table-tennis" || raw === "basketball") return raw;
+  if (
+    raw === "volleyball" ||
+    raw === "table-tennis" ||
+    raw === "basketball" ||
+    raw === "badminton" ||
+    raw === "squash"
+  ) {
+    return raw;
+  }
   return "basketball";
 }
 
@@ -54,7 +57,7 @@ export default function NewCompetitionScreen() {
   const [step, setStep] = useState(1);
   const [sportId, setSportId] = useState<SportId>(initialSport);
   const [official, setOfficial] = useState(false);
-  const [rules, setRules] = useState<SportRules>(clubRules(initialSport));
+  const [rules, setRules] = useState<SportRules>(clubRulesFor(initialSport));
   const [format, setFormat] = useState<"tournament" | "league">("tournament");
   const [name, setName] = useState(defaultName(initialSport));
   const [dateMode, setDateMode] = useState<"day" | "range">("day");
@@ -63,7 +66,7 @@ export default function NewCompetitionScreen() {
   const [courtCount, setCourtCount] = useState(0);
   const [error, setError] = useState("");
 
-  const basketballRules = sportId === "basketball" ? (rules as typeof BASKETBALL_CLUB_PRESET.rules) : null;
+  const basketballRules = sportId === "basketball" ? (rules as BasketballRules) : null;
   const tournamentBlocked = Boolean(basketballRules && format === "tournament" && !basketballRules.overtimeEnabled);
   const nameOk = name.trim().length > 0;
   const rangeErr = dateMode === "range" ? periodError(dateStart, dateEnd) : null;
@@ -78,14 +81,14 @@ export default function NewCompetitionScreen() {
     const next = parseSport(params.sport);
     setSportId(next);
     setOfficial(false);
-    setRules(clubRules(next));
+    setRules(clubRulesFor(next));
     setName((current) => (names.includes(current) ? defaultName(next) : current));
   }, [params.sport, names]);
 
   const selectSport = (next: SportId) => {
     setSportId(next);
     setOfficial(false);
-    setRules(clubRules(next));
+    setRules(clubRulesFor(next));
     setName((current) => (names.includes(current) ? defaultName(next) : current));
     setError("");
   };

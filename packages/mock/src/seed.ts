@@ -1,5 +1,7 @@
 import {
   BASKETBALL_CLUB_PRESET,
+  BADMINTON_CLUB_PRESET,
+  SQUASH_CLUB_PRESET,
   TABLE_TENNIS_CLUB_PRESET,
   VOLLEYBALL_CLUB_PRESET,
   type AppData,
@@ -12,6 +14,8 @@ import { emptySnapshot, emptyTableTennisSnapshot, emptyVolleyballSnapshot } from
 const RULES = BASKETBALL_CLUB_PRESET.rules;
 const VB_RULES = VOLLEYBALL_CLUB_PRESET.rules;
 const TT_RULES = TABLE_TENNIS_CLUB_PRESET.rules;
+const BD_RULES = BADMINTON_CLUB_PRESET.rules;
+const SQ_RULES = SQUASH_CLUB_PRESET.rules;
 
 const TIGER = "team-tiger";
 const EAGLE = "team-eagle";
@@ -24,6 +28,8 @@ const SF2 = "match-sf2";
 const FINAL = "match-final";
 const VB1 = "match-vb1";
 const TT1 = "match-tt1";
+const BD1 = "match-bd1";
+const SQ1 = "match-sq1";
 
 function p(id: string, teamId: string, number: number, name: string): Player {
   return { id, teamId, number, name };
@@ -239,6 +245,36 @@ export function createSeedState(): AppData {
         events: [],
         isFriendly: true,
         rules: TT_RULES,
+      },
+      {
+        id: BD1,
+        sportId: "badminton",
+        homeLabel: "최은지",
+        awayLabel: "한소라",
+        homeColor: "#0F766E",
+        awayColor: "#B91C1C",
+        roundLabel: "친선",
+        scheduledLabel: "오늘 배드민턴",
+        status: "in_progress",
+        snapshot: emptyTableTennisSnapshot(),
+        events: [],
+        isFriendly: true,
+        rules: BD_RULES,
+      },
+      {
+        id: SQ1,
+        sportId: "squash",
+        homeLabel: "정우성",
+        awayLabel: "오세훈",
+        homeColor: "#9A3412",
+        awayColor: "#1D4ED8",
+        roundLabel: "친선",
+        scheduledLabel: "오늘 스쿼시",
+        status: "in_progress",
+        snapshot: emptyTableTennisSnapshot(),
+        events: [],
+        isFriendly: true,
+        rules: SQ_RULES,
       },
       clubDoneMatch(MATCH_CLUB_1, SES_DONE_1, TEAM_CA, TEAM_CB, "home", "2026-08-08"),
       clubDoneMatch(MATCH_CLUB_2, SES_DONE_2, TEAM_CA2, TEAM_CB2, "away", "2026-08-15"),
@@ -489,6 +525,8 @@ export const SEED_IDS = {
   FINAL,
   VB1,
   TT1,
+  BD1,
+  SQ1,
   TIGER,
   EAGLE,
   SHARK,

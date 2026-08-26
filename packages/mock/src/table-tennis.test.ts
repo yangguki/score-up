@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { TABLE_TENNIS_CLUB_PRESET } from "@score-up/domain";
+import { BADMINTON_CLUB_PRESET, TABLE_TENNIS_CLUB_PRESET } from "@score-up/domain";
 import {
   applyTableTennisPoint,
   confirmTableTennisMatch,
@@ -78,4 +78,24 @@ test("마지막 세트 승 확정은 경기 종료 확인으로 이어진다", (
   match = confirmTableTennisMatch(match);
   assert.equal(match.status, "completed");
   assert.equal(match.winnerLabel, "김민수");
+});
+
+test("배드민턴은 득점자가 서브를 가진다", () => {
+  let match = startTableTennisMatch(
+    createBlankTableTennisMatch({
+      sportId: "badminton",
+      homeLabel: "최은지",
+      awayLabel: "한소라",
+      roundLabel: "친선",
+      scheduledLabel: "오늘",
+      rules: BADMINTON_CLUB_PRESET.rules,
+      isFriendly: true,
+    }),
+    "home",
+  );
+  match = applyTableTennisPoint(match, "away");
+  if (match.sportId !== "badminton") throw new Error("expected badminton");
+  assert.equal(match.snapshot.serveSide, "away");
+  assert.equal(match.snapshot.serveCount, 1);
+  assert.equal(match.snapshot.awaySetPoints, 1);
 });

@@ -1,4 +1,5 @@
-export type SportId = "basketball" | "volleyball" | "table-tennis";
+export type SportId = "basketball" | "volleyball" | "table-tennis" | "badminton" | "squash";
+export type RallySetSportId = "table-tennis" | "badminton" | "squash";
 
 export type MatchStatus =
   | "scheduled"
@@ -21,6 +22,7 @@ export type MatchEventType =
   | "timeout"
   | "substitution"
   | "serve_change"
+  | "sanction"
   | "period_end"
   | "match_end"
   | "revoke";
@@ -46,7 +48,11 @@ export interface VolleyballRules {
   lastSetTarget: number;
   winBy: number;
   timeoutsPerSet: number;
+  /** 켜면 전열 번호만 표시. 로테이션 반칙 판정은 하지 않는다. */
+  rotationEnabled: boolean;
 }
+
+export type RallyServeMode = "count" | "scorer";
 
 export interface TableTennisRules {
   setsToWin: number;
@@ -55,6 +61,10 @@ export interface TableTennisRules {
   serveLimit: number;
   deuceServeLimit: number;
   changeEndsAt: number;
+  /** count = 탁구 2점 교대. scorer = 배드민턴·스쿼시처럼 득점자가 서브. */
+  serveMode: RallyServeMode;
+  /** 이름만 복식. 위치·서브 순서는 강제하지 않는다. */
+  doubles: boolean;
 }
 
 export type SportRules = BasketballRules | VolleyballRules | TableTennisRules;
@@ -140,6 +150,11 @@ export interface VolleyballSetScore {
   winner: Side;
 }
 
+export interface VolleyballSanction {
+  side: Side;
+  level: "yellow" | "red";
+}
+
 export interface VolleyballSnapshot {
   currentSet: number;
   homeSetPoints: number;
@@ -152,6 +167,9 @@ export interface VolleyballSnapshot {
   timeoutsLeft: Record<string, number>;
   started: boolean;
   deuce: boolean;
+  rotationHome: number[];
+  rotationAway: number[];
+  sanctions: VolleyballSanction[];
 }
 
 export interface TableTennisSetScore {
@@ -311,6 +329,20 @@ export function isTableTennisMatch(
   match: Match,
 ): match is Match & { sportId: "table-tennis"; snapshot: TableTennisSnapshot; rules: TableTennisRules } {
   return match.sportId === "table-tennis";
+}
+
+export function isRallySetSport(sportId: SportId): sportId is RallySetSportId {
+  return sportId === "table-tennis" || sportId === "badminton" || sportId === "squash";
+}
+
+export function isSetSport(sportId: SportId): boolean {
+  return sportId === "volleyball" || isRallySetSport(sportId);
+}
+
+export function isRallySetMatch(
+  match: Match,
+): match is Match & { sportId: RallySetSportId; snapshot: TableTennisSnapshot; rules: TableTennisRules } {
+  return isRallySetSport(match.sportId);
 }
 
 export interface AppData {

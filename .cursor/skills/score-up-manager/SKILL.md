@@ -24,7 +24,7 @@ description: Orchestrates SCORE UP work across sport and platform agents. Use wh
 | 농구, 쿼터, 파울, +2/+3, 보너스, 샷클락(미구현) | Basketball | `basketball-agent` |
 | 화면 구현, 라우팅, mock, 홈/대진/스코어보드 레이아웃 | Frontend UX | `frontend-ux-agent` |
 | MatchEvent, 스냅샷, canEndPeriod, 공통 상태머신 | Rule Engine | `rule-engine-agent` |
-| 배구, 탁구, 축구, 새 종목 프리셋 | 해당 종목 agent. 없으면 생성 | 이 스킬의 템플릿 |
+| 배구, 탁구, 배드민턴, 스쿼시, 축구, 새 종목 프리셋 | 해당 종목 agent. 없으면 생성 | 이 스킬의 템플릿 |
 | AWS, S3, CloudFront, 배포, 호스팅, 팀 공유 URL | Infra | `infra-agent` |
 | 모노레포, Expo, 패키지 경계, 일정 | Manager가 직접 | — |
 

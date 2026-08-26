@@ -14,6 +14,8 @@ export const TABLE_TENNIS_CLUB_PRESET: SportPreset & { rules: TableTennisRules }
     serveLimit: 2,
     deuceServeLimit: 1,
     changeEndsAt: 5,
+    serveMode: "count",
+    doubles: false,
   },
 };
 
@@ -84,10 +86,13 @@ export function tableTennisSetLabel(snapshot: TableTennisSnapshot): string {
 
 export function tableTennisRulesSummary(rules: TableTennisRules): string {
   const bestOf = rules.setsToWin * 2 - 1;
-  return `${bestOf}판 ${rules.setsToWin}선 · ${rules.setTarget}점 · ${rules.winBy}점 차 · 서브 ${rules.serveLimit}점`;
+  const serve = rules.serveMode === "scorer" ? "득점자 서브" : `서브 ${rules.serveLimit}점`;
+  const doubles = rules.doubles ? " · 복식" : "";
+  return `${bestOf}판 ${rules.setsToWin}선 · ${rules.setTarget}점 · ${rules.winBy}점 차 · ${serve}${doubles}`;
 }
 
 export function advanceTableTennisServe(snapshot: TableTennisSnapshot, rules: TableTennisRules): void {
+  if (rules.serveMode === "scorer") return;
   const limit = tableTennisServeLimit(snapshot, rules);
   if (snapshot.serveCount >= limit) {
     snapshot.serveSide = snapshot.serveSide === "home" ? "away" : "home";

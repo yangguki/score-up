@@ -84,6 +84,7 @@ export default function SessionDetailScreen() {
             <P muted>
               참석 {goingCount} · 불참 {noCount} · 미정 {maybeCount} · 없음 {noneCount}
             </P>
+            <P muted>마감 후 참석이 10명 미만이면 게스트를 넣고 5대5로 나눕니다.</P>
             <H style={{ fontSize: 16 }}>참석</H>
             {grouped("going").map((row) => (
               <P key={row.id}>{accountName(data.accounts, row.accountId)}</P>

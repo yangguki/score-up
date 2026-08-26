@@ -9,6 +9,8 @@ export default function MatchIdLayout() {
       <Stack.Screen name="basketball" options={{ headerShown: false, title: "농구 스코어보드" }} />
       <Stack.Screen name="volleyball" options={{ headerShown: false, title: "배구 스코어보드" }} />
       <Stack.Screen name="table-tennis" options={{ headerShown: false, title: "탁구 스코어보드" }} />
+      <Stack.Screen name="badminton" options={{ headerShown: false, title: "배드민턴 스코어보드" }} />
+      <Stack.Screen name="squash" options={{ headerShown: false, title: "스쿼시 스코어보드" }} />
       <Stack.Screen name="timeline" options={{ title: "타임라인" }} />
       <Stack.Screen name="result" options={{ title: "결과" }} />
     </Stack>

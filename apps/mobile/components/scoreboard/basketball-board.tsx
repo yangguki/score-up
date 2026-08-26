@@ -48,6 +48,16 @@ export function BasketballScoreboard() {
   }, [notice]);
 
   useEffect(() => {
+    return () => {
+      const current = useAppStore.getState().matches.find((row) => row.id === id);
+      if (!current || !isBasketballMatch(current)) return;
+      if (current.status === "in_progress" && current.snapshot.started && current.snapshot.clockRunning) {
+        useAppStore.getState().pause(current.id);
+      }
+    };
+  }, [id]);
+
+  useEffect(() => {
     if (!match || !isBasketballMatch(match)) return;
     const ticking =
       match.snapshot.timeoutRunning || (match.status === "in_progress" && match.snapshot.clockRunning);

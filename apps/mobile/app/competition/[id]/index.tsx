@@ -1,3 +1,4 @@
+import { isRallySetSport } from "@score-up/domain";
 import { Link, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { sportRulesSummary } from "@score-up/domain";
@@ -42,7 +43,7 @@ export default function CompetitionOverview() {
         </P>
         <P muted>
           종료 {done} / {matches.length || 0} · 참가{" "}
-          {competition.sportId === "table-tennis" ? `선수 ${teams.length}` : `팀 ${teams.length}`}
+          {isRallySetSport(competition.sportId) ? `선수 ${teams.length}` : `팀 ${teams.length}`}
         </P>
         {next ? (
           <Card>

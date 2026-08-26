@@ -12,6 +12,8 @@ alwaysApply: true
 3. 농구 룰/스코어/파울 → `.cursor/skills/basketball-agent/SKILL.md`
 4. 배구 룰/세트/서브 → `.cursor/skills/volleyball-agent/SKILL.md`
 5. 탁구 룰/세트/서브 카운트 → `.cursor/skills/table-tennis-agent/SKILL.md`
+5b. 배드민턴 랠리 세트 → `.cursor/skills/badminton-agent/SKILL.md`
+5c. 스쿼시 랠리 세트 → `.cursor/skills/squash-agent/SKILL.md`
 6. 화면 구현, 네비게이션, mock UX → `.cursor/skills/frontend-ux-agent/SKILL.md`
 7. 공통 상태·이벤트·종료 함수 → `.cursor/skills/rule-engine-agent/SKILL.md`
 8. 없는 종목 → Manager가 skill을 만든 뒤 분배.

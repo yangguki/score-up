@@ -2,13 +2,12 @@ import { useState } from "react";
 import { router } from "expo-router";
 import { Pressable, ScrollView } from "react-native";
 import {
-  BASKETBALL_CLUB_PRESET,
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
-  TABLE_TENNIS_CLUB_PRESET,
-  VOLLEYBALL_CLUB_PRESET,
+  clubRulesFor,
   type SportId,
   type SportRules,
+  type TableTennisRules,
 } from "@score-up/domain";
 import { PlayerDraftList, type DraftPlayer } from "@/components/player-draft-list";
 import { SportRulesEditor } from "@/components/rules-editor";
@@ -24,13 +23,7 @@ function toPlayers(drafts: DraftPlayer[]) {
     .map((p) => ({ name: p.name.trim(), number: Number(p.number) || 0 }));
 }
 
-function clubRules(sportId: SportId): SportRules {
-  if (sportId === "volleyball") return VOLLEYBALL_CLUB_PRESET.rules;
-  if (sportId === "table-tennis") return TABLE_TENNIS_CLUB_PRESET.rules;
-  return BASKETBALL_CLUB_PRESET.rules;
-}
-
-const CREATE_SPORTS: SportId[] = ["basketball", "volleyball", "table-tennis"];
+const CREATE_SPORTS: SportId[] = ["basketball", "volleyball", "table-tennis", "badminton", "squash"];
 
 export default function FriendlyScreen() {
   const makeFriendly = useAppStore((s) => s.makeFriendly);
@@ -40,15 +33,20 @@ export default function FriendlyScreen() {
   const [homeColor, setHomeColor] = useState(DEFAULT_HOME_COLOR);
   const [awayColor, setAwayColor] = useState(DEFAULT_AWAY_COLOR);
   const [official, setOfficial] = useState(false);
-  const [rules, setRules] = useState<SportRules>(BASKETBALL_CLUB_PRESET.rules);
+  const [rules, setRules] = useState<SportRules>(clubRulesFor("basketball"));
   const [homePlayers, setHomePlayers] = useState<DraftPlayer[]>([]);
   const [awayPlayers, setAwayPlayers] = useState<DraftPlayer[]>([]);
 
   const selectSport = (next: SportId) => {
     setSportId(next);
     setOfficial(false);
-    setRules(clubRules(next));
+    setRules(clubRulesFor(next));
   };
+
+  const rally = sportId === "table-tennis" || sportId === "badminton" || sportId === "squash";
+  const doubles = rally && (rules as TableTennisRules).doubles;
+  const homeTitle = rally ? (doubles ? "홈 페어" : "선수 A") : "홈 팀";
+  const awayTitle = rally ? (doubles ? "어웨이 페어" : "선수 B") : "어웨이 팀";
 
   const start = () => {
     const parsedHome = toPlayers(homePlayers);
@@ -93,7 +91,7 @@ export default function FriendlyScreen() {
 
         <Card>
           <TeamEditor
-            title={sportId === "table-tennis" ? "선수 A" : "홈 팀"}
+            title={homeTitle}
             name={home}
             color={homeColor}
             onName={setHome}
@@ -110,7 +108,7 @@ export default function FriendlyScreen() {
         </Card>
         <Card>
           <TeamEditor
-            title={sportId === "table-tennis" ? "선수 B" : "어웨이 팀"}
+            title={awayTitle}
             name={away}
             color={awayColor}
             onName={setAway}
@@ -125,6 +123,9 @@ export default function FriendlyScreen() {
             </>
           ) : null}
         </Card>
+        {doubles ? (
+          <P muted>복식은 이름에 슬래시로 두 명을 적습니다. 위치·서브 순서는 강제하지 않습니다.</P>
+        ) : null}
 
         <Btn label="보드로 이동" onPress={start} disabled={!home.trim() || !away.trim()} />
         {!home.trim() || !away.trim() ? <P muted>이름을 입력하세요.</P> : null}

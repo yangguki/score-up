@@ -1,4 +1,5 @@
 import type { Match, MatchEvent, MatchStatus, Player, SportId } from "@score-up/domain";
+import { isSetSport } from "@score-up/domain";
 import type { Href } from "expo-router";
 import { scoreboardHref } from "@/lib/match-routes";
 
@@ -13,9 +14,9 @@ export function statusLabel(status: MatchStatus, sportId?: SportId): string {
     case "paused":
       return "일시정지";
     case "period_break":
-      return sportId === "volleyball" || sportId === "table-tennis" ? "세트 사이" : "쿼터 사이";
+      return sportId && isSetSport(sportId) ? "세트 사이" : "쿼터 사이";
     case "confirm_period_end":
-      return sportId === "volleyball" || sportId === "table-tennis" ? "세트 종료 확인" : "쿼터 종료 확인";
+      return sportId && isSetSport(sportId) ? "세트 종료 확인" : "쿼터 종료 확인";
     case "confirm_match_end":
       return "경기 종료 확인";
     case "completed":
@@ -33,7 +34,7 @@ export function matchHref(match: Match): Href {
   if (match.status === "completed" || match.status === "forfeited" || match.status === "abandoned") {
     return `/match/${match.id}/result` as Href;
   }
-  if (match.sportId === "volleyball" || match.sportId === "table-tennis") {
+  if (match.sportId !== "basketball") {
     return scoreboardHref(match);
   }
   if (match.status === "scheduled" || match.status === "lineup") {
@@ -59,12 +60,14 @@ export function eventLine(
       return `${who} +${event.payload?.points ?? 0}`;
     case "foul":
       return `${who} 파울 (${event.payload?.personalFouls ?? "-"})`;
+    case "sanction":
+      return `${who} ${event.payload?.reason === "red" ? "레드" : "경고"}`;
     case "timeout":
       return `${who} 타임아웃`;
     case "substitution":
       return "교체";
     case "period_end":
-      return match.sportId === "volleyball" || match.sportId === "table-tennis"
+      return match.sportId && isSetSport(match.sportId)
         ? `세트 ${event.payload?.quarter ?? event.quarter} 종료`
         : `Q${event.payload?.quarter ?? event.quarter} 종료`;
     case "serve_change":

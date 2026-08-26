@@ -24,8 +24,8 @@ export const HOME_SPORTS: HomeSport[] = [
   { id: "table-tennis", name: "탁구", line: "개인 세트제", tint: "#C53030", active: true },
   { id: "soccer", name: "축구", line: "전후반 + 카드", tint: "#276749", active: false },
   { id: "baseball", name: "야구", line: "이닝제", tint: "#1A365D", active: false },
-  { id: "badminton", name: "배드민턴", line: "세트 + 서브", tint: "#0F766E", active: false },
-  { id: "squash", name: "스쿼시", line: "랠리 점수", tint: "#9A3412", active: false },
+  { id: "badminton", name: "배드민턴", line: "랠리 세트제", tint: "#0F766E", active: true },
+  { id: "squash", name: "스쿼시", line: "랠리 점수", tint: "#9A3412", active: true },
   { id: "futsal", name: "풋살", line: "전후반", tint: "#1D4ED8", active: false },
 ];
 

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { AppData, Match, SessionSide, Side, SportId, SportRules, VoteValue } from "@score-up/domain";
 import { APP_PERSIST_NAME, APP_PERSIST_VERSION, createAppPersistStorage, isAppData, withClubDefaults } from "./persist";
-import { isBasketballMatch, isTableTennisMatch, isVolleyballMatch } from "@score-up/domain";
+import { isBasketballMatch, isRallySetMatch, isVolleyballMatch } from "@score-up/domain";
 import {
   addPlayer,
   addTeam,
@@ -14,6 +14,7 @@ import {
   applyTimeout,
   applyVolleyballPoint,
   applyVolleyballTimeout,
+  applyVolleyballSanction,
   applyTableTennisPoint,
   changeTableTennisServe,
   changeVolleyballServe,
@@ -71,6 +72,7 @@ type Store = AppData & {
   addPoint: (matchId: string, side: Side, points: 1 | 2 | 3, playerId?: string) => void;
   addFoul: (matchId: string, side: Side, playerId: string) => { foulOut: boolean; nextOut: boolean };
   addTimeout: (matchId: string, side: Side) => void;
+  addSanction: (matchId: string, side: Side, level: "yellow" | "red") => void;
   finishTimeout: (matchId: string) => void;
   sub: (matchId: string, side: Side, outPlayerId: string, inPlayerId: string) => void;
   undo: (matchId: string) => void;
@@ -154,7 +156,7 @@ export const useAppStore = create<Store>()(
       set(commitMatch(get(), applyVolleyballPoint(match, teamIdFor(match, side))));
       return;
     }
-    if (isTableTennisMatch(match)) {
+    if (isRallySetMatch(match)) {
       set(commitMatch(get(), applyTableTennisPoint(match, teamIdFor(match, side))));
       return;
     }
@@ -177,6 +179,11 @@ export const useAppStore = create<Store>()(
     if (!isBasketballMatch(match)) return;
     set(commitMatch(get(), applyTimeout(match, teamIdFor(match, side), match.rules)));
   },
+  addSanction: (matchId, side, level) => {
+    const match = getMatch(get(), matchId);
+    if (!match || !isVolleyballMatch(match)) return;
+    set(commitMatch(get(), applyVolleyballSanction(match, teamIdFor(match, side), level)));
+  },
   finishTimeout: (matchId) => {
     const match = getMatch(get(), matchId);
     if (!match) return;
@@ -194,7 +201,7 @@ export const useAppStore = create<Store>()(
       set(commitMatch(get(), undoVolleyballLast(match)));
       return;
     }
-    if (isTableTennisMatch(match)) {
+    if (isRallySetMatch(match)) {
       set(commitMatch(get(), undoTableTennisLast(match)));
       return;
     }
@@ -212,7 +219,7 @@ export const useAppStore = create<Store>()(
   pause: (matchId) => {
     const match = getMatch(get(), matchId);
     if (!match) return;
-    if (isTableTennisMatch(match)) {
+    if (isRallySetMatch(match)) {
       set(replaceMatch(get(), pauseTableTennisMatch(match)));
       return;
     }
@@ -221,7 +228,7 @@ export const useAppStore = create<Store>()(
   resume: (matchId) => {
     const match = getMatch(get(), matchId);
     if (!match) return;
-    if (isTableTennisMatch(match)) {
+    if (isRallySetMatch(match)) {
       set(replaceMatch(get(), resumeTableTennisMatch(match)));
       return;
     }
@@ -234,7 +241,7 @@ export const useAppStore = create<Store>()(
       set(replaceMatch(get(), confirmVolleyballSet(match)));
       return;
     }
-    if (isTableTennisMatch(match)) {
+    if (isRallySetMatch(match)) {
       set(replaceMatch(get(), confirmTableTennisSet(match)));
       return;
     }
@@ -254,7 +261,7 @@ export const useAppStore = create<Store>()(
       set(commitMatch(get(), confirmVolleyballMatch(match)));
       return;
     }
-    if (isTableTennisMatch(match)) {
+    if (isRallySetMatch(match)) {
       set(commitMatch(get(), confirmTableTennisMatch(match)));
       return;
     }
@@ -272,7 +279,7 @@ export const useAppStore = create<Store>()(
       set(commitMatch(get(), forfeitVolleyballMatch(match, winner)));
       return;
     }
-    if (isTableTennisMatch(match)) {
+    if (isRallySetMatch(match)) {
       set(commitMatch(get(), forfeitTableTennisMatch(match, winner)));
       return;
     }
@@ -300,7 +307,7 @@ export const useAppStore = create<Store>()(
       set(replaceMatch(get(), startVolleyballMatch(match, "home")));
       return;
     }
-    if (isTableTennisMatch(match)) {
+    if (isRallySetMatch(match)) {
       set(replaceMatch(get(), startTableTennisMatch(match, "home")));
       return;
     }
@@ -313,7 +320,7 @@ export const useAppStore = create<Store>()(
       set(commitMatch(get(), changeVolleyballServe(match)));
       return;
     }
-    if (isTableTennisMatch(match)) {
+    if (isRallySetMatch(match)) {
       set(commitMatch(get(), changeTableTennisServe(match)));
     }
   },
@@ -324,7 +331,7 @@ export const useAppStore = create<Store>()(
   },
   startTableTennis: (matchId, openingServe = "home") => {
     const match = getMatch(get(), matchId);
-    if (!match || !isTableTennisMatch(match)) return;
+    if (!match || !isRallySetMatch(match)) return;
     set(replaceMatch(get(), startTableTennisMatch(match, openingServe)));
   },
   createComp: (input) => {

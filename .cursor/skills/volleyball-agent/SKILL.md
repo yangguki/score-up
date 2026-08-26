@@ -21,6 +21,8 @@ description: Owns SCORE UP volleyball preset, set scoring, serve side, deuce, se
 
 현재 세트 점수(크게), 세트 스코어(중앙), 세트 이력, **서브권**(팀명 옆), +1, 타임아웃 횟수, 서브 변경, 실행 취소, 듀스/세트포인트 알림.
 
+로테이션을 켠 대회는 전열 번호만. 경고/레드는 메모(출전 제한 없음).
+
 시계·쿼터·개인 파울·보너스·샷클락은 **그리지 않는다.**
 
 ## mock UX에서 보여야 할 것
@@ -43,6 +45,7 @@ description: Owns SCORE UP volleyball preset, set scoring, serve side, deuce, se
 
 ## 하지 말 것
 
-- 로테이션 강제, 공식 카드/퇴장 (Phase 2)
+- 로테이션 **반칙 판정** (표시만)
+- 카드로 출전 제한 (경고/레드는 메모)
 - 탁구 서브 카운트 UI를 배구에 섞기
 - 농구 보드 컴포넌트에 배구 if문 끼워 넣기

@@ -83,3 +83,27 @@ test("마지막 세트 승 확정은 경기 종료 확인으로 이어진다", (
   assert.equal(match.status, "completed");
   assert.equal(match.winnerLabel, "블루");
 });
+
+test("로테이션 켜면 사이드아웃 때 득점 팀 전열이 돌고, 취소하면 되돌린다", () => {
+  const rules = { ...RULES, rotationEnabled: true };
+  let match = startVolleyballMatch(
+    createBlankVolleyballMatch({
+      homeLabel: "블루",
+      awayLabel: "레드",
+      roundLabel: "친선",
+      scheduledLabel: "오늘",
+      rules,
+      isFriendly: true,
+    }),
+    "home",
+  );
+  if (match.sportId !== "volleyball") throw new Error("expected volleyball");
+  assert.deepEqual(match.snapshot.rotationAway, [1, 2, 3, 4, 5, 6]);
+  match = applyVolleyballPoint(match, "away");
+  if (match.sportId !== "volleyball") throw new Error("expected volleyball");
+  assert.equal(match.snapshot.serveSide, "away");
+  assert.deepEqual(match.snapshot.rotationAway, [2, 3, 4, 5, 6, 1]);
+  match = undoVolleyballLast(match);
+  if (match.sportId !== "volleyball") throw new Error("expected volleyball");
+  assert.deepEqual(match.snapshot.rotationAway, [1, 2, 3, 4, 5, 6]);
+});

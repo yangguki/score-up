@@ -34,6 +34,7 @@ export { playerById, requestPeriodEnd, teamIdFor } from "./basketball";
 export {
   applyVolleyballPoint,
   applyVolleyballTimeout,
+  applyVolleyballSanction,
   changeVolleyballServe,
   confirmVolleyballMatch,
   confirmVolleyballSet,

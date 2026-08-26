@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 import { sessionStatusLabel } from "@score-up/domain";
@@ -8,7 +9,8 @@ import { space } from "@/theme/tokens";
 
 export default function ClubSessionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const sessions = useAppStore((s) => s.sessions.filter((row) => row.clubId === id));
+  const allSessions = useAppStore((s) => s.sessions);
+  const sessions = useMemo(() => allSessions.filter((row) => row.clubId === id), [allSessions, id]);
 
   return (
     <Screen>

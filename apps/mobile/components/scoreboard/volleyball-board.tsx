@@ -6,6 +6,7 @@ import {
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
   isVolleyballMatch,
+  volleyballFrontLine,
   volleyballRulesSummary,
   volleyballSetLabel,
   type Side,
@@ -25,6 +26,7 @@ export function VolleyballScoreboard() {
   const competition = useAppStore((s) => s.competitions.find((c) => c.id === match?.competitionId));
   const addPoint = useAppStore((s) => s.addPoint);
   const addTimeout = useAppStore((s) => s.addTimeout);
+  const addSanction = useAppStore((s) => s.addSanction);
   const undo = useAppStore((s) => s.undo);
   const changeServe = useAppStore((s) => s.changeServe);
   const startVolleyball = useAppStore((s) => s.startVolleyball);
@@ -62,6 +64,12 @@ export function VolleyballScoreboard() {
   const awayColor = match.awayColor ?? DEFAULT_AWAY_COLOR;
   const timeoutMax = match.rules.timeoutsPerSet;
   const headerTitle = competition?.name ?? match.roundLabel;
+  const rotationOn = match.rules.rotationEnabled;
+  const sanctions = snap.sanctions ?? [];
+  const lastSanction = sanctions[sanctions.length - 1];
+  const sanctionLine = lastSanction
+    ? `${lastSanction.side === "home" ? match.homeLabel : match.awayLabel} ${lastSanction.level === "red" ? "레드" : "경고"} · 출전 제한 없음`
+    : "";
   const historyLine = [
     ...snap.setHistory.map((row) => `${row.home}-${row.away}`),
     match.status === "completed" || match.status === "forfeited" ? null : "진행 중",
@@ -111,6 +119,7 @@ export function VolleyballScoreboard() {
           {notice ? (
             <P style={{ marginTop: 4, color: colors.primary, fontWeight: "700", textAlign: "center" }}>{notice}</P>
           ) : null}
+          {sanctionLine ? <P muted>{sanctionLine}</P> : null}
         </View>
 
         <View
@@ -127,11 +136,14 @@ export function VolleyballScoreboard() {
             score={snap.homeSetPoints}
             scoreSize={scoreSize}
             serving={snap.serveSide === "home"}
+            rotation={rotationOn ? volleyballFrontLine(snap.rotationHome) : undefined}
             disabled={playLocked}
             timeoutLeft={timeoutLeft("home")}
             timeoutMax={timeoutMax}
             onPoint={() => addPoint(match.id, "home", 1)}
             onTimeout={() => addTimeout(match.id, "home")}
+            onYellow={() => addSanction(match.id, "home", "yellow")}
+            onRed={() => addSanction(match.id, "home", "red")}
           />
           <SideBlock
             label={match.awayLabel}
@@ -139,11 +151,14 @@ export function VolleyballScoreboard() {
             score={snap.awaySetPoints}
             scoreSize={scoreSize}
             serving={snap.serveSide === "away"}
+            rotation={rotationOn ? volleyballFrontLine(snap.rotationAway) : undefined}
             disabled={playLocked}
             timeoutLeft={timeoutLeft("away")}
             timeoutMax={timeoutMax}
             onPoint={() => addPoint(match.id, "away", 1)}
             onTimeout={() => addTimeout(match.id, "away")}
+            onYellow={() => addSanction(match.id, "away", "yellow")}
+            onRed={() => addSanction(match.id, "away", "red")}
           />
         </View>
 
@@ -307,22 +322,28 @@ function SideBlock({
   score,
   scoreSize,
   serving,
+  rotation,
   disabled,
   timeoutLeft,
   timeoutMax,
   onPoint,
   onTimeout,
+  onYellow,
+  onRed,
 }: {
   label: string;
   color: string;
   score: number;
   scoreSize: number;
   serving: boolean;
+  rotation?: string;
   disabled: boolean;
   timeoutLeft: number;
   timeoutMax: number;
   onPoint: () => void;
   onTimeout: () => void;
+  onYellow: () => void;
+  onRed: () => void;
 }) {
   return (
     <View style={{ flex: 1, alignItems: "center", gap: 10, minWidth: 140 }}>
@@ -331,6 +352,7 @@ function SideBlock({
         <P style={{ fontWeight: "800" }}>{label}</P>
         {serving ? <P style={{ color: colors.primary, fontWeight: "800" }}>●서브</P> : null}
       </View>
+      {rotation ? <P muted>전열 {rotation}</P> : null}
       <P style={{ fontSize: scoreSize, fontWeight: "900", lineHeight: scoreSize * 1.05 }}>{score}</P>
       <Btn label="+1" disabled={disabled} onPress={onPoint} style={{ minWidth: 120 }} />
       <Btn
@@ -340,6 +362,10 @@ function SideBlock({
         onPress={onTimeout}
         style={{ minWidth: 120 }}
       />
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <Btn label="경고" variant="ghost" disabled={disabled} onPress={onYellow} />
+        <Btn label="레드" variant="ghost" disabled={disabled} onPress={onRed} />
+      </View>
     </View>
   );
 }

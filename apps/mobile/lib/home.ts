@@ -3,7 +3,7 @@ import type { Competition, Match, MatchStatus } from "@score-up/domain";
 import {
   formatClock,
   isBasketballMatch,
-  isTableTennisMatch,
+  isRallySetMatch,
   isVolleyballMatch,
   quarterLabel,
   tableTennisSetLabel,
@@ -52,7 +52,7 @@ export function matchDisplayScore(match: Match): { home: number; away: number } 
   if (isVolleyballMatch(match)) {
     return { home: match.snapshot.homeSetPoints, away: match.snapshot.awaySetPoints };
   }
-  if (isTableTennisMatch(match)) {
+  if (isRallySetMatch(match)) {
     return { home: match.snapshot.homeSetPoints, away: match.snapshot.awaySetPoints };
   }
   if (isBasketballMatch(match)) {
@@ -66,7 +66,7 @@ export function matchClockLine(match: Match) {
     const snap = match.snapshot;
     return `${volleyballSetLabel(snap)} · 세트 ${snap.setsWonHome}-${snap.setsWonAway}`;
   }
-  if (isTableTennisMatch(match)) {
+  if (isRallySetMatch(match)) {
     const snap = match.snapshot;
     return `${tableTennisSetLabel(snap)} · 세트 ${snap.setsWonHome}-${snap.setsWonAway}`;
   }

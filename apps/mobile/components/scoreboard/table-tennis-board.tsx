@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
-  isTableTennisMatch,
+  isRallySetMatch,
   tableTennisRulesSummary,
   tableTennisServeLimit,
   tableTennisSetLabel,
@@ -13,6 +13,7 @@ import {
 import { tableTennisNotice } from "@score-up/mock";
 import { Btn, P } from "@/components/ui";
 import { eventLine } from "@/lib/labels";
+import { sportLabel } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
 import { colors } from "@/theme/tokens";
 
@@ -39,14 +40,14 @@ export function TableTennisScoreboard() {
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    if (!match || !isTableTennisMatch(match)) return;
+    if (!match || !isRallySetMatch(match)) return;
     setNotice(tableTennisNotice(match));
   }, [match]);
 
-  if (!match || !isTableTennisMatch(match)) {
+  if (!match || !isRallySetMatch(match)) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, justifyContent: "center", padding: 24 }}>
-        <P>탁구 경기를 찾을 수 없습니다.</P>
+        <P>세트 경기를 찾을 수 없습니다.</P>
       </View>
     );
   }
@@ -63,6 +64,11 @@ export function TableTennisScoreboard() {
   const awayColor = match.awayColor ?? DEFAULT_AWAY_COLOR;
   const headerTitle = competition?.name ?? match.roundLabel;
   const serveLimit = tableTennisServeLimit(snap, match.rules);
+  const showServeCount = match.rules.serveMode !== "scorer";
+  const homeServeLine =
+    snap.serveSide === "home" && showServeCount ? `${snap.serveCount}/${serveLimit}` : undefined;
+  const awayServeLine =
+    snap.serveSide === "away" && showServeCount ? `${snap.serveCount}/${serveLimit}` : undefined;
   const historyLine = [
     ...snap.setHistory.map((row) => `${row.home}-${row.away}`),
     match.status === "completed" || match.status === "forfeited" ? null : "진행 중",
@@ -89,7 +95,8 @@ export function TableTennisScoreboard() {
           <P>나가기</P>
         </Pressable>
         <P muted>
-          {headerTitle} · {tableTennisSetLabel(snap)}
+          {headerTitle} · {sportLabel(match.sportId)} · {tableTennisSetLabel(snap)}
+          {match.rules.doubles ? " · 복식" : ""}
         </P>
         <Pressable onPress={() => setMoreOpen(true)}>
           <P>더보기</P>
@@ -123,7 +130,7 @@ export function TableTennisScoreboard() {
             score={snap.homeSetPoints}
             scoreSize={scoreSize}
             serving={snap.serveSide === "home"}
-            serveLine={snap.serveSide === "home" ? `${snap.serveCount}/${serveLimit}` : undefined}
+            serveLine={homeServeLine}
             disabled={playLocked}
             onPoint={() => addPoint(match.id, "home", 1)}
           />
@@ -133,7 +140,7 @@ export function TableTennisScoreboard() {
             score={snap.awaySetPoints}
             scoreSize={scoreSize}
             serving={snap.serveSide === "away"}
-            serveLine={snap.serveSide === "away" ? `${snap.serveCount}/${serveLimit}` : undefined}
+            serveLine={awayServeLine}
             disabled={playLocked}
             onPoint={() => addPoint(match.id, "away", 1)}
           />

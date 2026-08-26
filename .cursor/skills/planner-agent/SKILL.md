@@ -51,7 +51,8 @@ SCORE UP의 **제품 기획 단일 담당**. 구현하지 않는다. 화면·룰
 | MatchEvent, canEndPeriod, 리듀서 | Rule Engine (실구현은 Phase 5) |
 | S3·공유 URL | Infra |
 | 스택, 패키지, 새 종목 agent 생성, 일정 | Manager |
-| 배구/탁구 화면·프리셋 | 해당 종목 agent (volleyball / table-tennis) |
+| 배구/탁구 화면·프리셋 | volleyball / table-tennis |
+| 배드민턴/스쿼시 화면·프리셋 | badminton / squash |
 
 화면+기획이 겹치면: 기획자가 명세를 고치고, Frontend UX가 그리고, 농구 보드면 Basketball이 검수한다.
 

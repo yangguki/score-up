@@ -2,10 +2,13 @@ import type { Match, MatchEvent, Side, VolleyballRules } from "@score-up/domain"
 import {
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
+  VOLLEYBALL_COURT_ORDER,
   canEndVolleyballMatch,
   canEndVolleyballSet,
   emptyVolleyballSnapshot,
   isVolleyballMatch,
+  rotateVolleyballCourt,
+  unrotateVolleyballCourt,
   volleyballDeuce,
   volleyballSetPointSide,
 } from "@score-up/domain";
@@ -45,6 +48,9 @@ function cloneMatch(match: Match): Match {
       ...match.snapshot,
       setHistory: match.snapshot.setHistory.map((s) => ({ ...s })),
       timeoutsLeft: { ...match.snapshot.timeoutsLeft },
+      rotationHome: [...(match.snapshot.rotationHome ?? VOLLEYBALL_COURT_ORDER)],
+      rotationAway: [...(match.snapshot.rotationAway ?? VOLLEYBALL_COURT_ORDER)],
+      sanctions: (match.snapshot.sanctions ?? []).map((row) => ({ ...row })),
     },
     events: match.events.map((e) => ({ ...e, payload: e.payload ? { ...e.payload } : undefined })),
     rules: { ...match.rules },
@@ -104,15 +110,24 @@ export function applyVolleyballPoint(match: Match, teamId: string): Match {
   const next = cloneMatch(match);
   if (!isVolleyballMatch(next)) return match;
   const side = sideOfTeam(next, teamId);
+  const prevServeSide = next.snapshot.serveSide;
   if (side === "home") next.snapshot.homeSetPoints += 1;
   else next.snapshot.awaySetPoints += 1;
+  const gainedServe = prevServeSide !== side;
+  if (next.rules.rotationEnabled && gainedServe) {
+    if (side === "home") {
+      next.snapshot.rotationHome = rotateVolleyballCourt(next.snapshot.rotationHome);
+    } else {
+      next.snapshot.rotationAway = rotateVolleyballCourt(next.snapshot.rotationAway);
+    }
+  }
   next.snapshot.serveSide = side;
   next.snapshot.deuce = volleyballDeuce(next.snapshot, next.rules);
   next.events.push(
     pushEvent(next, {
       type: "point",
       teamId,
-      payload: { points: 1 },
+      payload: { points: 1, prevServeSide },
     }),
   );
   if (canEndVolleyballSet(next.snapshot, next.rules)) {
@@ -130,6 +145,17 @@ export function applyVolleyballTimeout(match: Match, teamId: string): Match {
   if (left <= 0) return match;
   next.snapshot.timeoutsLeft[teamId] = left - 1;
   next.events.push(pushEvent(next, { type: "timeout", teamId }));
+  return next;
+}
+
+export function applyVolleyballSanction(match: Match, teamId: string, level: "yellow" | "red"): Match {
+  if (!isVolleyballMatch(match)) return match;
+  if (match.status !== "in_progress" && match.status !== "paused") return match;
+  const next = cloneMatch(match);
+  if (!isVolleyballMatch(next)) return match;
+  const side = sideOfTeam(next, teamId);
+  next.snapshot.sanctions = [...(next.snapshot.sanctions ?? []), { side, level }];
+  next.events.push(pushEvent(next, { type: "sanction", teamId, payload: { reason: level } }));
   return next;
 }
 
@@ -167,12 +193,22 @@ export function undoVolleyballLast(match: Match): Match {
       .find((e) => !e.revoked && e.type === "point" && e.id !== last.id);
     if (prevPoint?.teamId) next.snapshot.serveSide = sideOfTeam(next, prevPoint.teamId);
     else next.snapshot.serveSide = next.snapshot.setOpeningServe;
+    if (
+      next.rules.rotationEnabled &&
+      last.payload?.prevServeSide !== undefined &&
+      last.payload.prevServeSide !== side
+    ) {
+      if (side === "home") next.snapshot.rotationHome = unrotateVolleyballCourt(next.snapshot.rotationHome);
+      else next.snapshot.rotationAway = unrotateVolleyballCourt(next.snapshot.rotationAway);
+    }
     next.snapshot.deuce = volleyballDeuce(next.snapshot, next.rules);
     if (next.status === "confirm_period_end") next.status = "in_progress";
   } else if (last.type === "serve_change") {
     next.snapshot.serveSide = next.snapshot.serveSide === "home" ? "away" : "home";
   } else if (last.type === "timeout" && last.teamId) {
     next.snapshot.timeoutsLeft[last.teamId] = (next.snapshot.timeoutsLeft[last.teamId] ?? 0) + 1;
+  } else if (last.type === "sanction") {
+    next.snapshot.sanctions = (next.snapshot.sanctions ?? []).slice(0, -1);
   } else if (last.type === "period_end") {
     const finished = next.snapshot.setHistory[next.snapshot.setHistory.length - 1];
     if (!finished) return match;

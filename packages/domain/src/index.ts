@@ -26,20 +26,23 @@ export type {
   SessionVote,
   Side,
   SportId,
+  RallySetSportId,
   SportPreset,
   SportRules,
   SportSnapshot,
   TableTennisRules,
   TableTennisSetScore,
   TableTennisSnapshot,
+  RallyServeMode,
   Team,
   VolleyballRules,
+  VolleyballSanction,
   VolleyballSetScore,
   VolleyballSnapshot,
   VoteValue,
 } from "./types";
-export { isBasketballMatch, isTableTennisMatch, isVolleyballMatch } from "./types";
-export { sportRulesSummary } from "./sport";
+export { isBasketballMatch, isRallySetMatch, isRallySetSport, isSetSport, isTableTennisMatch, isVolleyballMatch } from "./types";
+export { clubRulesFor, sportRulesSummary } from "./sport";
 export { accountName, canOperateClub, computeClubRanking, memberOf, sessionStatusLabel, voteLabel } from "./club";
 export type { ClubRankingRow } from "./club";
 export { DEFAULT_AWAY_COLOR, DEFAULT_HOME_COLOR, TEAM_COLOR_PRESETS, nextTeamColor } from "./colors";
@@ -73,11 +76,15 @@ export {
 export type { LeagueStandingRow } from "./league";
 export {
   VOLLEYBALL_CLUB_PRESET,
+  VOLLEYBALL_COURT_ORDER,
   canEndVolleyballMatch,
   canEndVolleyballSet,
   emptyVolleyballSnapshot,
   isLastVolleyballSet,
+  rotateVolleyballCourt,
+  unrotateVolleyballCourt,
   volleyballDeuce,
+  volleyballFrontLine,
   volleyballRulesSummary,
   volleyballSetLabel,
   volleyballSetPointSide,
@@ -96,3 +103,5 @@ export {
   tableTennisSetLabel,
   tableTennisSetPointSide,
 } from "./table-tennis";
+export { BADMINTON_CLUB_PRESET } from "./badminton";
+export { SQUASH_CLUB_PRESET } from "./squash";
