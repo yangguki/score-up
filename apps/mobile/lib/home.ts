@@ -1,10 +1,14 @@
 import type { Href } from "expo-router";
 import type { Competition, Match, MatchStatus } from "@score-up/domain";
 import {
+  baseballHalfLabel,
   formatClock,
+  isBaseballMatch,
   isBasketballMatch,
+  isPitchMatch,
   isRallySetMatch,
   isVolleyballMatch,
+  pitchPeriodLabel,
   quarterLabel,
   tableTennisSetLabel,
   volleyballSetLabel,
@@ -58,6 +62,9 @@ export function matchDisplayScore(match: Match): { home: number; away: number } 
   if (isBasketballMatch(match)) {
     return { home: match.snapshot.homeScore, away: match.snapshot.awayScore };
   }
+  if (isPitchMatch(match) || isBaseballMatch(match)) {
+    return { home: match.snapshot.homeScore, away: match.snapshot.awayScore };
+  }
   return { home: 0, away: 0 };
 }
 
@@ -72,6 +79,12 @@ export function matchClockLine(match: Match) {
   }
   if (isBasketballMatch(match)) {
     return `${quarterLabel(match.snapshot.quarter, match.rules.periodCount)} ${formatClock(match.snapshot.clockMs)}`;
+  }
+  if (isPitchMatch(match)) {
+    return `${pitchPeriodLabel(match.snapshot, match.rules)} ${formatClock(match.snapshot.clockMs)}`;
+  }
+  if (isBaseballMatch(match)) {
+    return `${baseballHalfLabel(match.snapshot)} · 아웃 ${match.snapshot.outs}`;
   }
   return match.roundLabel;
 }

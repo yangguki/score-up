@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { AppData, Match, SessionSide, Side, SportId, SportRules, VoteValue } from "@score-up/domain";
 import { APP_PERSIST_NAME, APP_PERSIST_VERSION, createAppPersistStorage, isAppData, withClubDefaults } from "./persist";
-import { isBasketballMatch, isRallySetMatch, isVolleyballMatch } from "@score-up/domain";
+import { isBaseballMatch, isBasketballMatch, isPitchMatch, isRallySetMatch, isVolleyballMatch } from "@score-up/domain";
 import {
   addPlayer,
   addTeam,
@@ -16,6 +16,11 @@ import {
   applyVolleyballTimeout,
   applyVolleyballSanction,
   applyTableTennisPoint,
+  applyPitchPoint,
+  applyPitchSanction,
+  applyPitchTeamFoul,
+  applyBaseballOut,
+  applyBaseballRun,
   changeTableTennisServe,
   changeVolleyballServe,
   confirmMatchEnd,
@@ -24,6 +29,10 @@ import {
   confirmVolleyballSet,
   confirmTableTennisMatch,
   confirmTableTennisSet,
+  confirmPitchMatch,
+  confirmPitchPeriod,
+  confirmBaseballHalf,
+  confirmBaseballMatch,
   createCompetition,
   createFriendly,
   createSeedState,
@@ -31,23 +40,34 @@ import {
   forfeitMatch,
   forfeitVolleyballMatch,
   forfeitTableTennisMatch,
+  forfeitPitchMatch,
+  forfeitBaseballMatch,
   generateBracket,
   getMatch,
   pauseMatch,
   pauseTableTennisMatch,
+  pausePitchMatch,
   requestPeriodEnd,
+  requestPitchPeriodEnd,
   replaceMatch,
   resumeMatch,
   resumeTableTennisMatch,
+  resumePitchMatch,
   startMatch,
   startOvertime,
+  startPitchOvertime,
   startVolleyballMatch,
   startTableTennisMatch,
+  startPitchMatch,
+  startBaseballMatch,
   teamIdFor,
   tickClock,
+  tickPitchClock,
   undoLast,
   undoVolleyballLast,
   undoTableTennisLast,
+  undoPitchLast,
+  undoBaseballLast,
   addGuest,
   cancelSession,
   closeVoting,
@@ -73,6 +93,8 @@ type Store = AppData & {
   addFoul: (matchId: string, side: Side, playerId: string) => { foulOut: boolean; nextOut: boolean };
   addTimeout: (matchId: string, side: Side) => void;
   addSanction: (matchId: string, side: Side, level: "yellow" | "red") => void;
+  addTeamFoul: (matchId: string, side: Side) => void;
+  addOut: (matchId: string) => void;
   finishTimeout: (matchId: string) => void;
   sub: (matchId: string, side: Side, outPlayerId: string, inPlayerId: string) => void;
   undo: (matchId: string) => void;
@@ -89,6 +111,8 @@ type Store = AppData & {
   changeServe: (matchId: string) => void;
   startVolleyball: (matchId: string, openingServe?: Side) => void;
   startTableTennis: (matchId: string, openingServe?: Side) => void;
+  startPitch: (matchId: string) => void;
+  startBaseball: (matchId: string) => void;
   createComp: (input: {
     name: string;
     dateLabel: string;
@@ -160,6 +184,14 @@ export const useAppStore = create<Store>()(
       set(commitMatch(get(), applyTableTennisPoint(match, teamIdFor(match, side))));
       return;
     }
+    if (isPitchMatch(match)) {
+      set(commitMatch(get(), applyPitchPoint(match, teamIdFor(match, side))));
+      return;
+    }
+    if (isBaseballMatch(match)) {
+      set(commitMatch(get(), applyBaseballRun(match, teamIdFor(match, side))));
+      return;
+    }
     set(commitMatch(get(), applyPoint(match, teamIdFor(match, side), points, playerId)));
   },
   addFoul: (matchId, side, playerId) => {
@@ -181,8 +213,24 @@ export const useAppStore = create<Store>()(
   },
   addSanction: (matchId, side, level) => {
     const match = getMatch(get(), matchId);
-    if (!match || !isVolleyballMatch(match)) return;
-    set(commitMatch(get(), applyVolleyballSanction(match, teamIdFor(match, side), level)));
+    if (!match) return;
+    if (isVolleyballMatch(match)) {
+      set(commitMatch(get(), applyVolleyballSanction(match, teamIdFor(match, side), level)));
+      return;
+    }
+    if (isPitchMatch(match)) {
+      set(commitMatch(get(), applyPitchSanction(match, teamIdFor(match, side), level)));
+    }
+  },
+  addTeamFoul: (matchId, side) => {
+    const match = getMatch(get(), matchId);
+    if (!match || !isPitchMatch(match)) return;
+    set(commitMatch(get(), applyPitchTeamFoul(match, teamIdFor(match, side))));
+  },
+  addOut: (matchId) => {
+    const match = getMatch(get(), matchId);
+    if (!match || !isBaseballMatch(match)) return;
+    set(commitMatch(get(), applyBaseballOut(match)));
   },
   finishTimeout: (matchId) => {
     const match = getMatch(get(), matchId);
@@ -205,13 +253,28 @@ export const useAppStore = create<Store>()(
       set(commitMatch(get(), undoTableTennisLast(match)));
       return;
     }
+    if (isPitchMatch(match)) {
+      set(commitMatch(get(), undoPitchLast(match)));
+      return;
+    }
+    if (isBaseballMatch(match)) {
+      set(commitMatch(get(), undoBaseballLast(match)));
+      return;
+    }
     if (isBasketballMatch(match)) {
       set(commitMatch(get(), undoLast(match, match.rules)));
     }
   },
   tick: (matchId, dtMs) => {
     const match = getMatch(get(), matchId);
-    if (!match || !isBasketballMatch(match)) return;
+    if (!match) return;
+    if (isPitchMatch(match)) {
+      const next = tickPitchClock(match, dtMs);
+      if (next === match) return;
+      set(replaceMatch(get(), next));
+      return;
+    }
+    if (!isBasketballMatch(match)) return;
     const next = tickClock(match, dtMs, match.rules);
     if (next === match) return;
     set(replaceMatch(get(), next));
@@ -223,6 +286,10 @@ export const useAppStore = create<Store>()(
       set(replaceMatch(get(), pauseTableTennisMatch(match)));
       return;
     }
+    if (isPitchMatch(match)) {
+      set(replaceMatch(get(), pausePitchMatch(match)));
+      return;
+    }
     set(replaceMatch(get(), pauseMatch(match)));
   },
   resume: (matchId) => {
@@ -230,6 +297,10 @@ export const useAppStore = create<Store>()(
     if (!match) return;
     if (isRallySetMatch(match)) {
       set(replaceMatch(get(), resumeTableTennisMatch(match)));
+      return;
+    }
+    if (isPitchMatch(match)) {
+      set(replaceMatch(get(), resumePitchMatch(match)));
       return;
     }
     set(replaceMatch(get(), resumeMatch(match)));
@@ -245,13 +316,26 @@ export const useAppStore = create<Store>()(
       set(replaceMatch(get(), confirmTableTennisSet(match)));
       return;
     }
+    if (isPitchMatch(match)) {
+      set(replaceMatch(get(), confirmPitchPeriod(match)));
+      return;
+    }
+    if (isBaseballMatch(match)) {
+      set(replaceMatch(get(), confirmBaseballHalf(match)));
+      return;
+    }
     if (isBasketballMatch(match)) {
       set(replaceMatch(get(), confirmPeriodEnd(match, match.rules)));
     }
   },
   requestPeriodEnd: (matchId) => {
     const match = getMatch(get(), matchId);
-    if (!match || !isBasketballMatch(match)) return;
+    if (!match) return;
+    if (isPitchMatch(match)) {
+      set(replaceMatch(get(), requestPitchPeriodEnd(match)));
+      return;
+    }
+    if (!isBasketballMatch(match)) return;
     set(replaceMatch(get(), requestPeriodEnd(match, match.rules)));
   },
   confirmMatch: (matchId) => {
@@ -265,11 +349,24 @@ export const useAppStore = create<Store>()(
       set(commitMatch(get(), confirmTableTennisMatch(match)));
       return;
     }
+    if (isPitchMatch(match)) {
+      set(commitMatch(get(), confirmPitchMatch(match)));
+      return;
+    }
+    if (isBaseballMatch(match)) {
+      set(commitMatch(get(), confirmBaseballMatch(match)));
+      return;
+    }
     set(commitMatch(get(), confirmMatchEnd(match)));
   },
   goOvertime: (matchId) => {
     const match = getMatch(get(), matchId);
-    if (!match || !isBasketballMatch(match)) return;
+    if (!match) return;
+    if (isPitchMatch(match)) {
+      set(replaceMatch(get(), startPitchOvertime(match)));
+      return;
+    }
+    if (!isBasketballMatch(match)) return;
     set(replaceMatch(get(), startOvertime(match, match.rules)));
   },
   forfeit: (matchId, winner) => {
@@ -283,12 +380,20 @@ export const useAppStore = create<Store>()(
       set(commitMatch(get(), forfeitTableTennisMatch(match, winner)));
       return;
     }
+    if (isPitchMatch(match)) {
+      set(commitMatch(get(), forfeitPitchMatch(match, winner)));
+      return;
+    }
+    if (isBaseballMatch(match)) {
+      set(commitMatch(get(), forfeitBaseballMatch(match, winner)));
+      return;
+    }
     set(commitMatch(get(), forfeitMatch(match, winner)));
   },
   abandon: (matchId) => {
     const match = getMatch(get(), matchId);
     if (!match) return;
-    if (isBasketballMatch(match)) {
+    if (isBasketballMatch(match) || isPitchMatch(match)) {
       set(
         commitMatch(get(), {
           ...match,
@@ -309,6 +414,14 @@ export const useAppStore = create<Store>()(
     }
     if (isRallySetMatch(match)) {
       set(replaceMatch(get(), startTableTennisMatch(match, "home")));
+      return;
+    }
+    if (isPitchMatch(match)) {
+      set(replaceMatch(get(), startPitchMatch(match)));
+      return;
+    }
+    if (isBaseballMatch(match)) {
+      set(replaceMatch(get(), startBaseballMatch(match)));
       return;
     }
     set(commitMatch(get(), startMatch(match, onCourtHome, onCourtAway)));
@@ -333,6 +446,16 @@ export const useAppStore = create<Store>()(
     const match = getMatch(get(), matchId);
     if (!match || !isRallySetMatch(match)) return;
     set(replaceMatch(get(), startTableTennisMatch(match, openingServe)));
+  },
+  startPitch: (matchId) => {
+    const match = getMatch(get(), matchId);
+    if (!match || !isPitchMatch(match)) return;
+    set(replaceMatch(get(), startPitchMatch(match)));
+  },
+  startBaseball: (matchId) => {
+    const match = getMatch(get(), matchId);
+    if (!match || !isBaseballMatch(match)) return;
+    set(replaceMatch(get(), startBaseballMatch(match)));
   },
   createComp: (input) => {
     const { data, id } = createCompetition(get(), input);
@@ -405,10 +528,19 @@ export const useAppStore = create<Store>()(
       migrate: (persisted) => {
         if (!isAppData(persisted)) return createSeedState();
         const next = withClubDefaults(persisted);
-        if (next.clubs.length > 0) return next;
         const seed = createSeedState();
-        return {
+        const knownMatch = new Set(next.matches.map((match) => match.id));
+        const extraMatches = seed.matches.filter((match) => !knownMatch.has(match.id));
+        const knownTeam = new Set(next.teams.map((team) => team.id));
+        const extraTeams = seed.teams.filter((team) => !knownTeam.has(team.id));
+        const withSports = {
           ...next,
+          matches: extraMatches.length ? [...next.matches, ...extraMatches] : next.matches,
+          teams: extraTeams.length ? [...next.teams, ...extraTeams] : next.teams,
+        };
+        if (withSports.clubs.length > 0) return withSports;
+        return {
+          ...withSports,
           accountId: seed.accountId,
           accounts: seed.accounts,
           clubs: seed.clubs,
@@ -417,11 +549,6 @@ export const useAppStore = create<Store>()(
           sessionVotes: seed.sessionVotes,
           sessionGuests: seed.sessionGuests,
           sessionAssignments: seed.sessionAssignments,
-          matches: [...next.matches, ...seed.matches.filter((match) => match.sessionId)],
-          teams: [
-            ...next.teams,
-            ...seed.teams.filter((team) => !next.teams.some((row) => row.id === team.id)),
-          ],
         };
       },
     },

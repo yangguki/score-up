@@ -58,6 +58,34 @@ export {
   tableTennisServeLine,
   undoTableTennisLast,
 } from "./table-tennis";
+export {
+  applyPitchPoint,
+  applyPitchSanction,
+  applyPitchTeamFoul,
+  confirmPitchMatch,
+  confirmPitchPeriod,
+  createBlankPitchMatch,
+  forfeitPitchMatch,
+  pausePitchMatch,
+  pitchNotice,
+  requestPitchPeriodEnd,
+  resumePitchMatch,
+  startPitchMatch,
+  startPitchOvertime,
+  tickPitchClock,
+  undoPitchLast,
+} from "./pitch";
+export {
+  applyBaseballOut,
+  applyBaseballRun,
+  baseballNotice,
+  confirmBaseballHalf,
+  confirmBaseballMatch,
+  createBlankBaseballMatch,
+  forfeitBaseballMatch,
+  startBaseballMatch,
+  undoBaseballLast,
+} from "./baseball";
 export { uid } from "./id";
 export {
   addGuest,

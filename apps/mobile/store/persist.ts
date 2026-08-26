@@ -3,7 +3,7 @@ import type { StateStorage } from "zustand/middleware";
 import { createInnerStorage } from "./persist-storage";
 
 export const APP_PERSIST_NAME = "score-up-app";
-export const APP_PERSIST_VERSION = 2;
+export const APP_PERSIST_VERSION = 3;
 
 const WRITE_DEBOUNCE_MS = 500;
 

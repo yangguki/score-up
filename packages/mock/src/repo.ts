@@ -3,12 +3,17 @@ import {
   BASKETBALL_CLUB_PRESET,
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
+  isBaseballMatch,
   isBasketballMatch,
+  isPitchMatch,
+  isPitchSport,
   isRallySetMatch,
   isRallySetSport,
   isVolleyballMatch,
   nextTeamColor,
+  type BaseballRules,
   type BasketballRules,
+  type PitchRules,
   type TableTennisRules,
   type VolleyballRules,
 } from "@score-up/domain";
@@ -31,6 +36,8 @@ import {
 } from "./basketball";
 import { createBlankTableTennisMatch } from "./table-tennis";
 import { createBlankVolleyballMatch } from "./volleyball";
+import { createBlankPitchMatch } from "./pitch";
+import { createBlankBaseballMatch } from "./baseball";
 import { uid } from "./id";
 import { createSeedState } from "./seed";
 
@@ -188,6 +195,16 @@ function createSportMatch(input: BlankMatchInput): Match {
       rules: input.rules as TableTennisRules,
     });
   }
+  if (isPitchSport(input.sportId)) {
+    return createBlankPitchMatch({
+      ...input,
+      sportId: input.sportId,
+      rules: input.rules as PitchRules,
+    });
+  }
+  if (input.sportId === "baseball") {
+    return createBlankBaseballMatch({ ...input, rules: input.rules as BaseballRules });
+  }
   return createBlankMatch({ ...input, rules: input.rules as BasketballRules });
 }
 
@@ -203,6 +220,8 @@ function markByeWinner(match: Match, teamId: string, teamName: string) {
     match.snapshot.setsWonHome = 1;
     match.snapshot.setHistory = [{ home: 1, away: 0, winner: "home" }];
   }
+  if (isPitchMatch(match)) match.snapshot.homeScore = 1;
+  if (isBaseballMatch(match)) match.snapshot.homeScore = 1;
 }
 
 export function createCompetition(

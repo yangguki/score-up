@@ -1,7 +1,15 @@
 import type { Match, MatchEvent, MatchStatus, Player, SportId } from "@score-up/domain";
-import { isSetSport } from "@score-up/domain";
+import { isPitchSport, isSetSport } from "@score-up/domain";
 import type { Href } from "expo-router";
 import { scoreboardHref } from "@/lib/match-routes";
+
+function periodNoun(sportId?: SportId): string {
+  if (!sportId) return "쿼터";
+  if (isSetSport(sportId)) return "세트";
+  if (isPitchSport(sportId)) return "전후반";
+  if (sportId === "baseball") return "이닝";
+  return "쿼터";
+}
 
 export function statusLabel(status: MatchStatus, sportId?: SportId): string {
   switch (status) {
@@ -14,9 +22,9 @@ export function statusLabel(status: MatchStatus, sportId?: SportId): string {
     case "paused":
       return "일시정지";
     case "period_break":
-      return sportId && isSetSport(sportId) ? "세트 사이" : "쿼터 사이";
+      return `${periodNoun(sportId)} 사이`;
     case "confirm_period_end":
-      return sportId && isSetSport(sportId) ? "세트 종료 확인" : "쿼터 종료 확인";
+      return `${periodNoun(sportId)} 종료 확인`;
     case "confirm_match_end":
       return "경기 종료 확인";
     case "completed":
@@ -59,7 +67,9 @@ export function eventLine(
     case "point":
       return `${who} +${event.payload?.points ?? 0}`;
     case "foul":
-      return `${who} 파울 (${event.payload?.personalFouls ?? "-"})`;
+      return match.sportId === "baseball"
+        ? `${who} 아웃 (${event.payload?.teamFouls ?? "-"})`
+        : `${who} 파울 (${event.payload?.personalFouls ?? event.payload?.teamFouls ?? "-"})`;
     case "sanction":
       return `${who} ${event.payload?.reason === "red" ? "레드" : "경고"}`;
     case "timeout":
@@ -67,9 +77,7 @@ export function eventLine(
     case "substitution":
       return "교체";
     case "period_end":
-      return match.sportId && isSetSport(match.sportId)
-        ? `세트 ${event.payload?.quarter ?? event.quarter} 종료`
-        : `Q${event.payload?.quarter ?? event.quarter} 종료`;
+      return `${periodNoun(match.sportId)} ${event.payload?.quarter ?? event.quarter} 종료`;
     case "serve_change":
       return `${who} 서브 변경`;
     case "match_end":

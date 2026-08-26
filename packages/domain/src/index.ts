@@ -27,6 +27,11 @@ export type {
   Side,
   SportId,
   RallySetSportId,
+  PitchSportId,
+  PitchRules,
+  PitchSnapshot,
+  BaseballRules,
+  BaseballSnapshot,
   SportPreset,
   SportRules,
   SportSnapshot,
@@ -41,8 +46,18 @@ export type {
   VolleyballSnapshot,
   VoteValue,
 } from "./types";
-export { isBasketballMatch, isRallySetMatch, isRallySetSport, isSetSport, isTableTennisMatch, isVolleyballMatch } from "./types";
-export { clubRulesFor, sportRulesSummary } from "./sport";
+export {
+  isBaseballMatch,
+  isBasketballMatch,
+  isPitchMatch,
+  isPitchSport,
+  isRallySetMatch,
+  isRallySetSport,
+  isSetSport,
+  isTableTennisMatch,
+  isVolleyballMatch,
+} from "./types";
+export { ALL_SPORT_IDS, clubRulesFor, isSportId, sportRulesSummary } from "./sport";
 export { accountName, canOperateClub, computeClubRanking, memberOf, sessionStatusLabel, voteLabel } from "./club";
 export type { ClubRankingRow } from "./club";
 export { DEFAULT_AWAY_COLOR, DEFAULT_HOME_COLOR, TEAM_COLOR_PRESETS, nextTeamColor } from "./colors";
@@ -105,3 +120,18 @@ export {
 } from "./table-tennis";
 export { BADMINTON_CLUB_PRESET } from "./badminton";
 export { SQUASH_CLUB_PRESET } from "./squash";
+export {
+  FUTSAL_CLUB_PRESET,
+  SOCCER_CLUB_PRESET,
+  emptyPitchSnapshot,
+  isPitchRegulationOver,
+  pitchPeriodLabel,
+  pitchRulesSummary,
+} from "./pitch";
+export {
+  BASEBALL_CLUB_PRESET,
+  baseballHalfLabel,
+  baseballRulesSummary,
+  emptyBaseballSnapshot,
+  isLastBaseballInning,
+} from "./baseball";

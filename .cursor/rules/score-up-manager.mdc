@@ -14,9 +14,12 @@ alwaysApply: true
 5. 탁구 룰/세트/서브 카운트 → `.cursor/skills/table-tennis-agent/SKILL.md`
 5b. 배드민턴 랠리 세트 → `.cursor/skills/badminton-agent/SKILL.md`
 5c. 스쿼시 랠리 세트 → `.cursor/skills/squash-agent/SKILL.md`
+5d. 축구 전후반·카드 → `.cursor/skills/soccer-agent/SKILL.md`
+5e. 풋살 전후반·누적파울 → `.cursor/skills/futsal-agent/SKILL.md`
+5f. 야구 이닝·아웃 → `.cursor/skills/baseball-agent/SKILL.md`
 6. 화면 구현, 네비게이션, mock UX → `.cursor/skills/frontend-ux-agent/SKILL.md`
 7. 공통 상태·이벤트·종료 함수 → `.cursor/skills/rule-engine-agent/SKILL.md`
 8. 없는 종목 → Manager가 skill을 만든 뒤 분배.
 9. AWS/배포/호스팅/팀 공유 URL → `.cursor/skills/infra-agent/SKILL.md`. S3 정적 + GitHub Actions(`origin-hub`). GitLab Runner·Amplify·API·RDS 만들지 않는다.
 
-제약: Expo 단일 코드(앱+웹). mock 프론트 우선. 1차는 농구, Phase 6 배구·탁구 mock. 종목에 없는 UI를 그리지 않는다.
+제약: Expo 단일 코드(앱+웹). mock 프론트 우선. 1차는 농구, Phase 6 홈 8종목 mock. 종목에 없는 UI를 그리지 않는다.

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { router } from "expo-router";
 import { Pressable, ScrollView } from "react-native";
 import {
+  ALL_SPORT_IDS,
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
   clubRulesFor,
@@ -23,15 +24,15 @@ function toPlayers(drafts: DraftPlayer[]) {
     .map((p) => ({ name: p.name.trim(), number: Number(p.number) || 0 }));
 }
 
-const CREATE_SPORTS: SportId[] = ["basketball", "volleyball", "table-tennis", "badminton", "squash"];
+const CREATE_SPORTS: SportId[] = [...ALL_SPORT_IDS];
 
 export default function FriendlyScreen() {
   const makeFriendly = useAppStore((s) => s.makeFriendly);
   const [sportId, setSportId] = useState<SportId>("basketball");
   const [home, setHome] = useState("홈");
   const [away, setAway] = useState("어웨이");
-  const [homeColor, setHomeColor] = useState(DEFAULT_HOME_COLOR);
-  const [awayColor, setAwayColor] = useState(DEFAULT_AWAY_COLOR);
+  const [homeColor, setHomeColor] = useState<string>(DEFAULT_HOME_COLOR);
+  const [awayColor, setAwayColor] = useState<string>(DEFAULT_AWAY_COLOR);
   const [official, setOfficial] = useState(false);
   const [rules, setRules] = useState<SportRules>(clubRulesFor("basketball"));
   const [homePlayers, setHomePlayers] = useState<DraftPlayer[]>([]);

@@ -1,5 +1,5 @@
 import type { BracketSlot, Competition, LeagueStandingRow, Match } from "@score-up/domain";
-import { isBasketballMatch, isRallySetMatch, isVolleyballMatch } from "@score-up/domain";
+import { isBaseballMatch, isBasketballMatch, isPitchMatch, isRallySetMatch, isVolleyballMatch } from "@score-up/domain";
 import { formatLabel, isLiveMatch, matchDisplayScore } from "@/lib/home";
 import { statusLabel } from "@/lib/labels";
 import { sportLabel } from "@/lib/match-routes";
@@ -19,6 +19,14 @@ export function matchPeriodLine(match: Match): string {
       `세트 ${match.snapshot.setsWonHome}-${match.snapshot.setsWonAway}`,
       ...match.snapshot.setHistory.map((row, i) => `S${i + 1} ${row.home}-${row.away}`),
     ].join(" · ");
+  }
+  if (isPitchMatch(match)) {
+    return match.snapshot.periodScores
+      .map((row, i) => `${i === 0 ? "전반" : i === 1 ? "후반" : "연장"} ${row.home}-${row.away}`)
+      .join(" · ");
+  }
+  if (isBaseballMatch(match)) {
+    return match.snapshot.inningScores.map((row, i) => `${i + 1}회 ${row.home}-${row.away}`).join(" · ");
   }
   return "";
 }

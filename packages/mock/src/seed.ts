@@ -1,6 +1,9 @@
 import {
   BASKETBALL_CLUB_PRESET,
   BADMINTON_CLUB_PRESET,
+  BASEBALL_CLUB_PRESET,
+  FUTSAL_CLUB_PRESET,
+  SOCCER_CLUB_PRESET,
   SQUASH_CLUB_PRESET,
   TABLE_TENNIS_CLUB_PRESET,
   VOLLEYBALL_CLUB_PRESET,
@@ -9,13 +12,22 @@ import {
   type MatchEvent,
   type Player,
 } from "@score-up/domain";
-import { emptySnapshot, emptyTableTennisSnapshot, emptyVolleyballSnapshot } from "@score-up/domain";
+import {
+  emptyBaseballSnapshot,
+  emptyPitchSnapshot,
+  emptySnapshot,
+  emptyTableTennisSnapshot,
+  emptyVolleyballSnapshot,
+} from "@score-up/domain";
 
 const RULES = BASKETBALL_CLUB_PRESET.rules;
 const VB_RULES = VOLLEYBALL_CLUB_PRESET.rules;
 const TT_RULES = TABLE_TENNIS_CLUB_PRESET.rules;
 const BD_RULES = BADMINTON_CLUB_PRESET.rules;
 const SQ_RULES = SQUASH_CLUB_PRESET.rules;
+const SC_RULES = SOCCER_CLUB_PRESET.rules;
+const FT_RULES = FUTSAL_CLUB_PRESET.rules;
+const BB_RULES = BASEBALL_CLUB_PRESET.rules;
 
 const TIGER = "team-tiger";
 const EAGLE = "team-eagle";
@@ -30,6 +42,9 @@ const VB1 = "match-vb1";
 const TT1 = "match-tt1";
 const BD1 = "match-bd1";
 const SQ1 = "match-sq1";
+const SC1 = "match-sc1";
+const FT1 = "match-ft1";
+const BB1 = "match-bb1";
 
 function p(id: string, teamId: string, number: number, name: string): Player {
   return { id, teamId, number, name };
@@ -275,6 +290,51 @@ export function createSeedState(): AppData {
         events: [],
         isFriendly: true,
         rules: SQ_RULES,
+      },
+      {
+        id: SC1,
+        sportId: "soccer",
+        homeLabel: "그린",
+        awayLabel: "네이비",
+        homeColor: "#276749",
+        awayColor: "#1A365D",
+        roundLabel: "친선",
+        scheduledLabel: "오늘 축구",
+        status: "scheduled",
+        snapshot: emptyPitchSnapshot(SC_RULES),
+        events: [],
+        isFriendly: true,
+        rules: SC_RULES,
+      },
+      {
+        id: FT1,
+        sportId: "futsal",
+        homeLabel: "시티",
+        awayLabel: "포트",
+        homeColor: "#1D4ED8",
+        awayColor: "#B91C1C",
+        roundLabel: "친선",
+        scheduledLabel: "오늘 풋살",
+        status: "scheduled",
+        snapshot: emptyPitchSnapshot(FT_RULES),
+        events: [],
+        isFriendly: true,
+        rules: FT_RULES,
+      },
+      {
+        id: BB1,
+        sportId: "baseball",
+        homeLabel: "타이거즈",
+        awayLabel: "이글스",
+        homeColor: "#1A365D",
+        awayColor: "#C53030",
+        roundLabel: "친선",
+        scheduledLabel: "오늘 야구",
+        status: "scheduled",
+        snapshot: emptyBaseballSnapshot(),
+        events: [],
+        isFriendly: true,
+        rules: BB_RULES,
       },
       clubDoneMatch(MATCH_CLUB_1, SES_DONE_1, TEAM_CA, TEAM_CB, "home", "2026-08-08"),
       clubDoneMatch(MATCH_CLUB_2, SES_DONE_2, TEAM_CA2, TEAM_CB2, "away", "2026-08-15"),

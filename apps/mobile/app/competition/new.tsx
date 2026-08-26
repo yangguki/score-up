@@ -3,7 +3,10 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, TextInput, View } from "react-native";
 import {
   clubRulesFor,
+  isPitchSport,
+  isSportId,
   type BasketballRules,
+  type PitchRules,
   type SportId,
   type SportRules,
 } from "@score-up/domain";
@@ -20,8 +23,11 @@ const CREATE_SPORTS: { id: SportId; line: string }[] = [
   { id: "basketball", line: "시간+파울" },
   { id: "volleyball", line: "세트+서브" },
   { id: "table-tennis", line: "개인 세트제" },
+  { id: "soccer", line: "전후반+카드" },
+  { id: "baseball", line: "이닝제" },
   { id: "badminton", line: "랠리 세트제" },
   { id: "squash", line: "랠리 점수" },
+  { id: "futsal", line: "전후반+누적파울" },
 ];
 
 function defaultName(sportId: SportId) {
@@ -30,15 +36,7 @@ function defaultName(sportId: SportId) {
 
 function parseSport(value?: string | string[]): SportId {
   const raw = Array.isArray(value) ? value[0] : value;
-  if (
-    raw === "volleyball" ||
-    raw === "table-tennis" ||
-    raw === "basketball" ||
-    raw === "badminton" ||
-    raw === "squash"
-  ) {
-    return raw;
-  }
+  if (isSportId(raw)) return raw;
   return "basketball";
 }
 
@@ -67,7 +65,11 @@ export default function NewCompetitionScreen() {
   const [error, setError] = useState("");
 
   const basketballRules = sportId === "basketball" ? (rules as BasketballRules) : null;
-  const tournamentBlocked = Boolean(basketballRules && format === "tournament" && !basketballRules.overtimeEnabled);
+  const pitchRules = isPitchSport(sportId) ? (rules as PitchRules) : null;
+  const tournamentBlocked = Boolean(
+    (basketballRules && format === "tournament" && !basketballRules.overtimeEnabled) ||
+      (pitchRules && format === "tournament" && !pitchRules.overtimeEnabled),
+  );
   const nameOk = name.trim().length > 0;
   const rangeErr = dateMode === "range" ? periodError(dateStart, dateEnd) : null;
   const canSubmit = nameOk && !rangeErr;

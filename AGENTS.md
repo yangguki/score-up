@@ -19,6 +19,9 @@
 | Table Tennis | 탁구 룰, 세트·서브 카운트, 탁구 mock | 활성 (Phase 6) |
 | Badminton | 배드민턴 룰, 랠리 세트, 득점자 서브 | 활성 (mock) |
 | Squash | 스쿼시 룰, 랠리 세트, 득점자 서브 | 활성 (mock) |
+| Soccer | 축구 룰, 전후반 시계, 카드 메모 | 활성 (mock) |
+| Futsal | 풋살 룰, 전후반 시계, 누적 파울 힌트 | 활성 (mock) |
+| Baseball | 야구 룰, 이닝·아웃 | 활성 (mock) |
 | Infra | 팀 공유 S3 미리보기. GitHub Actions(`origin-hub`) → S3. API·DB·GitLab Runner 아님 | 활성 (적용됨) |
 
 ## 분배 규칙
@@ -35,6 +38,6 @@
 - 앱과 웹을 **한 코드베이스**로 만든다. 스택은 Expo (React Native) + Expo Router + TypeScript.
 - 패키지 매니저는 **pnpm**이다. 루트 workspace + `node-linker=hoisted`. `npm install` / `yarn`을 쓰지 않는다.
 - UX 확인이 목적이다. **mock 데이터로 프론트가 먼저 동작**해야 한다.
-- **1차 종목은 농구.** Phase 6에서 배구·탁구 mock 보드와 대회·친선 생성, 이 기기 로그인·농구 모임을 연다. 배드민턴·스쿼시는 랠리 세트 mock으로 연다.
+- **1차 종목은 농구.** Phase 6에서 홈 8종목 대회·친선 mock과 이 기기 로그인·농구 모임을 연다.
 - 종목에 없는 UI는 그리지 않는다. 농구에는 쿼터·시계·파울이 있고 서브권은 없다. 배구에는 세트·서브가 있고 시계·파울은 없다.
 - 스코어보드는 종목 경로로 분기한다. `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다.

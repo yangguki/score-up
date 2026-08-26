@@ -6,10 +6,16 @@ import {
   BASKETBALL_PERIOD_COUNT_MIN,
   BASKETBALL_PERIOD_MINUTES,
   BASKETBALL_TIMEOUT_SECONDS,
+  baseballRulesSummary,
+  isPitchSport,
+  pitchRulesSummary,
   rulesSummary,
   tableTennisRulesSummary,
   volleyballRulesSummary,
+  type BaseballRules,
   type BasketballRules,
+  type PitchRules,
+  type PitchSportId,
   type SportId,
   type SportRules,
   type TableTennisRules,
@@ -53,6 +59,12 @@ export function SportRulesEditor({
         onOfficial={onOfficial}
       />
     );
+  }
+  if (isPitchSport(sportId)) {
+    return <PitchRulesEditor sportId={sportId} rules={rules as PitchRules} onRules={onRules} />;
+  }
+  if (sportId === "baseball") {
+    return <BaseballRulesEditor rules={rules as BaseballRules} onRules={onRules} />;
   }
   return <TableTennisRulesEditor sportId={sportId} rules={rules as TableTennisRules} onRules={onRules} />;
 }
@@ -131,6 +143,60 @@ function TableTennisRulesEditor({
       {rules.doubles ? (
         <P muted>복식은 이름만 바꿉니다. 위치·서브 순서는 강제하지 않습니다.</P>
       ) : null}
+    </>
+  );
+}
+
+function PitchRulesEditor({
+  sportId,
+  rules,
+  onRules,
+}: {
+  sportId: PitchSportId;
+  rules: PitchRules;
+  onRules: (rules: PitchRules) => void;
+}) {
+  return (
+    <>
+      <P muted>이 대회에 적용됩니다. 경기 시작 후에는 바꿀 수 없습니다.</P>
+      <P>{pitchRulesSummary(rules, sportId)}</P>
+      <RowToggle
+        label={`${rules.periodMinutes}분 × ${rules.periodCount}`}
+        onPress={() => onRules({ ...rules, periodMinutes: rules.periodMinutes === 20 ? 25 : 20 })}
+      />
+      <RowToggle
+        label={rules.overtimeEnabled ? `연장 ${rules.overtimeMinutes}분` : "연장 없음"}
+        onPress={() => onRules({ ...rules, overtimeEnabled: !rules.overtimeEnabled })}
+      />
+      {sportId === "futsal" ? (
+        <P muted>누적 파울 {rules.teamFoulPenaltyAt}번째부터 PK 힌트만 냅니다. PK 위자드는 없습니다.</P>
+      ) : (
+        <P muted>카드는 팀 메모입니다. 출전 제한은 없습니다. 추가시간은 자동으로 넣지 않습니다.</P>
+      )}
+    </>
+  );
+}
+
+function BaseballRulesEditor({
+  rules,
+  onRules,
+}: {
+  rules: BaseballRules;
+  onRules: (rules: BaseballRules) => void;
+}) {
+  return (
+    <>
+      <P muted>이 대회에 적용됩니다. 경기 시작 후에는 바꿀 수 없습니다.</P>
+      <P>{baseballRulesSummary(rules)}</P>
+      <RowToggle
+        label={`${rules.inningCount}이닝`}
+        onPress={() => onRules({ ...rules, inningCount: rules.inningCount === 7 ? 9 : 7 })}
+      />
+      <RowToggle
+        label={rules.extraInningEnabled ? "연장 가능" : "연장 없음"}
+        onPress={() => onRules({ ...rules, extraInningEnabled: !rules.extraInningEnabled })}
+      />
+      <P muted>볼/스트라이크·주자 진루는 없습니다.</P>
     </>
   );
 }

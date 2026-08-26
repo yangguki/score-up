@@ -1,5 +1,14 @@
-export type SportId = "basketball" | "volleyball" | "table-tennis" | "badminton" | "squash";
+export type SportId =
+  | "basketball"
+  | "volleyball"
+  | "table-tennis"
+  | "badminton"
+  | "squash"
+  | "soccer"
+  | "futsal"
+  | "baseball";
 export type RallySetSportId = "table-tennis" | "badminton" | "squash";
+export type PitchSportId = "soccer" | "futsal";
 
 export type MatchStatus =
   | "scheduled"
@@ -67,12 +76,26 @@ export interface TableTennisRules {
   doubles: boolean;
 }
 
-export type SportRules = BasketballRules | VolleyballRules | TableTennisRules;
+export interface PitchRules {
+  periodCount: number;
+  periodMinutes: number;
+  overtimeEnabled: boolean;
+  overtimeMinutes: number;
+  /** 0이면 팀 누적 파울 힌트 없음. 풋살은 6. */
+  teamFoulPenaltyAt: number;
+}
+
+export interface BaseballRules {
+  inningCount: number;
+  extraInningEnabled: boolean;
+}
+
+export type SportRules = BasketballRules | VolleyballRules | TableTennisRules | PitchRules | BaseballRules;
 
 export interface SportPreset {
   id: string;
   sportId: SportId;
-  scoringType: "timed_total" | "set_target";
+  scoringType: "timed_total" | "set_target" | "inning_chance";
   label: string;
   summary: string;
   official: boolean;
@@ -194,7 +217,40 @@ export interface TableTennisSnapshot {
   endChangeAtFiveDone: boolean;
 }
 
-export type SportSnapshot = BasketballSnapshot | VolleyballSnapshot | TableTennisSnapshot;
+export interface PitchSnapshot {
+  period: number;
+  clockMs: number;
+  clockRunning: boolean;
+  started: boolean;
+  homeScore: number;
+  awayScore: number;
+  periodScores: PeriodScore[];
+  yellowHome: number;
+  yellowAway: number;
+  redHome: number;
+  redAway: number;
+  teamFoulsHome: number;
+  teamFoulsAway: number;
+  inOvertime: boolean;
+  needsOvertimeDecision: boolean;
+}
+
+export interface BaseballSnapshot {
+  inning: number;
+  half: "top" | "bottom";
+  outs: number;
+  started: boolean;
+  homeScore: number;
+  awayScore: number;
+  inningScores: PeriodScore[];
+}
+
+export type SportSnapshot =
+  | BasketballSnapshot
+  | VolleyballSnapshot
+  | TableTennisSnapshot
+  | PitchSnapshot
+  | BaseballSnapshot;
 
 export interface MatchEvent {
   id: string;
@@ -343,6 +399,22 @@ export function isRallySetMatch(
   match: Match,
 ): match is Match & { sportId: RallySetSportId; snapshot: TableTennisSnapshot; rules: TableTennisRules } {
   return isRallySetSport(match.sportId);
+}
+
+export function isPitchSport(sportId: SportId): sportId is PitchSportId {
+  return sportId === "soccer" || sportId === "futsal";
+}
+
+export function isPitchMatch(
+  match: Match,
+): match is Match & { sportId: PitchSportId; snapshot: PitchSnapshot; rules: PitchRules } {
+  return isPitchSport(match.sportId);
+}
+
+export function isBaseballMatch(
+  match: Match,
+): match is Match & { sportId: "baseball"; snapshot: BaseballSnapshot; rules: BaseballRules } {
+  return match.sportId === "baseball";
 }
 
 export interface AppData {

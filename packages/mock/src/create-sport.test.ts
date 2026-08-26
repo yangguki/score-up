@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { BADMINTON_CLUB_PRESET, TABLE_TENNIS_CLUB_PRESET, VOLLEYBALL_CLUB_PRESET } from "@score-up/domain";
+import { BADMINTON_CLUB_PRESET, SOCCER_CLUB_PRESET, TABLE_TENNIS_CLUB_PRESET, VOLLEYBALL_CLUB_PRESET } from "@score-up/domain";
 import { addTeam, createCompetition, createFriendly, createSeedState, generateBracket } from "./repo";
 
 test("createCompetition volleyball then bracket makes volleyball matches", () => {
@@ -44,4 +44,19 @@ test("createFriendly badminton uses rally snapshot and scorer serve", () => {
   const match = data.matches.find((row) => row.id === matchId);
   assert.equal(match?.sportId, "badminton");
   assert.equal(match?.rules, BADMINTON_CLUB_PRESET.rules);
+});
+
+test("createFriendly soccer uses pitch snapshot", () => {
+  const { data, matchId } = createFriendly(createSeedState(), {
+    sportId: "soccer",
+    homeName: "그린",
+    awayName: "네이비",
+    rules: SOCCER_CLUB_PRESET.rules,
+  });
+  const match = data.matches.find((row) => row.id === matchId);
+  assert.equal(match?.sportId, "soccer");
+  assert.equal(match?.status, "in_progress");
+  if (match?.sportId !== "soccer") throw new Error("expected soccer");
+  assert.equal(match.snapshot.homeScore, 0);
+  assert.equal(match.snapshot.started, false);
 });

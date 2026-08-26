@@ -7,7 +7,7 @@ import type {
   SportId,
   VoteValue,
 } from "@score-up/domain";
-import { BASKETBALL_CLUB_PRESET, canOperateClub, memberOf } from "@score-up/domain";
+import { BASKETBALL_CLUB_PRESET, canOperateClub, isBasketballMatch, memberOf } from "@score-up/domain";
 import { createBlankMatch } from "./basketball";
 import { uid } from "./id";
 
@@ -310,7 +310,7 @@ export function confirmSplit(data: AppData, sessionId: string): { data: AppData;
     rules: BASKETBALL_CLUB_PRESET.rules,
     status: "lineup",
   });
-  if (match.sportId === "basketball") {
+  if (isBasketballMatch(match)) {
     match.snapshot.onCourtHome = homeOn;
     match.snapshot.onCourtAway = awayOn;
   }
