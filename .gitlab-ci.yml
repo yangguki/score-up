@@ -1,0 +1,49 @@
+# main push → S3 정적 미리보기. AWS CodeBuild/Amplify는 쓰지 않는다.
+# GitLab CI/CD 변수(마스크, Protected): AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+# Runner가 Docker면 아래 image를 씀. Shell이면 image는 무시되고 호스트에 node 20·aws가 있어야 한다.
+
+stages:
+  - deploy
+
+variables:
+  AWS_DEFAULT_REGION: ap-northeast-2
+  S3_BUCKET: score-up-preview-211125640658-ap-northeast-2-an
+  PNPM_HOME: /tmp/pnpm
+  EXPO_NO_TELEMETRY: "1"
+
+cache:
+  key:
+    files:
+      - pnpm-lock.yaml
+  paths:
+    - .pnpm-store
+
+deploy_s3:
+  stage: deploy
+  image: node:20-bookworm
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  before_script:
+    - node -v
+    - corepack enable
+    - corepack prepare pnpm@10.20.0 --activate
+    - pnpm config set store-dir .pnpm-store
+    - |
+      if command -v aws >/dev/null 2>&1; then
+        echo "aws CLI already present"
+      elif command -v apt-get >/dev/null 2>&1; then
+        apt-get update
+        apt-get install -y --no-install-recommends awscli
+      else
+        echo "aws CLI가 없습니다. Docker Runner이거나 호스트에 aws를 설치하세요."
+        exit 1
+      fi
+    - aws --version
+  script:
+    - test -n "$AWS_ACCESS_KEY_ID"
+    - test -n "$AWS_SECRET_ACCESS_KEY"
+    - pnpm install --frozen-lockfile
+    - pnpm export:web
+    - test -f apps/mobile/dist/index.html
+    - aws s3 sync apps/mobile/dist "s3://${S3_BUCKET}" --delete --region "$AWS_DEFAULT_REGION"
+    - echo "미리보기 http://${S3_BUCKET}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com/"

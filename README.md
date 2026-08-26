@@ -13,7 +13,7 @@ pnpm web
 
 같은 코드가 앱(Expo)과 웹에서 돌아갑니다. `pnpm start` 후 기기/시뮬레이터도 가능합니다.
 
-팀 공유는 최소 비용이 원칙입니다. PC가 켜져 있으면 `cloudflared tunnel`($0). PC가 꺼져 있어도 URL이 필요하면 `pnpm export:web` 후 S3 정적 웹사이트에 `apps/mobile/dist`만 올립니다. Amplify Git 빌드·EC2는 쓰지 않습니다. 절차: `docs/SCORE-UP-팀공유-S3-미리보기.md`.
+팀 공유는 최소 비용이 원칙입니다. PC가 켜져 있으면 `cloudflared tunnel`($0). PC가 꺼져 있어도 URL이 필요하면 `pnpm export:web` 후 S3 정적 웹사이트에 `apps/mobile/dist`만 올립니다. `main` push는 시놀로지 GitLab Runner가 S3에 sync합니다. Amplify Git 빌드·EC2는 쓰지 않습니다. 절차: `docs/SCORE-UP-팀공유-S3-미리보기.md`.
 
 ## 구조
 

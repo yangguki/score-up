@@ -6,7 +6,7 @@
 | 버전 | v0.1 |
 | 작성일 | 2026-08-25 |
 | 담당 | Infra |
-| 상태 | S3 수동 배포 **사용 중**. `main` push 자동 반영은 **검토만. 아직 구현하지 않음** |
+| 상태 | S3 수동 배포 **사용 중**. GitLab `main` → S3는 `.gitlab-ci.yml` 추가. **CI 변수·첫 파이프라인으로 Runner 검증 필요** |
 | 에이전트 | `.cursor/skills/infra-agent/SKILL.md` |
 
 지금은 Phase 3 mock 프론트다. AWS에는 API·DB·서버가 없고, `pnpm export:web`으로 만든 **정적 파일만** 올린다. 목적은 팀 UX 검수이며 프로덕션이 아니다.
@@ -22,7 +22,7 @@
 | HTTPS | 기본 없음. 필요할 때만 CloudFront | S3 웹사이트 엔드포인트는 HTTP. 팀 검수에는 충분 |
 | 도메인 | 안 삼. Route 53 호스팅 존 안 만듦 | 존만 있어도 월 $0.50 |
 | 산출물 | `apps/mobile/dist` | Expo `web.output: static` |
-| Git 자동 배포 | **보류** | origin이 GitHub가 아님. 아래 6장 |
+| Git 자동 배포 | GitLab CI (시놀로지). AWS에서 빌드하지 않음 | origin이 GitHub가 아님. 아래 4장 |
 
 PC가 켜져 있는 동안만 보여 주면 `cloudflared tunnel --url http://localhost:포트`가 $0다. S3는 **노트북이 꺼져 있어도 URL이 필요할 때** 쓴다.
 
@@ -171,54 +171,79 @@ mock은 브라우저 메모리다. 새로고침하면 시드로 돌아가고, �
 
 ---
 
-## 4. `main` push → S3 자동 반영 (검토)
+## 4. `main` push → S3 (GitLab CI)
 
-하고 싶은 것: `main`에 push하면 S3 미리보기가 갱신된다.
+origin: `http://woorii.synology.me:30000/ormak/score-up.git` (**GitLab**). GitHub Actions는 쓰지 않는다.
 
-### 4.1 왜 GitHub Actions가 아닌가
+빌드는 GitLab Runner에서 하고, AWS에는 `dist`만 올린다. Amplify·CodeBuild·EC2는 만들지 않는다.
 
-이 저장소 origin은 GitHub가 아니라 시놀로지 Git이다.
+### 4.1 버킷 이름과 웹 주소는 다르다
 
-`http://woorii.synology.me:30000/ormak/score-up.git`
+팀에 보내는 주소(웹사이트 엔드포인트):
 
-포트 30000은 시놀로지의 **GitLab 또는 Gitea**일 가능성이 크다. 여기로 push하면 GitHub Actions는 실행되지 않는다.
+[http://score-up-preview-211125640658-ap-northeast-2-an.s3-website.ap-northeast-2.amazonaws.com/](http://score-up-preview-211125640658-ap-northeast-2-an.s3-website.ap-northeast-2.amazonaws.com/)
 
-### 4.2 권장 구조 (아직 구현하지 않음)
+**버킷 전체 이름**은 호스트에서 `.s3-website.ap-northeast-2.amazonaws.com`을 뺀 부분이다.
 
-빌드는 Git 서버(또는 그 Runner)에서 하고, AWS에는 결과물만 올린다.
+`score-up-preview-211125640658-ap-northeast-2-an`
 
-```text
-main push
-  → GitLab/Gitea Runner가 pnpm export:web
-  → aws s3 sync apps/mobile/dist s3://버킷 --delete
-```
+정책 ARN:
 
-AWS에 **만들지 말 것:** Amplify, CodePipeline, CodeBuild, EC2. 빌드 분·월정액이 붙는다.
+`arn:aws:s3:::score-up-preview-211125640658-ap-northeast-2-an/*`
 
-IAM은 콘솔 계정 키를 CI에 넣지 않는다. **해당 버킷 객체 올리기/삭제/목록만** 있는 배포용 사용자를 따로 둔다.
+CI·`aws s3 sync`에도 이 이름을 쓴다. URL 전체를 버킷 이름으로 넣으면 실패한다.
+
+### 4.2 파이프라인
+
+파일: `.gitlab-ci.yml`. `main`에 push하면 `pnpm export:web` 후
+
+`aws s3 sync apps/mobile/dist s3://score-up-preview-211125640658-ap-northeast-2-an --delete`
+
+문서만 고쳐도 전체 빌드된다. 미리보기 단계에서는 허용.
+
+### 4.3 GitLab에 넣을 변수 (한 번)
+
+프로젝트 → **Settings → CI/CD → Variables**. 키는 저장소에 넣지 않는다.
+
+| 키 | Protected | Masked | 값 |
+| --- | --- | --- | --- |
+| `AWS_ACCESS_KEY_ID` | 가능하면 켜기 | 켜기 | 배포용 IAM 액세스 키 |
+| `AWS_SECRET_ACCESS_KEY` | 가능하면 켜기 | 켜기 | 비밀 액세스 키 |
+
+콘솔용 `test01` 키를 넣지 말고, 이 버킷 쓰기만 있는 사용자를 권장한다. 당장 새 사용자를 못 만들면 기존 키로 첫 파이프라인만 검증해도 된다.
+
+배포 사용자 최소 권한:
+
+- `s3:ListBucket` → `arn:aws:s3:::score-up-preview-211125640658-ap-northeast-2-an`
+- `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` → `arn:aws:s3:::score-up-preview-211125640658-ap-northeast-2-an/*`
+
+`main`이 Protected 브랜치인데 변수도 Protected면, Protected Runner가 있어야 변수가 주입된다. 파이프라인 로그에 키가 비어 있으면 Protected 설정을 맞춘다.
+
+### 4.4 Runner 검증
+
+Runner는 있다고 했으나 동작은 **첫 파이프라인**으로 확인한다.
+
+1. GitLab에 위 두 변수를 저장한다
+2. `.gitlab-ci.yml`이 들어 있는 커밋을 `main`에 push한다
+3. GitLab → **CI/CD → Pipelines**에서 `deploy_s3` 성공 여부
+
+| 증상 | 원인 |
+| --- | --- |
+| pending / stuck | Runner가 꺼졌거나 태그가 안 맞음. 이 잡은 태그 없음(아무 Runner) |
+| `image` pull 실패 | Docker Hub를 NAS가 못 받음. Runner가 Shell이면 호스트에 Node 20·pnpm·aws CLI 설치 |
+| `test -n "$AWS_ACCESS_KEY_ID"` 실패 | 변수 없음 또는 Protected 불일치 |
+| AccessDenied (sync) | IAM에 버킷 쓰기 없음. 정책 ARN에 URL을 넣은 경우 |
+| Expo/Node OOM, killed | NAS 메모리 부족. 팀 PC를 GitLab Runner로 등록 |
+| 성공했는데 예전 화면 | 브라우저 캐시. 시크릿 창으로 웹사이트 엔드포인트 확인 |
+
+IAM은 콘솔 계정 키를 CI에 넣지 않는 것이 맞다. 해당 버킷 객체 올리기/삭제/목록만 있는 배포용 사용자를 따로 둔다.
 
 | 어디서 빌드하나 | AWS 비용 |
 | --- | --- |
-| 시놀로지 또는 팀 PC에 Runner | S3 업로드만. 사실상 0원 |
-| CodeBuild / Amplify에 빌드 | push마다 분당 과금. 지금 원칙과 안 맞음 |
+| 시놀로지 GitLab Runner | S3 업로드만. 사실상 0원 |
+| CodeBuild / Amplify에 빌드 | push마다 분당 과금. 쓰지 않음 |
 
-Expo 웹 export는 메모리·시간이 있다. NAS Runner가 너무 느리면 팀 PC를 Runner로 쓴다.
-
-파이프라인 조건:
-
-- `main`만 배포
-- `pnpm install --frozen-lockfile` → `pnpm export:web` → `dist`만 sync
-- CI 변수: 버킷 전체 이름, 배포용 AWS 키, 리전 `ap-northeast-2`
-- 문서만 고쳐도 전체 빌드됨. 미리보기 단계에서는 허용
-
-### 4.3 구현 전에 확인할 것
-
-1. `woorii.synology.me:30000`이 GitLab인지 Gitea인지
-2. Runner가 이미 있는지
-3. S3 버킷 전체 이름
-4. 배포용 IAM을 만들 권한이 있는지 (`test01` 콘솔 계정이 못 만들 수 있음)
-
-확인되면 GitLab은 `.gitlab-ci.yml`, Gitea는 Actions 워크플로를 추가한다. YAML만 넣고 Runner가 없으면 배포는 안 된다.
+Expo 웹 export는 메모리·시간이 있다. NAS가 너무 느리면 팀 PC를 Runner로 쓴다.
 
 ---
 
