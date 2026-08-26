@@ -6,7 +6,7 @@
 | 버전 | v0.1 |
 | 작성일 | 2026-08-25 |
 | 담당 | Infra |
-| 상태 | S3 사용 중. `main` → S3는 **GitHub Actions** (`origin-hub`). GitLab Runner는 쓰지 않음 |
+| 상태 | **적용됨.** S3 미리보기 + GitHub Actions `Deploy S3 preview` 초록. remote `origin-hub` |
 | 에이전트 | `.cursor/skills/infra-agent/SKILL.md` |
 
 지금은 Phase 3 mock 프론트다. AWS에는 API·DB·서버가 없고, `pnpm export:web`으로 만든 **정적 파일만** 올린다. 목적은 팀 UX 검수이며 프로덕션이 아니다.
@@ -225,24 +225,20 @@ GitHub의 `main`에 push하면 GitHub-hosted runner(`ubuntu-latest`)가 `pnpm ex
 
 Settings가 안 보이면 저장소 Owner 권한이 없다.
 
-### 4.4 첫 연결·배포
+### 4.4 연결·운영 (적용됨)
 
-Secrets를 넣은 뒤, 워크플로가 포함된 커밋을 GitHub `main`으로 보낸다.
+2026-08-26 `origin-hub`에 `.github/workflows/deploy-s3.yml`을 push한 뒤 Actions `Deploy S3 preview`가 **초록**으로 확인됐다. Secrets는 GitHub Actions에 등록된 상태다.
 
-```powershell
-git push -u origin-hub main
-```
-
-GitHub → **Actions** 탭에서 `Deploy S3 preview`가 초록이면 성공이다. 시크릿 창으로 웹사이트 엔드포인트를 연다.
-
-이후 일상:
+일상 배포:
 
 ```powershell
 git push origin main
 git push origin-hub main
 ```
 
-GitLab만 push하면 S3는 안 바뀐다. 배포하려면 반드시 `origin-hub`에 `main`이 올라가야 한다.
+GitLab만 push하면 S3는 안 바뀐다. 워크플로가 Actions 탭에 안 보이면 파일이 GitHub `main`에 없는 것이다.
+
+시크릿 창으로 웹사이트 엔드포인트를 연다.
 
 | 증상 | 원인 |
 | --- | --- |

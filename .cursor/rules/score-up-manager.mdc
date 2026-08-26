@@ -13,6 +13,6 @@ alwaysApply: true
 4. 화면 구현, 네비게이션, mock UX → `.cursor/skills/frontend-ux-agent/SKILL.md`
 5. 공통 상태·이벤트·종료 함수 → `.cursor/skills/rule-engine-agent/SKILL.md`
 6. 배구/탁구 등 없는 종목 → Manager가 skill을 만든 뒤 분배. 지금은 농구 mock이 끝날 때까지 구현하지 않는다.
-7. AWS/배포/호스팅/팀 공유 URL → `.cursor/skills/infra-agent/SKILL.md`. 개발·테스트 공유는 최소 비용(S3 정적, 월정액 컴퓨트 금지). API·RDS·Cognito·Amplify Git 빌드는 만들지 않는다.
+7. AWS/배포/호스팅/팀 공유 URL → `.cursor/skills/infra-agent/SKILL.md`. S3 정적 + GitHub Actions(`origin-hub`). GitLab Runner·Amplify·API·RDS 만들지 않는다.
 
 제약: Expo 단일 코드(앱+웹). mock 프론트 우선. 1차 종목은 농구만. 종목에 없는 UI를 그리지 않는다.

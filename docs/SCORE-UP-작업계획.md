@@ -78,7 +78,7 @@ docs/                 기획·룰·화면·이 계획
          ├─ Frontend UX     화면 구현, 라우팅, mock 동작
          ├─ Basketball      농구 버튼·파울·타이머·카피
          ├─ Rule Engine     공통 상태/이벤트 계약 (실구현은 Phase 5)
-         ├─ Infra           팀 공유 미리보기 (S3 정적, 최소 비용)
+         ├─ Infra           팀 공유 미리보기 (S3 + GitHub Actions, 최소 비용)
          └─ (이후) Volleyball / Table Tennis agent 생성 후 분배
 ```
 

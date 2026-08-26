@@ -15,7 +15,7 @@
 | Basketball | 농구 룰, 스코어보드, 파울, 타이머, 농구 mock | 활성 (1차 종목) |
 | Frontend UX | 앱+웹 화면, 네비게이션, mock 데이터로 동작하는 UI | 활성 |
 | Rule Engine | 종목 공통 상태/이벤트/종료 판정. UI에 if문 흩뿌리지 않기 | 활성 (설계만, 구현은 mock 이후) |
-| Infra | 팀 공유용 정적 미리보기. 기본 S3(최소 비용). API·DB·Amplify Git 빌드 아님 | 활성 (개발·테스트 공유) |
+| Infra | 팀 공유 S3 미리보기. GitHub Actions(`origin-hub`) → S3. API·DB·GitLab Runner 아님 | 활성 (적용됨) |
 | Volleyball / Table Tennis | 배구·탁구 | **아직 만들지 않음.** 농구 mock UX가 끝난 뒤 Manager가 생성 |
 
 ## 분배 규칙
