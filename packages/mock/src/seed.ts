@@ -1,15 +1,17 @@
 import {
   BASKETBALL_CLUB_PRESET,
+  TABLE_TENNIS_CLUB_PRESET,
   VOLLEYBALL_CLUB_PRESET,
   type AppData,
   type Match,
   type MatchEvent,
   type Player,
 } from "@score-up/domain";
-import { emptySnapshot, emptyVolleyballSnapshot } from "@score-up/domain";
+import { emptySnapshot, emptyTableTennisSnapshot, emptyVolleyballSnapshot } from "@score-up/domain";
 
 const RULES = BASKETBALL_CLUB_PRESET.rules;
 const VB_RULES = VOLLEYBALL_CLUB_PRESET.rules;
+const TT_RULES = TABLE_TENNIS_CLUB_PRESET.rules;
 
 const TIGER = "team-tiger";
 const EAGLE = "team-eagle";
@@ -21,6 +23,7 @@ const SF1 = "match-sf1";
 const SF2 = "match-sf2";
 const FINAL = "match-final";
 const VB1 = "match-vb1";
+const TT1 = "match-tt1";
 
 function p(id: string, teamId: string, number: number, name: string): Player {
   return { id, teamId, number, name };
@@ -136,6 +139,12 @@ export function createSeedState(): AppData {
       { id: "team-office-b", competitionId: OFFICE, name: "개발팀", color: "#1D4ED8" },
       { id: "team-office-c", competitionId: OFFICE, name: "디자인", color: "#0F766E" },
       { id: "team-office-d", competitionId: OFFICE, name: "영업부", color: "#7C3AED" },
+      { id: TEAM_CA, name: "A", color: "#B91C1C" },
+      { id: TEAM_CB, name: "B", color: "#1D4ED8" },
+      { id: TEAM_CA2, name: "A", color: "#B91C1C" },
+      { id: TEAM_CB2, name: "B", color: "#1D4ED8" },
+      { id: TEAM_CA3, name: "A", color: "#B91C1C" },
+      { id: TEAM_CB3, name: "B", color: "#1D4ED8" },
     ],
     players: [
       p("p-t12", TIGER, 12, "김민수"),
@@ -216,6 +225,24 @@ export function createSeedState(): AppData {
         isFriendly: true,
         rules: VB_RULES,
       },
+      {
+        id: TT1,
+        sportId: "table-tennis",
+        homeLabel: "김민수",
+        awayLabel: "박지훈",
+        homeColor: "#B91C1C",
+        awayColor: "#1D4ED8",
+        roundLabel: "친선",
+        scheduledLabel: "오늘 탁구",
+        status: "in_progress",
+        snapshot: emptyTableTennisSnapshot(),
+        events: [],
+        isFriendly: true,
+        rules: TT_RULES,
+      },
+      clubDoneMatch(MATCH_CLUB_1, SES_DONE_1, TEAM_CA, TEAM_CB, "home", "2026-08-08"),
+      clubDoneMatch(MATCH_CLUB_2, SES_DONE_2, TEAM_CA2, TEAM_CB2, "away", "2026-08-15"),
+      clubDoneMatch(MATCH_CLUB_3, SES_DONE_3, TEAM_CA3, TEAM_CB3, "home", "2026-08-22"),
     ],
     brackets: [
       {
@@ -245,7 +272,227 @@ export function createSeedState(): AppData {
       },
       { id: "br-champ", competitionId: COMP, round: "champion", label: "우승" },
     ],
+    ...seedClubFields(),
   };
 }
 
-export const SEED_IDS = { COMP, OFFICE, SF1, SF2, FINAL, VB1, TIGER, EAGLE, SHARK, WOLF };
+const CLUB = "club-weekend";
+const SES_VOTE = "ses-vote";
+const SES_DONE_1 = "ses-done-1";
+const SES_DONE_2 = "ses-done-2";
+const SES_DONE_3 = "ses-done-3";
+const MATCH_CLUB_1 = "match-club-1";
+const MATCH_CLUB_2 = "match-club-2";
+const MATCH_CLUB_3 = "match-club-3";
+const TEAM_CA = "team-club-a";
+const TEAM_CB = "team-club-b";
+const TEAM_CA2 = "team-club-a2";
+const TEAM_CB2 = "team-club-b2";
+const TEAM_CA3 = "team-club-a3";
+const TEAM_CB3 = "team-club-b3";
+
+const CLUB_PEOPLE = [
+  ["acc-minsu", "김민수"],
+  ["acc-jihun", "박지훈"],
+  ["acc-seoyeon", "이서연"],
+  ["acc-jiho", "한지호"],
+  ["acc-woosung", "정우성"],
+  ["acc-sehun", "오세훈"],
+  ["acc-dahye", "윤다혜"],
+  ["acc-yujin", "최유진"],
+  ["acc-taemin", "강태민"],
+  ["acc-haneul", "문하늘"],
+  ["acc-seojiho", "서지호"],
+  ["acc-doyun", "배도윤"],
+  ["acc-minho", "이민호"],
+] as const;
+
+function seedClubFields(): Pick<
+  AppData,
+  | "accountId"
+  | "accounts"
+  | "clubs"
+  | "clubMembers"
+  | "sessions"
+  | "sessionVotes"
+  | "sessionGuests"
+  | "sessionAssignments"
+> {
+  const accounts = CLUB_PEOPLE.map(([id, name]) => ({ id, name }));
+  const active = CLUB_PEOPLE.slice(0, 12);
+  const going = active.slice(0, 8);
+  const maybe = active.slice(8, 10);
+  const notGoing = active.slice(10, 11);
+  const home1 = active.slice(0, 5);
+  const away1 = active.slice(5, 10);
+  const home2 = [active[1], active[2], active[3], active[4], active[5]] as const;
+  const away2 = [active[0], active[6], active[7], active[8], active[9]] as const;
+  const home3 = [active[0], active[2], active[4], active[6], active[8]] as const;
+  const away3 = [active[1], active[3], active[5], active[7], active[9]] as const;
+
+  const assignment = (
+    sessionId: string,
+    people: readonly (readonly [string, string])[],
+    side: "home" | "away",
+    prefix: string,
+  ) =>
+    people.map(([accountId], index) => ({
+      id: `${prefix}-${index}`,
+      sessionId,
+      accountId,
+      side,
+    }));
+
+  return {
+    accountId: "acc-minsu",
+    accounts,
+    clubs: [
+      {
+        id: CLUB,
+        name: "주말 농구 모임",
+        sportId: "basketball",
+        venue: "시민체육관 3코트",
+        inviteToken: "ab12cd",
+        ownerAccountId: "acc-minsu",
+        seasonLabel: "2026",
+        weekday: 6,
+        weeklyTime: "14:00",
+      },
+    ],
+    clubMembers: [
+      ...active.map(([accountId], index) => ({
+        id: `cm-${index}`,
+        clubId: CLUB,
+        accountId,
+        role: index === 0 ? ("owner" as const) : index === 1 ? ("operator" as const) : ("member" as const),
+        status: "active" as const,
+      })),
+      { id: "cm-pending", clubId: CLUB, accountId: "acc-minho", role: "member", status: "pending" },
+    ],
+    sessions: [
+      {
+        id: SES_VOTE,
+        clubId: CLUB,
+        dateLabel: "2026-08-29",
+        timeLabel: "14:00",
+        venue: "시민체육관 3코트",
+        voteDeadlineLabel: "12:00",
+        status: "voting",
+        recurring: true,
+      },
+      {
+        id: SES_DONE_1,
+        clubId: CLUB,
+        dateLabel: "2026-08-08",
+        timeLabel: "14:00",
+        venue: "시민체육관 3코트",
+        voteDeadlineLabel: "12:00",
+        status: "completed",
+        recurring: true,
+        matchId: MATCH_CLUB_1,
+      },
+      {
+        id: SES_DONE_2,
+        clubId: CLUB,
+        dateLabel: "2026-08-15",
+        timeLabel: "14:00",
+        venue: "시민체육관 3코트",
+        voteDeadlineLabel: "12:00",
+        status: "completed",
+        recurring: true,
+        matchId: MATCH_CLUB_2,
+      },
+      {
+        id: SES_DONE_3,
+        clubId: CLUB,
+        dateLabel: "2026-08-22",
+        timeLabel: "14:00",
+        venue: "시민체육관 3코트",
+        voteDeadlineLabel: "12:00",
+        status: "completed",
+        recurring: true,
+        matchId: MATCH_CLUB_3,
+      },
+    ],
+    sessionVotes: [
+      ...going.map(([accountId], index) => ({
+        id: `vote-g-${index}`,
+        sessionId: SES_VOTE,
+        accountId,
+        value: "going" as const,
+      })),
+      ...maybe.map(([accountId], index) => ({
+        id: `vote-m-${index}`,
+        sessionId: SES_VOTE,
+        accountId,
+        value: "maybe" as const,
+      })),
+      ...notGoing.map(([accountId], index) => ({
+        id: `vote-n-${index}`,
+        sessionId: SES_VOTE,
+        accountId,
+        value: "not_going" as const,
+      })),
+    ],
+    sessionGuests: [],
+    sessionAssignments: [
+      ...assignment(SES_DONE_1, home1, "home", "asg1h"),
+      ...assignment(SES_DONE_1, away1, "away", "asg1a"),
+      ...assignment(SES_DONE_2, home2, "home", "asg2h"),
+      ...assignment(SES_DONE_2, away2, "away", "asg2a"),
+      ...assignment(SES_DONE_3, home3, "home", "asg3h"),
+      ...assignment(SES_DONE_3, away3, "away", "asg3a"),
+    ],
+  };
+}
+
+function clubDoneMatch(
+  id: string,
+  sessionId: string,
+  homeTeamId: string,
+  awayTeamId: string,
+  winner: "home" | "away",
+  dateLabel: string,
+): Match {
+  const snapshot = emptySnapshot(RULES, homeTeamId, awayTeamId);
+  snapshot.started = true;
+  snapshot.homeScore = winner === "home" ? 62 : 55;
+  snapshot.awayScore = winner === "home" ? 55 : 62;
+  snapshot.clockMs = 0;
+  return {
+    id,
+    sportId: "basketball",
+    sessionId,
+    homeTeamId,
+    awayTeamId,
+    homeLabel: "A",
+    awayLabel: "B",
+    homeColor: "#B91C1C",
+    awayColor: "#1D4ED8",
+    roundLabel: "회차",
+    scheduledLabel: dateLabel,
+    status: "completed",
+    snapshot,
+    events: [],
+    winnerTeamId: winner === "home" ? homeTeamId : awayTeamId,
+    winnerLabel: winner === "home" ? "A" : "B",
+    isFriendly: false,
+    rules: RULES,
+  };
+}
+
+export const SEED_IDS = {
+  COMP,
+  OFFICE,
+  SF1,
+  SF2,
+  FINAL,
+  VB1,
+  TT1,
+  TIGER,
+  EAGLE,
+  SHARK,
+  WOLF,
+  CLUB,
+  SES_VOTE,
+};

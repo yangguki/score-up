@@ -1,8 +1,8 @@
-import type { Match, MatchEvent, MatchStatus, Player } from "@score-up/domain";
+import type { Match, MatchEvent, MatchStatus, Player, SportId } from "@score-up/domain";
 import type { Href } from "expo-router";
 import { scoreboardHref } from "@/lib/match-routes";
 
-export function statusLabel(status: MatchStatus): string {
+export function statusLabel(status: MatchStatus, sportId?: SportId): string {
   switch (status) {
     case "scheduled":
       return "대기";
@@ -13,9 +13,9 @@ export function statusLabel(status: MatchStatus): string {
     case "paused":
       return "일시정지";
     case "period_break":
-      return "쿼터 사이";
+      return sportId === "volleyball" || sportId === "table-tennis" ? "세트 사이" : "쿼터 사이";
     case "confirm_period_end":
-      return "쿼터 종료 확인";
+      return sportId === "volleyball" || sportId === "table-tennis" ? "세트 종료 확인" : "쿼터 종료 확인";
     case "confirm_match_end":
       return "경기 종료 확인";
     case "completed":
@@ -33,6 +33,9 @@ export function matchHref(match: Match): Href {
   if (match.status === "completed" || match.status === "forfeited" || match.status === "abandoned") {
     return `/match/${match.id}/result` as Href;
   }
+  if (match.sportId === "volleyball" || match.sportId === "table-tennis") {
+    return scoreboardHref(match);
+  }
   if (match.status === "scheduled" || match.status === "lineup") {
     return `/match/${match.id}/lineup` as Href;
   }
@@ -42,7 +45,7 @@ export function matchHref(match: Match): Href {
 export function eventLine(
   event: MatchEvent,
   players: Player[],
-  match: { homeTeamId?: string; awayTeamId?: string; homeLabel: string; awayLabel: string },
+  match: { homeTeamId?: string; awayTeamId?: string; homeLabel: string; awayLabel: string; sportId?: SportId },
 ): string {
   const player = players.find((p) => p.id === event.playerId);
   const who = player
@@ -61,7 +64,9 @@ export function eventLine(
     case "substitution":
       return "교체";
     case "period_end":
-      return `세트 ${event.payload?.quarter ?? event.quarter} 종료`;
+      return match.sportId === "volleyball" || match.sportId === "table-tennis"
+        ? `세트 ${event.payload?.quarter ?? event.quarter} 종료`
+        : `Q${event.payload?.quarter ?? event.quarter} 종료`;
     case "serve_change":
       return `${who} 서브 변경`;
     case "match_end":

@@ -1,6 +1,8 @@
 import { create } from "zustand";
-import type { AppData, BasketballRules, Match, Side } from "@score-up/domain";
-import { isBasketballMatch, isVolleyballMatch } from "@score-up/domain";
+import { createJSONStorage, persist } from "zustand/middleware";
+import type { AppData, Match, SessionSide, Side, SportId, SportRules, VoteValue } from "@score-up/domain";
+import { APP_PERSIST_NAME, APP_PERSIST_VERSION, createAppPersistStorage, isAppData, withClubDefaults } from "./persist";
+import { isBasketballMatch, isTableTennisMatch, isVolleyballMatch } from "@score-up/domain";
 import {
   addPlayer,
   addTeam,
@@ -11,30 +13,57 @@ import {
   applySub,
   applyTimeout,
   applyVolleyballPoint,
+  applyVolleyballTimeout,
+  applyTableTennisPoint,
+  changeTableTennisServe,
   changeVolleyballServe,
   confirmMatchEnd,
   confirmPeriodEnd,
   confirmVolleyballMatch,
   confirmVolleyballSet,
+  confirmTableTennisMatch,
+  confirmTableTennisSet,
   createCompetition,
   createFriendly,
   createSeedState,
   endTimeout,
   forfeitMatch,
   forfeitVolleyballMatch,
+  forfeitTableTennisMatch,
   generateBracket,
   getMatch,
   pauseMatch,
+  pauseTableTennisMatch,
   requestPeriodEnd,
   replaceMatch,
   resumeMatch,
+  resumeTableTennisMatch,
   startMatch,
   startOvertime,
   startVolleyballMatch,
+  startTableTennisMatch,
   teamIdFor,
   tickClock,
   undoLast,
   undoVolleyballLast,
+  undoTableTennisLast,
+  addGuest,
+  cancelSession,
+  closeVoting,
+  confirmSplit,
+  createClub,
+  createSessions,
+  decideJoin,
+  dissolveClub,
+  dropCandidate,
+  requestJoin,
+  setAssignment,
+  setMemberGoing,
+  setVote,
+  signIn,
+  signOut,
+  syncSessionFromMatch,
+  updateClub,
 } from "@score-up/mock";
 
 type Store = AppData & {
@@ -57,11 +86,13 @@ type Store = AppData & {
   beginMatch: (matchId: string, onCourtHome: string[], onCourtAway: string[]) => void;
   changeServe: (matchId: string) => void;
   startVolleyball: (matchId: string, openingServe?: Side) => void;
+  startTableTennis: (matchId: string, openingServe?: Side) => void;
   createComp: (input: {
     name: string;
     dateLabel: string;
     format: "tournament" | "league";
-    rules: BasketballRules;
+    sportId?: SportId;
+    rules: SportRules;
     officialPreset: boolean;
     teams?: { name: string; color: string }[];
     courtCount?: number;
@@ -71,14 +102,31 @@ type Store = AppData & {
   addPlayerTo: (teamId: string, name: string, number: number) => void;
   makeBracket: (competitionId: string) => void;
   makeFriendly: (input: {
+    sportId?: SportId;
     homeName: string;
     awayName: string;
     homeColor: string;
     awayColor: string;
-    rules: BasketballRules;
+    rules: SportRules;
     homePlayers: { name: string; number: number }[];
     awayPlayers: { name: string; number: number }[];
   }) => string;
+  signInAs: (name: string) => void;
+  signOutAccount: () => void;
+  createClubAt: (input: { name: string; venue?: string }) => string;
+  requestJoinAt: (token: string) => void;
+  decideJoinAt: (memberId: string, accept: boolean) => void;
+  createSessionsAt: (clubId: string, input: { dateLabel: string; timeLabel: string; venue: string; weekly: boolean }) => string;
+  setVoteAt: (sessionId: string, value: VoteValue) => void;
+  closeVotingAt: (sessionId: string) => void;
+  addGuestAt: (sessionId: string, name: string) => void;
+  setMemberGoingAt: (sessionId: string, accountId: string) => void;
+  dropCandidateAt: (sessionId: string, accountId?: string, guestId?: string) => void;
+  setAssignmentAt: (sessionId: string, key: { accountId?: string; guestId?: string }, side: SessionSide) => void;
+  confirmSplitAt: (sessionId: string) => string;
+  cancelSessionAt: (sessionId: string) => void;
+  updateClubAt: (clubId: string, patch: { name?: string; venue?: string; seasonLabel?: string }) => void;
+  dissolveClubAt: (clubId: string) => void;
   reset: () => void;
 };
 
@@ -87,11 +135,13 @@ function commitMatch(data: AppData, match: Match): AppData {
   if (match.status === "completed" || match.status === "forfeited") {
     next = advanceBracket(next, match);
   }
-  return next;
+  return syncSessionFromMatch(next, match);
 }
 
-export const useAppStore = create<Store>((set, get) => ({
-  ...createSeedState(),
+export const useAppStore = create<Store>()(
+  persist(
+    (set, get) => ({
+      ...createSeedState(),
   patchMatch: (id, fn) => {
     const match = getMatch(get(), id);
     if (!match) return;
@@ -102,6 +152,10 @@ export const useAppStore = create<Store>((set, get) => ({
     if (!match) return;
     if (isVolleyballMatch(match)) {
       set(commitMatch(get(), applyVolleyballPoint(match, teamIdFor(match, side))));
+      return;
+    }
+    if (isTableTennisMatch(match)) {
+      set(commitMatch(get(), applyTableTennisPoint(match, teamIdFor(match, side))));
       return;
     }
     set(commitMatch(get(), applyPoint(match, teamIdFor(match, side), points, playerId)));
@@ -115,7 +169,12 @@ export const useAppStore = create<Store>((set, get) => ({
   },
   addTimeout: (matchId, side) => {
     const match = getMatch(get(), matchId);
-    if (!match || !isBasketballMatch(match)) return;
+    if (!match) return;
+    if (isVolleyballMatch(match)) {
+      set(commitMatch(get(), applyVolleyballTimeout(match, teamIdFor(match, side))));
+      return;
+    }
+    if (!isBasketballMatch(match)) return;
     set(commitMatch(get(), applyTimeout(match, teamIdFor(match, side), match.rules)));
   },
   finishTimeout: (matchId) => {
@@ -135,6 +194,10 @@ export const useAppStore = create<Store>((set, get) => ({
       set(commitMatch(get(), undoVolleyballLast(match)));
       return;
     }
+    if (isTableTennisMatch(match)) {
+      set(commitMatch(get(), undoTableTennisLast(match)));
+      return;
+    }
     if (isBasketballMatch(match)) {
       set(commitMatch(get(), undoLast(match, match.rules)));
     }
@@ -149,11 +212,19 @@ export const useAppStore = create<Store>((set, get) => ({
   pause: (matchId) => {
     const match = getMatch(get(), matchId);
     if (!match) return;
+    if (isTableTennisMatch(match)) {
+      set(replaceMatch(get(), pauseTableTennisMatch(match)));
+      return;
+    }
     set(replaceMatch(get(), pauseMatch(match)));
   },
   resume: (matchId) => {
     const match = getMatch(get(), matchId);
     if (!match) return;
+    if (isTableTennisMatch(match)) {
+      set(replaceMatch(get(), resumeTableTennisMatch(match)));
+      return;
+    }
     set(replaceMatch(get(), resumeMatch(match)));
   },
   confirmPeriod: (matchId) => {
@@ -161,6 +232,10 @@ export const useAppStore = create<Store>((set, get) => ({
     if (!match) return;
     if (isVolleyballMatch(match)) {
       set(replaceMatch(get(), confirmVolleyballSet(match)));
+      return;
+    }
+    if (isTableTennisMatch(match)) {
+      set(replaceMatch(get(), confirmTableTennisSet(match)));
       return;
     }
     if (isBasketballMatch(match)) {
@@ -179,6 +254,10 @@ export const useAppStore = create<Store>((set, get) => ({
       set(commitMatch(get(), confirmVolleyballMatch(match)));
       return;
     }
+    if (isTableTennisMatch(match)) {
+      set(commitMatch(get(), confirmTableTennisMatch(match)));
+      return;
+    }
     set(commitMatch(get(), confirmMatchEnd(match)));
   },
   goOvertime: (matchId) => {
@@ -193,6 +272,10 @@ export const useAppStore = create<Store>((set, get) => ({
       set(commitMatch(get(), forfeitVolleyballMatch(match, winner)));
       return;
     }
+    if (isTableTennisMatch(match)) {
+      set(commitMatch(get(), forfeitTableTennisMatch(match, winner)));
+      return;
+    }
     set(commitMatch(get(), forfeitMatch(match, winner)));
   },
   abandon: (matchId) => {
@@ -200,7 +283,7 @@ export const useAppStore = create<Store>((set, get) => ({
     if (!match) return;
     if (isBasketballMatch(match)) {
       set(
-        replaceMatch(get(), {
+        commitMatch(get(), {
           ...match,
           status: "abandoned",
           snapshot: { ...match.snapshot, clockRunning: false },
@@ -217,17 +300,32 @@ export const useAppStore = create<Store>((set, get) => ({
       set(replaceMatch(get(), startVolleyballMatch(match, "home")));
       return;
     }
-    set(replaceMatch(get(), startMatch(match, onCourtHome, onCourtAway)));
+    if (isTableTennisMatch(match)) {
+      set(replaceMatch(get(), startTableTennisMatch(match, "home")));
+      return;
+    }
+    set(commitMatch(get(), startMatch(match, onCourtHome, onCourtAway)));
   },
   changeServe: (matchId) => {
     const match = getMatch(get(), matchId);
-    if (!match || !isVolleyballMatch(match)) return;
-    set(commitMatch(get(), changeVolleyballServe(match)));
+    if (!match) return;
+    if (isVolleyballMatch(match)) {
+      set(commitMatch(get(), changeVolleyballServe(match)));
+      return;
+    }
+    if (isTableTennisMatch(match)) {
+      set(commitMatch(get(), changeTableTennisServe(match)));
+    }
   },
   startVolleyball: (matchId, openingServe = "home") => {
     const match = getMatch(get(), matchId);
     if (!match || !isVolleyballMatch(match)) return;
     set(replaceMatch(get(), startVolleyballMatch(match, openingServe)));
+  },
+  startTableTennis: (matchId, openingServe = "home") => {
+    const match = getMatch(get(), matchId);
+    if (!match || !isTableTennisMatch(match)) return;
+    set(replaceMatch(get(), startTableTennisMatch(match, openingServe)));
   },
   createComp: (input) => {
     const { data, id } = createCompetition(get(), input);
@@ -243,5 +341,82 @@ export const useAppStore = create<Store>((set, get) => ({
     set(data);
     return matchId;
   },
+  signInAs: (name) => set(signIn(get(), name)),
+  signOutAccount: () => set(signOut(get())),
+  createClubAt: (input) => {
+    const { data, id } = createClub(get(), input);
+    set(data);
+    return id;
+  },
+  requestJoinAt: (token) => set(requestJoin(get(), token)),
+  decideJoinAt: (memberId, accept) => set(decideJoin(get(), memberId, accept)),
+  createSessionsAt: (clubId, input) => {
+    const { data, firstId } = createSessions(get(), clubId, input);
+    set(data);
+    return firstId;
+  },
+  setVoteAt: (sessionId, value) => set(setVote(get(), sessionId, value)),
+  closeVotingAt: (sessionId) => set(closeVoting(get(), sessionId)),
+  addGuestAt: (sessionId, name) => set(addGuest(get(), sessionId, name)),
+  setMemberGoingAt: (sessionId, accountId) => set(setMemberGoing(get(), sessionId, accountId)),
+  dropCandidateAt: (sessionId, accountId, guestId) => set(dropCandidate(get(), sessionId, accountId, guestId)),
+  setAssignmentAt: (sessionId, key, side) => set(setAssignment(get(), sessionId, key, side)),
+  confirmSplitAt: (sessionId) => {
+    const { data, matchId } = confirmSplit(get(), sessionId);
+    set(data);
+    return matchId;
+  },
+  cancelSessionAt: (sessionId) => set(cancelSession(get(), sessionId)),
+  updateClubAt: (clubId, patch) => set(updateClub(get(), clubId, patch)),
+  dissolveClubAt: (clubId) => set(dissolveClub(get(), clubId)),
   reset: () => set(createSeedState()),
-}));
+    }),
+    {
+      name: APP_PERSIST_NAME,
+      version: APP_PERSIST_VERSION,
+      skipHydration: true,
+      storage: createJSONStorage(() => createAppPersistStorage()),
+      partialize: (state) => ({
+        competitions: state.competitions,
+        teams: state.teams,
+        players: state.players,
+        matches: state.matches,
+        brackets: state.brackets,
+        accountId: state.accountId,
+        accounts: state.accounts,
+        clubs: state.clubs,
+        clubMembers: state.clubMembers,
+        sessions: state.sessions,
+        sessionVotes: state.sessionVotes,
+        sessionGuests: state.sessionGuests,
+        sessionAssignments: state.sessionAssignments,
+      }),
+      merge: (persisted, current) => {
+        if (!isAppData(persisted)) return current;
+        return { ...current, ...withClubDefaults(persisted) };
+      },
+      migrate: (persisted) => {
+        if (!isAppData(persisted)) return createSeedState();
+        const next = withClubDefaults(persisted);
+        if (next.clubs.length > 0) return next;
+        const seed = createSeedState();
+        return {
+          ...next,
+          accountId: seed.accountId,
+          accounts: seed.accounts,
+          clubs: seed.clubs,
+          clubMembers: seed.clubMembers,
+          sessions: seed.sessions,
+          sessionVotes: seed.sessionVotes,
+          sessionGuests: seed.sessionGuests,
+          sessionAssignments: seed.sessionAssignments,
+          matches: [...next.matches, ...seed.matches.filter((match) => match.sessionId)],
+          teams: [
+            ...next.teams,
+            ...seed.teams.filter((team) => !next.teams.some((row) => row.id === team.id)),
+          ],
+        };
+      },
+    },
+  ),
+);

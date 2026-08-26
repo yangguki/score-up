@@ -7,7 +7,13 @@ import {
   BASKETBALL_PERIOD_MINUTES,
   BASKETBALL_TIMEOUT_SECONDS,
   rulesSummary,
+  tableTennisRulesSummary,
+  volleyballRulesSummary,
   type BasketballRules,
+  type SportId,
+  type SportRules,
+  type TableTennisRules,
+  type VolleyballRules,
 } from "@score-up/domain";
 import { Card, P } from "@/components/ui";
 import { colors } from "@/theme/tokens";
@@ -20,6 +26,97 @@ function nextOption(options: readonly number[], current: number, delta: number) 
   const idx = options.indexOf(current);
   if (idx < 0) return options[delta > 0 ? 0 : options.length - 1] ?? current;
   return options[(idx + delta + options.length) % options.length] ?? current;
+}
+
+export function SportRulesEditor({
+  sportId,
+  rules,
+  official,
+  onRules,
+  onOfficial,
+}: {
+  sportId: SportId;
+  rules: SportRules;
+  official: boolean;
+  onRules: (rules: SportRules) => void;
+  onOfficial: (official: boolean) => void;
+}) {
+  if (sportId === "volleyball") {
+    return <VolleyballRulesEditor rules={rules as VolleyballRules} onRules={onRules} />;
+  }
+  if (sportId === "table-tennis") {
+    return <TableTennisRulesEditor rules={rules as TableTennisRules} onRules={onRules} />;
+  }
+  return (
+    <RulesEditor
+      rules={rules as BasketballRules}
+      official={official}
+      onRules={onRules}
+      onOfficial={onOfficial}
+    />
+  );
+}
+
+function VolleyballRulesEditor({
+  rules,
+  onRules,
+}: {
+  rules: VolleyballRules;
+  onRules: (rules: VolleyballRules) => void;
+}) {
+  return (
+    <>
+      <P muted>이 대회에 적용됩니다. 경기 시작 후에는 바꿀 수 없습니다.</P>
+      <P>{volleyballRulesSummary(rules)}</P>
+      <RowToggle
+        label={rules.setsToWin === 3 ? "5판 3선승" : "3판 2선승"}
+        onPress={() => onRules({ ...rules, setsToWin: rules.setsToWin === 3 ? 2 : 3 })}
+      />
+      <RowToggle
+        label={`세트 ${rules.setTarget}점`}
+        onPress={() => onRules({ ...rules, setTarget: rules.setTarget === 25 ? 21 : 25 })}
+      />
+      <RowToggle
+        label={`최종 세트 ${rules.lastSetTarget}점`}
+        onPress={() => onRules({ ...rules, lastSetTarget: rules.lastSetTarget === 15 ? 21 : 15 })}
+      />
+      <RowToggle
+        label={`${rules.winBy}점 차`}
+        onPress={() => onRules({ ...rules, winBy: rules.winBy === 2 ? 1 : 2 })}
+      />
+      <RowToggle
+        label={`타임아웃 세트당 ${rules.timeoutsPerSet}회`}
+        onPress={() => onRules({ ...rules, timeoutsPerSet: rules.timeoutsPerSet === 2 ? 1 : 2 })}
+      />
+    </>
+  );
+}
+
+function TableTennisRulesEditor({
+  rules,
+  onRules,
+}: {
+  rules: TableTennisRules;
+  onRules: (rules: TableTennisRules) => void;
+}) {
+  return (
+    <>
+      <P muted>이 대회에 적용됩니다. 경기 시작 후에는 바꿀 수 없습니다.</P>
+      <P>{tableTennisRulesSummary(rules)}</P>
+      <RowToggle
+        label={rules.setsToWin === 3 ? "5판 3선승" : "3판 2선승"}
+        onPress={() => onRules({ ...rules, setsToWin: rules.setsToWin === 3 ? 2 : 3 })}
+      />
+      <RowToggle
+        label={`세트 ${rules.setTarget}점`}
+        onPress={() => onRules({ ...rules, setTarget: rules.setTarget === 11 ? 21 : 11 })}
+      />
+      <RowToggle
+        label={`${rules.winBy}점 차`}
+        onPress={() => onRules({ ...rules, winBy: rules.winBy === 2 ? 1 : 2 })}
+      />
+    </>
+  );
 }
 
 export function RulesEditor({

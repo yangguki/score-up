@@ -1,14 +1,43 @@
-import { useState } from "react";
-import { router } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, TextInput, View } from "react-native";
-import { BASKETBALL_CLUB_PRESET, type BasketballRules } from "@score-up/domain";
-import { RulesEditor } from "@/components/rules-editor";
+import {
+  BASKETBALL_CLUB_PRESET,
+  TABLE_TENNIS_CLUB_PRESET,
+  VOLLEYBALL_CLUB_PRESET,
+  type SportId,
+  type SportRules,
+} from "@score-up/domain";
+import { SportRulesEditor } from "@/components/rules-editor";
 import { Btn, Card, H, P, Screen } from "@/components/ui";
+import { sportLabel } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
 import { colors, space } from "@/theme/tokens";
 
 const STEPS = 4;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+const CREATE_SPORTS: { id: SportId; line: string }[] = [
+  { id: "basketball", line: "시간+파울" },
+  { id: "volleyball", line: "세트+서브" },
+  { id: "table-tennis", line: "개인 세트제" },
+];
+
+function clubRules(sportId: SportId): SportRules {
+  if (sportId === "volleyball") return VOLLEYBALL_CLUB_PRESET.rules;
+  if (sportId === "table-tennis") return TABLE_TENNIS_CLUB_PRESET.rules;
+  return BASKETBALL_CLUB_PRESET.rules;
+}
+
+function defaultName(sportId: SportId) {
+  return `새 ${sportLabel(sportId)} 대회`;
+}
+
+function parseSport(value?: string | string[]): SportId {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === "volleyball" || raw === "table-tennis" || raw === "basketball") return raw;
+  return "basketball";
+}
 
 function periodError(start: string, end: string): string | null {
   const a = start.trim();
@@ -19,25 +48,47 @@ function periodError(start: string, end: string): string | null {
 }
 
 export default function NewCompetitionScreen() {
+  const params = useLocalSearchParams<{ sport?: string }>();
   const createComp = useAppStore((s) => s.createComp);
+  const initialSport = parseSport(params.sport);
   const [step, setStep] = useState(1);
+  const [sportId, setSportId] = useState<SportId>(initialSport);
   const [official, setOfficial] = useState(false);
-  const [rules, setRules] = useState<BasketballRules>(BASKETBALL_CLUB_PRESET.rules);
+  const [rules, setRules] = useState<SportRules>(clubRules(initialSport));
   const [format, setFormat] = useState<"tournament" | "league">("tournament");
-  const [name, setName] = useState("새 농구 대회");
+  const [name, setName] = useState(defaultName(initialSport));
   const [dateMode, setDateMode] = useState<"day" | "range">("day");
   const [dateStart, setDateStart] = useState("2026-08-26");
   const [dateEnd, setDateEnd] = useState("2026-08-27");
   const [courtCount, setCourtCount] = useState(0);
   const [error, setError] = useState("");
 
-  const tournamentBlocked = format === "tournament" && !rules.overtimeEnabled;
+  const basketballRules = sportId === "basketball" ? (rules as typeof BASKETBALL_CLUB_PRESET.rules) : null;
+  const tournamentBlocked = Boolean(basketballRules && format === "tournament" && !basketballRules.overtimeEnabled);
   const nameOk = name.trim().length > 0;
   const rangeErr = dateMode === "range" ? periodError(dateStart, dateEnd) : null;
   const canSubmit = nameOk && !rangeErr;
 
   const dateLabel =
     dateMode === "range" ? `${dateStart.trim()} ~ ${dateEnd.trim()}` : dateStart.trim();
+
+  const names = useMemo(() => CREATE_SPORTS.map((row) => defaultName(row.id)), []);
+
+  useEffect(() => {
+    const next = parseSport(params.sport);
+    setSportId(next);
+    setOfficial(false);
+    setRules(clubRules(next));
+    setName((current) => (names.includes(current) ? defaultName(next) : current));
+  }, [params.sport, names]);
+
+  const selectSport = (next: SportId) => {
+    setSportId(next);
+    setOfficial(false);
+    setRules(clubRules(next));
+    setName((current) => (names.includes(current) ? defaultName(next) : current));
+    setError("");
+  };
 
   const next = () => {
     if (step === 3 && tournamentBlocked) {
@@ -70,6 +121,7 @@ export default function NewCompetitionScreen() {
       name: name.trim(),
       dateLabel,
       format,
+      sportId,
       rules,
       officialPreset: official,
       courtCount: courtCount > 0 ? courtCount : undefined,
@@ -100,25 +152,27 @@ export default function NewCompetitionScreen() {
         {step === 1 && (
           <>
             <H>종목</H>
-            <Card style={{ borderColor: colors.primary }}>
-              <H style={{ fontSize: 18 }}>농구</H>
-              <P muted>시간+파울</P>
-            </Card>
-            <Card style={{ opacity: 0.45 }}>
-              <H style={{ fontSize: 18 }}>배구</H>
-              <P muted>세트+서브 · 지금은 선택할 수 없습니다</P>
-            </Card>
-            <Card style={{ opacity: 0.45 }}>
-              <H style={{ fontSize: 18 }}>탁구</H>
-              <P muted>개인 세트제 · 지금은 선택할 수 없습니다</P>
-            </Card>
+            {CREATE_SPORTS.map((sport) => (
+              <Pressable key={sport.id} onPress={() => selectSport(sport.id)}>
+                <Card style={{ borderColor: sportId === sport.id ? colors.primary : colors.line }}>
+                  <H style={{ fontSize: 18 }}>{sportLabel(sport.id)}</H>
+                  <P muted>{sport.line}</P>
+                </Card>
+              </Pressable>
+            ))}
           </>
         )}
 
         {step === 2 && (
           <>
             <H>룰</H>
-            <RulesEditor rules={rules} official={official} onRules={setRules} onOfficial={setOfficial} />
+            <SportRulesEditor
+              sportId={sportId}
+              rules={rules}
+              official={official}
+              onRules={setRules}
+              onOfficial={setOfficial}
+            />
           </>
         )}
 
@@ -218,11 +272,7 @@ export default function NewCompetitionScreen() {
         {error ? <P style={{ color: colors.danger }}>{error}</P> : null}
 
         {step < STEPS ? (
-          <Btn
-            label="다음"
-            onPress={next}
-            disabled={step === 3 && tournamentBlocked}
-          />
+          <Btn label="다음" onPress={next} disabled={step === 3 && tournamentBlocked} />
         ) : (
           <Btn label="대회 만들기" onPress={submit} disabled={!canSubmit} />
         )}

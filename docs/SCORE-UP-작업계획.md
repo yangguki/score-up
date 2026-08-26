@@ -6,7 +6,7 @@
 | 버전 | v0.2 |
 | 작성일 | 2026-08-20 |
 | 수정일 | 2026-08-26 |
-| 상태 | Phase 3 진행 (농구 mock 스코어보드 수직 슬라이스) |
+| 상태 | Phase 6 3종목 + 이 기기 로그인·농구 모임 mock. 실시간 링크는 API 후 |
 | 목적 | Manager + 종목 agent 운영, 앱/웹 기술 조합, 농구 1종목 mock 프론트까지의 순서를 고정한다 |
 
 기준: 기획서 v0.3, 종목 룰 명세서 v0.2, 화면 기획 v0.3, 모임 기획 v0.3
@@ -43,7 +43,7 @@
 | 화면 상태 | Zustand |
 | 도메인 타입 | `packages/domain` (React 없음, 순수 TS) |
 | mock | `packages/mock` — repository 인터페이스의 in-memory 구현 |
-| 나중에 오프라인 | expo-sqlite + 이벤트 로그 (Phase 6+) |
+| 오프라인 (지금) | Zustand persist. 네이티브 `expo-sqlite` KV, 웹 `localStorage`. `Match.events`가 이벤트 로그. 별도 events 테이블·동기화는 계정 때 |
 | 나중에 API | 도메인 이벤트를 받는 얇은 백엔드 (Hono 또는 Nest). 지금은 없음 |
 
 앱과 웹을 처음부터 따로 만들면 스코어보드가 두 벌이 된다. SCORE UP의 핵심 화면은 태블릿 가로 기록 UI라, **Expo 한 벌이 가장 적은 중복**이다.
@@ -79,7 +79,7 @@ docs/                 기획·룰·화면·이 계획
          ├─ Basketball      농구 버튼·파울·타이머·카피
          ├─ Rule Engine     공통 상태/이벤트 계약 (실구현은 Phase 5)
          ├─ Infra           팀 공유 미리보기 (S3 + GitHub Actions, 최소 비용)
-         └─ (이후) Volleyball / Table Tennis agent 생성 후 분배
+         └─ Volleyball / Table Tennis  종목 mock 보드
 ```
 
 - 스킬 위치: `.cursor/skills/` (기획 학습: `planner-agent/canon.md`)
@@ -134,10 +134,13 @@ Manager는 배구·탁구 작업 요청이 와도 **농구 mock UX가 끝나기 
 ### Phase 6 이후
 
 - [x] Volleyball agent 생성 + 배구 mock 보드 (+1·서브·듀스·세트/경기 확정). 시드 `match-vb1`
-- [ ] 오프라인 저장, 계정
-- [ ] Table Tennis agent 생성
-- [ ] 공유 링크 등 기획서 Phase 2
-- [ ] 계정 이후: 모임·회차·참석 투표. 화면 명세 `docs/SCORE-UP-모임-상세.md`
+- [x] 오프라인 저장 (이 기기 persist. 설정에서 시드로 되돌리기)
+- [x] Table Tennis agent 생성 + 탁구 mock 보드 (+1·서브 카운트·듀스·세트/경기 확정). 시드 `match-tt1`
+- [x] 결과·대진 텍스트 복사 (카톡 붙여넣기. 실시간 링크·이미지 아님)
+- [x] 대회·친선 만들기에서 배구·탁구 선택 (로테이션·복식 없음)
+- [x] 이 기기 로그인 (이름만. Cognito·API 없음)
+- [x] 모임·회차·참석 투표 mock (농구 1차. 탭 없음. 홈 `내 모임`)
+- [ ] 실시간 공유 링크 · 대진 이미지. 기획서 Phase 2. API 필요
 
 ---
 
@@ -146,7 +149,7 @@ Manager는 배구·탁구 작업 요청이 와도 **농구 mock UX가 끝나기 
 준비
 
 - [x] 홈 (H1 Arena · 시안 바 없음. 진행 중 카드, 내 대회, 대회 만들기, 빠른 친선)
-- [x] 대회 만들기 1~4단계 — 종목은 농구만 활성. 배구/탁구 카드는 비활성 또는 숨김
+- [x] 대회 만들기 1~4단계 — 농구·배구·탁구 선택. 나머지 종목은 홈에서 준비 중
 - [x] 대회 개요 — 빈 팀·다음 경기 없음 카피. 참가 관리는 개요 다음
 - [x] 참가 팀/선수 — `docs/SCORE-UP-참가-상세.md`. 등번호 중복 방지, 5명 미달 경고만
 - [x] 대진 생성 + 토너먼트 브래킷 — 팀 2 미만 잠금, 시드 4강 표시
@@ -158,7 +161,7 @@ Manager는 배구·탁구 작업 요청이 와도 **농구 mock UX가 끝나기 
 기록
 
 - [x] 농구 스코어보드 (가로 우선, `/match/[id]/basketball`)
-- [x] 종목 보드 슬롯 (`table-tennis` 경로만, `volleyball` mock 본문)
+- [x] 종목 보드 슬롯 (`volleyball`·`table-tennis` mock 본문)
 - [x] 경기 시작 전에는 시계 정지
 - [x] 작전타임 카운트다운 + 룰에서 초 설정
 - [x] 쿼터 수(최소 2)·쿼터 시간 설정
@@ -179,12 +182,12 @@ Manager는 배구·탁구 작업 요청이 와도 **농구 mock UX가 끝나기 
 
 ## 6. 명시적으로 안 하는 것 (이번 수직 슬라이스)
 
-- 배구·탁구 스코어보드 **본문**과 프리셋 (경로는 예약만)
+- 배구/탁구 복식·로테이션 강제, 샷클락, 관중용 보드 (배구·탁구 mock 보드는 Phase 6)
 - 실서버(API/DB/인증), 실시간 동기화. **팀 공유용 S3 정적 웹은 허용** (`docs/SCORE-UP-팀공유-S3-미리보기.md`). Amplify Git 빌드·EC2·ALB·NAT·Route 53 존은 비용 때문에 쓰지 않음. `main` 자동 배포는 GitHub Actions (`.github/workflows/deploy-s3.yml`, remote `origin-hub`)
 - 샷클락, 관중용 보드, 이미지/링크 공유
 - 리그 승점 세부, 조별+결선
 - 웹 전용 랜딩/마케팅 페이지
-- 모임, 참석 투표, 자동 매칭, 모임 랭킹 (제품 Phase 3. 계정 필요)
+- 자동 매칭, 4v4, 푸시 알림, 실서버 계정(Cognito)
 
 ---
 
@@ -197,4 +200,4 @@ Manager는 배구·탁구 작업 요청이 와도 **농구 mock UX가 끝나기 
 5. ~~Phase 3 잔여 준비 화면~~ — 대진·경기 목록·출전·친선
 6. ~~Phase 5: mock apply* 를 엔진 리듀서로 교체~~ — `applyBasketballEvent`. 시계·작전타임 UI 상태는 mock 유지. 그 전 배구/탁구 보드 금지
 
-다음: 배구 보드 UX 검수 → Table Tennis agent. 오프라인·계정은 그 다음. 보드 실물 태블릿 검수는 선택.
+다음: 실시간 공유 링크·이미지는 API 후. 로테이션·복식·태블릿 실물 검수는 선택.

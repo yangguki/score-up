@@ -23,16 +23,18 @@ description: Builds SCORE UP Expo app+web screens that run on mock data for UX r
 
 - Repository 인터페이스(`listCompetitions`, `getMatch`, `appendEvent` 등)를 먼저 두고, in-memory 구현만 연결한다.
 - 화면에 `fetch` URL을 박지 않는다.
-- 새로고침하면 초기 픽스처로 돌아와도 된다. persist는 나중.
+- 대회·경기·모임·이벤트는 Zustand persist로 이 기기에 남긴다. 네이티브는 expo-sqlite KV, 웹은 localStorage. 실 API·Cognito는 없다. 로그인은 이 기기 이름.
+- 설정 `시드 데이터로 되돌리기`로만 초기 픽스처로 돌아간다.
+- 결과·대진은 **텍스트 복사**. 실시간 조회 링크·이미지 공유는 그리지 않는다.
 - 농구 1개 대회 + 진행 중 1경기 + 대기 브래킷이 홈에서 바로 보이게 시드한다.
 
 ## 1차 그릴 화면 (농구만)
 
-준비: 홈, 대회 만들기 1~4단계(종목 카드는 농구만 선택 가능), 대회 개요, 참가 팀/선수, 대진 생성, 토너먼트 브래킷, 리그 순위, 출전 명단, 빠른 친선.
+준비: 홈, 대회 만들기 1~4단계(농구·배구·탁구), 대회 개요, 참가 팀/선수, 대진 생성, 토너먼트 브래킷, 리그 순위, 출전 명단, 빠른 친선, 이 기기 로그인, 모임·회차·참석 투표(농구).
 
-기록: 농구 스코어보드(`/match/[id]/basketball`), 배구 mock 보드(`/match/[id]/volleyball`), 선수 피커, 교체 시트, 종료 확인 팝업, 타임라인, 결과.
+기록: 농구 스코어보드(`/match/[id]/basketball`), 배구 mock 보드(`/match/[id]/volleyball`), 탁구 mock 보드(`/match/[id]/table-tennis`), 선수 피커, 교체 시트, 종료 확인 팝업, 타임라인, 결과.
 
-빼는 것: 탁구 보드 본문, 관중용 큰 보드, 로그인, 실 API, 배구 세트 승점제. 리그 MVP는 승3/패0 순위표. 탁구는 경로만 예약. `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다.
+빼는 것: 관중용 큰 보드, 실 API/Cognito, 배구 세트 승점제, 자동 매칭. 리그 MVP는 승3/패0 순위표. `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다.
 
 종목 레이아웃이 다르므로 스코어보드는 종목 컴포넌트 단위로 갈아끼운다. 버튼마다 종목 if문을 쓰지 않는다.
 

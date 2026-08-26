@@ -7,7 +7,7 @@ import {
   emptyVolleyballSnapshot,
   isVolleyballMatch,
   volleyballDeuce,
-  volleyballTarget,
+  volleyballSetPointSide,
 } from "@score-up/domain";
 import { uid } from "./id";
 
@@ -121,6 +121,18 @@ export function applyVolleyballPoint(match: Match, teamId: string): Match {
   return next;
 }
 
+export function applyVolleyballTimeout(match: Match, teamId: string): Match {
+  if (!isVolleyballMatch(match)) return match;
+  if (match.status !== "in_progress" || !match.snapshot.started) return match;
+  const next = cloneMatch(match);
+  if (!isVolleyballMatch(next)) return match;
+  const left = next.snapshot.timeoutsLeft[teamId] ?? 0;
+  if (left <= 0) return match;
+  next.snapshot.timeoutsLeft[teamId] = left - 1;
+  next.events.push(pushEvent(next, { type: "timeout", teamId }));
+  return next;
+}
+
 export function changeVolleyballServe(match: Match): Match {
   if (!isVolleyballMatch(match)) return match;
   if (match.status !== "in_progress" && match.status !== "paused") return match;
@@ -150,7 +162,6 @@ export function undoVolleyballLast(match: Match): Match {
     const side = sideOfTeam(next, last.teamId);
     if (side === "home") next.snapshot.homeSetPoints = Math.max(0, next.snapshot.homeSetPoints - 1);
     else next.snapshot.awaySetPoints = Math.max(0, next.snapshot.awaySetPoints - 1);
-    // 직전 활성 득점의 서브권으로 복구 (없으면 오프닝)
     const prevPoint = [...next.events]
       .reverse()
       .find((e) => !e.revoked && e.type === "point" && e.id !== last.id);
@@ -160,6 +171,24 @@ export function undoVolleyballLast(match: Match): Match {
     if (next.status === "confirm_period_end") next.status = "in_progress";
   } else if (last.type === "serve_change") {
     next.snapshot.serveSide = next.snapshot.serveSide === "home" ? "away" : "home";
+  } else if (last.type === "timeout" && last.teamId) {
+    next.snapshot.timeoutsLeft[last.teamId] = (next.snapshot.timeoutsLeft[last.teamId] ?? 0) + 1;
+  } else if (last.type === "period_end") {
+    const finished = next.snapshot.setHistory[next.snapshot.setHistory.length - 1];
+    if (!finished) return match;
+    const wasMatchConfirm = next.status === "confirm_match_end";
+    next.snapshot.setHistory = next.snapshot.setHistory.slice(0, -1);
+    if (finished.winner === "home") next.snapshot.setsWonHome = Math.max(0, next.snapshot.setsWonHome - 1);
+    else next.snapshot.setsWonAway = Math.max(0, next.snapshot.setsWonAway - 1);
+    if (!wasMatchConfirm) {
+      next.snapshot.setOpeningServe = next.snapshot.setOpeningServe === "home" ? "away" : "home";
+    }
+    next.snapshot.currentSet = next.snapshot.setHistory.length + 1;
+    next.snapshot.homeSetPoints = finished.home;
+    next.snapshot.awaySetPoints = finished.away;
+    next.snapshot.serveSide = finished.winner;
+    next.snapshot.deuce = volleyballDeuce(next.snapshot, next.rules);
+    next.status = "confirm_period_end";
   }
   return next;
 }
@@ -256,18 +285,18 @@ export function forfeitVolleyballMatch(match: Match, winnerSide: Side): Match {
 
 export function volleyballNotice(match: Match): string {
   if (!isVolleyballMatch(match)) return "";
-  const { snapshot, rules } = match;
-  if (canEndVolleyballSet(snapshot, rules)) {
+  const { snapshot, rules, status } = match;
+  if (status === "confirm_match_end") {
+    const home = snapshot.setsWonHome > snapshot.setsWonAway;
+    return `경기 종료 · ${snapshot.setsWonHome}-${snapshot.setsWonAway} ${home ? match.homeLabel : match.awayLabel} 승을 확정할까요?`;
+  }
+  if (status === "confirm_period_end" || canEndVolleyballSet(snapshot, rules)) {
     const home = snapshot.homeSetPoints > snapshot.awaySetPoints;
     return `세트 종료 · ${home ? match.homeLabel : match.awayLabel} 승을 확정할까요?`;
   }
-  if (volleyballDeuce(snapshot, rules)) return "듀스 · 2점 차";
-  const target = volleyballTarget(snapshot, rules);
-  if (snapshot.homeSetPoints === target - 1 && snapshot.homeSetPoints > snapshot.awaySetPoints) {
-    return "세트 포인트";
+  if (volleyballDeuce(snapshot, rules) && snapshot.homeSetPoints === snapshot.awaySetPoints) {
+    return "듀스 · 2점 차 필요";
   }
-  if (snapshot.awaySetPoints === target - 1 && snapshot.awaySetPoints > snapshot.homeSetPoints) {
-    return "세트 포인트";
-  }
+  if (volleyballSetPointSide(snapshot, rules)) return "세트 포인트";
   return "";
 }

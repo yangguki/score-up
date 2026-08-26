@@ -75,7 +75,7 @@ export default function MatchesScreen() {
                       {match.scheduledLabel} · {match.roundLabel}
                     </P>
                     <Pill
-                      label={statusLabel(match.status)}
+                      label={statusLabel(match.status, match.sportId)}
                       tone={match.status === "in_progress" ? "live" : "muted"}
                     />
                   </View>

@@ -1,14 +1,24 @@
+import { useEffect, useState } from "react";
 import { Link, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { computeLeagueStandings } from "@score-up/domain";
 import { Btn, Card, H, P, Pill, Screen } from "@/components/ui";
+import { copyText } from "@/lib/copy-text";
 import { matchDisplayScore } from "@/lib/home";
 import { matchHref, statusLabel } from "@/lib/labels";
+import { leagueShareText, tournamentShareText } from "@/lib/share-text";
 import { useAppStore } from "@/store/app-store";
 import { colors, space } from "@/theme/tokens";
 
 export default function BracketScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(""), 2200);
+    return () => clearTimeout(t);
+  }, [notice]);
   const competition = useAppStore((s) => s.competitions.find((c) => c.id === id));
   const allTeams = useAppStore((s) => s.teams);
   const allSlots = useAppStore((s) => s.brackets);
@@ -55,6 +65,25 @@ export default function BracketScreen() {
     <Screen>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
         <H style={{ fontSize: 18 }}>{isLeague ? "일정 · 순위" : "대진표"}</H>
+        {hasSchedule ? (
+          <>
+            <Btn
+              label={isLeague ? "순위 복사" : "대진 복사"}
+              variant="ghost"
+              onPress={async () => {
+                const text = isLeague
+                  ? leagueShareText(competition, standings, leagueMatches)
+                  : tournamentShareText(competition, slots, matches, nameOf);
+                const ok = await copyText(text);
+                setNotice(ok ? "복사됨" : "복사하지 못했습니다");
+              }}
+            />
+            <P muted style={{ fontSize: 12 }}>
+              카톡·문자로 붙여넣기. 실시간 링크는 없습니다.
+            </P>
+            {notice ? <P muted>{notice}</P> : null}
+          </>
+        ) : null}
         {!hasSchedule ? (
           <>
             <P muted>
@@ -139,7 +168,7 @@ export default function BracketScreen() {
                               {match.homeLabel} vs {match.awayLabel}
                             </P>
                             <Pill
-                              label={statusLabel(match.status)}
+                              label={statusLabel(match.status, match.sportId)}
                               tone={match.status === "in_progress" ? "live" : "muted"}
                             />
                           </View>
@@ -184,7 +213,7 @@ export default function BracketScreen() {
                               </P>
                               {match ? (
                                 <Pill
-                                  label={statusLabel(match.status)}
+                                  label={statusLabel(match.status, match.sportId)}
                                   tone={match.status === "in_progress" ? "live" : "muted"}
                                 />
                               ) : null}

@@ -404,6 +404,7 @@ export function createBlankMatch(input: {
   id?: string;
   sportId?: Match["sportId"];
   competitionId?: string;
+  sessionId?: string;
   homeTeamId?: string;
   awayTeamId?: string;
   homeLabel: string;
@@ -421,6 +422,7 @@ export function createBlankMatch(input: {
     id,
     sportId: input.sportId ?? "basketball",
     competitionId: input.competitionId,
+    sessionId: input.sessionId,
     homeTeamId: input.homeTeamId,
     awayTeamId: input.awayTeamId,
     homeLabel: input.homeLabel,

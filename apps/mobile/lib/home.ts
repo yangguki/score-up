@@ -3,8 +3,10 @@ import type { Competition, Match, MatchStatus } from "@score-up/domain";
 import {
   formatClock,
   isBasketballMatch,
+  isTableTennisMatch,
   isVolleyballMatch,
   quarterLabel,
+  tableTennisSetLabel,
   volleyballSetLabel,
 } from "@score-up/domain";
 import { matchHref, statusLabel } from "@/lib/labels";
@@ -50,6 +52,9 @@ export function matchDisplayScore(match: Match): { home: number; away: number } 
   if (isVolleyballMatch(match)) {
     return { home: match.snapshot.homeSetPoints, away: match.snapshot.awaySetPoints };
   }
+  if (isTableTennisMatch(match)) {
+    return { home: match.snapshot.homeSetPoints, away: match.snapshot.awaySetPoints };
+  }
   if (isBasketballMatch(match)) {
     return { home: match.snapshot.homeScore, away: match.snapshot.awayScore };
   }
@@ -60,6 +65,10 @@ export function matchClockLine(match: Match) {
   if (isVolleyballMatch(match)) {
     const snap = match.snapshot;
     return `${volleyballSetLabel(snap)} · 세트 ${snap.setsWonHome}-${snap.setsWonAway}`;
+  }
+  if (isTableTennisMatch(match)) {
+    const snap = match.snapshot;
+    return `${tableTennisSetLabel(snap)} · 세트 ${snap.setsWonHome}-${snap.setsWonAway}`;
   }
   if (isBasketballMatch(match)) {
     return `${quarterLabel(match.snapshot.quarter, match.rules.periodCount)} ${formatClock(match.snapshot.clockMs)}`;
@@ -98,7 +107,7 @@ export function nextHomeAction(competitions: Competition[], matches: Match[]): H
   if (live) {
     return {
       title: `${live.homeLabel} vs ${live.awayLabel}`,
-      subtitle: `${matchClockLine(live)} · ${statusLabel(live.status)}`,
+      subtitle: `${matchClockLine(live)} · ${statusLabel(live.status, live.sportId)}`,
       href: matchHref(live),
       cta: "이어하기",
     };

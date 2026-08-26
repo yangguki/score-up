@@ -40,7 +40,7 @@ export function MatchStackCard({ match, kit }: { match: Match; kit: HomeKit }) {
             <KitText kit={kit} muted style={{ flex: 1, fontSize: 13, fontWeight: "600" }}>
               {matchSportLine(match)} · {match.scheduledLabel}
             </KitText>
-            <KitBadge kit={kit} label={statusLabel(match.status)} live={live} />
+            <KitBadge kit={kit} label={statusLabel(match.status, match.sportId)} live={live} />
           </View>
           {live ? (
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 14, alignItems: "flex-end" }}>

@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, router, type Href } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import Animated, { FadeInDown, FadeInRight } from "react-native-reanimated";
 import { CompetitionCard, MatchStackCard } from "@/components/home/cards";
@@ -6,7 +6,8 @@ import { CourtAtmosphere, ScoreStrip } from "@/components/home/court-atmosphere"
 import { KitButton, KitScreen, KitText, KitTitle } from "@/components/home/kit-ui";
 import { SportPicker } from "@/components/home/sport-picker";
 import { EMPTY_HOME_COPY, type buildHomeModel } from "@/lib/home";
-import { HOME_TAGLINE, HOME_VALUE_LINES } from "@/lib/home-sports";
+import { HOME_TAGLINE, HOME_VALUE_LINES, type HomeSport } from "@/lib/home-sports";
+import type { HomeClubCard } from "@/lib/club-home";
 import { HOME_KIT, type HomeKit } from "@/theme/home-kits";
 import { space } from "@/theme/tokens";
 
@@ -49,7 +50,15 @@ function SectionTitle({
 }
 
 /** 검수 확정 — 스크린샷 Arena T&M 전면 + H3식 2열 종목 */
-export function HomeH1({ model }: { model: Model }) {
+export function HomeH1({
+  model,
+  operatorName,
+  clubs,
+}: {
+  model: Model;
+  operatorName: string;
+  clubs: HomeClubCard[];
+}) {
   const kit = HOME_KIT;
   const accent = kit.accent ?? COURT_AMBER;
 
@@ -102,7 +111,7 @@ export function HomeH1({ model }: { model: Model }) {
                   })}
                 >
                   <KitText kit={kit} style={{ fontSize: 13, fontWeight: "700", color: "#F8FAFC" }}>
-                    운영자
+                    {operatorName || "운영자"}
                   </KitText>
                 </Pressable>
               </Link>
@@ -147,13 +156,20 @@ export function HomeH1({ model }: { model: Model }) {
         </View>
 
         <Animated.View entering={FadeInDown.delay(120).duration(420).springify().damping(18)} style={{ gap: space.md }}>
-          <SectionTitle kit={kit} title="종목 고르기" hint="아이콘으로 구분 · MVP는 농구만 활성" />
-          <SportPicker kit={kit} />
+          <SectionTitle kit={kit} title="종목 고르기" hint="농구·배구·탁구로 대회를 만듭니다" />
+          <SportPicker
+            kit={kit}
+            onSelect={(sport: HomeSport) => {
+              if (sport.id === "basketball" || sport.id === "volleyball" || sport.id === "table-tennis") {
+                router.push(`/competition/new?sport=${sport.id}` as Href);
+              }
+            }}
+          />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(180).duration(420).springify().damping(18)} style={{ gap: 10 }}>
           <Link href="/competition/new" asChild>
-            <KitButton kit={kit} label="농구로 대회 만들기" style={{ minHeight: 54 }} />
+            <KitButton kit={kit} label="대회 만들기" style={{ minHeight: 54 }} />
           </Link>
           <Link href="/friendly" asChild>
             <KitButton kit={kit} label="빠른 친선경기" variant="ghost" />
@@ -187,6 +203,56 @@ export function HomeH1({ model }: { model: Model }) {
             <SectionTitle kit={kit} title="내 대회" />
             {model.competitions.map(({ competition, leftover }) => (
               <CompetitionCard key={competition.id} competition={competition} leftover={leftover} kit={kit} />
+            ))}
+          </Animated.View>
+        )}
+
+        {clubs.length === 0 ? null : (
+          <Animated.View entering={FadeInDown.delay(340).duration(420).springify().damping(18)} style={{ gap: space.sm }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+              <View style={{ flex: 1 }}>
+                <SectionTitle kit={kit} title="내 모임" hint="참석 투표는 회차에서" />
+              </View>
+              <Link href="/club/new" asChild>
+                <Pressable style={{ padding: 8 }}>
+                  <KitText kit={kit} style={{ fontSize: 22, fontWeight: "800", color: accent }}>
+                    +
+                  </KitText>
+                </Pressable>
+              </Link>
+            </View>
+            {clubs.map(({ club, nextLine, voteLine }) => (
+              <Link key={club.id} href={`/club/${club.id}`} asChild>
+                <Pressable>
+                  <View
+                    style={{
+                      backgroundColor: kit.surface,
+                      borderRadius: kit.heroRadius,
+                      borderWidth: 1.5,
+                      borderColor: kit.line,
+                      padding: 16,
+                      gap: 6,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <KitText kit={kit} style={{ fontSize: 16, fontWeight: "800", color: "#F8FAFC" }}>
+                        {club.name}
+                      </KitText>
+                      <KitText kit={kit} muted style={{ fontSize: 12, fontWeight: "700" }}>
+                        농구
+                      </KitText>
+                    </View>
+                    <KitText kit={kit} muted style={{ fontSize: 13 }}>
+                      다음 회차 {nextLine}
+                    </KitText>
+                    {voteLine ? (
+                      <KitText kit={kit} style={{ fontSize: 13, fontWeight: "700", color: accent }}>
+                        내 투표 {voteLine}
+                      </KitText>
+                    ) : null}
+                  </View>
+                </Pressable>
+              </Link>
             ))}
           </Animated.View>
         )}

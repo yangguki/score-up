@@ -48,7 +48,16 @@ export interface VolleyballRules {
   timeoutsPerSet: number;
 }
 
-export type SportRules = BasketballRules | VolleyballRules;
+export interface TableTennisRules {
+  setsToWin: number;
+  setTarget: number;
+  winBy: number;
+  serveLimit: number;
+  deuceServeLimit: number;
+  changeEndsAt: number;
+}
+
+export type SportRules = BasketballRules | VolleyballRules | TableTennisRules;
 
 export interface SportPreset {
   id: string;
@@ -82,7 +91,7 @@ export interface Competition {
   format: CompetitionFormat;
   dateLabel: string;
   courtCount?: number;
-  rules: BasketballRules;
+  rules: SportRules;
   officialPreset: boolean;
 }
 
@@ -145,7 +154,29 @@ export interface VolleyballSnapshot {
   deuce: boolean;
 }
 
-export type SportSnapshot = BasketballSnapshot | VolleyballSnapshot;
+export interface TableTennisSetScore {
+  home: number;
+  away: number;
+  winner: Side;
+}
+
+export interface TableTennisSnapshot {
+  currentSet: number;
+  homeSetPoints: number;
+  awaySetPoints: number;
+  setsWonHome: number;
+  setsWonAway: number;
+  setHistory: TableTennisSetScore[];
+  serveSide: Side;
+  setOpeningServe: Side;
+  serveCount: number;
+  started: boolean;
+  deuce: boolean;
+  endChangeHint: boolean;
+  endChangeAtFiveDone: boolean;
+}
+
+export type SportSnapshot = BasketballSnapshot | VolleyballSnapshot | TableTennisSnapshot;
 
 export interface MatchEvent {
   id: string;
@@ -162,6 +193,8 @@ export interface MatchEvent {
     targetEventId?: string;
     personalFouls?: number;
     teamFouls?: number;
+    prevServeCount?: number;
+    prevServeSide?: Side;
   };
   clockMs: number;
   quarter: number;
@@ -169,10 +202,82 @@ export interface MatchEvent {
   revoked: boolean;
 }
 
+export type ClubRole = "owner" | "operator" | "member";
+export type ClubMemberStatus = "active" | "pending";
+export type SessionStatus =
+  | "draft"
+  | "voting"
+  | "confirming"
+  | "matched"
+  | "in_play"
+  | "completed"
+  | "cancelled";
+export type VoteValue = "going" | "not_going" | "maybe" | "none";
+export type SessionSide = "home" | "away" | "bench";
+
+export interface Account {
+  id: string;
+  name: string;
+}
+
+export interface Club {
+  id: string;
+  name: string;
+  sportId: SportId;
+  venue?: string;
+  inviteToken: string;
+  ownerAccountId: string;
+  seasonLabel: string;
+  weekday?: number;
+  weeklyTime?: string;
+}
+
+export interface ClubMember {
+  id: string;
+  clubId: string;
+  accountId: string;
+  role: ClubRole;
+  status: ClubMemberStatus;
+}
+
+export interface ClubSession {
+  id: string;
+  clubId: string;
+  dateLabel: string;
+  timeLabel: string;
+  venue: string;
+  voteDeadlineLabel: string;
+  status: SessionStatus;
+  recurring: boolean;
+  matchId?: string;
+}
+
+export interface SessionVote {
+  id: string;
+  sessionId: string;
+  accountId: string;
+  value: VoteValue;
+}
+
+export interface SessionGuest {
+  id: string;
+  sessionId: string;
+  name: string;
+}
+
+export interface SessionAssignment {
+  id: string;
+  sessionId: string;
+  accountId?: string;
+  guestId?: string;
+  side: SessionSide;
+}
+
 export interface Match {
   id: string;
   sportId: SportId;
   competitionId?: string;
+  sessionId?: string;
   homeTeamId?: string;
   awayTeamId?: string;
   homeLabel: string;
@@ -202,10 +307,24 @@ export function isVolleyballMatch(
   return match.sportId === "volleyball";
 }
 
+export function isTableTennisMatch(
+  match: Match,
+): match is Match & { sportId: "table-tennis"; snapshot: TableTennisSnapshot; rules: TableTennisRules } {
+  return match.sportId === "table-tennis";
+}
+
 export interface AppData {
   competitions: Competition[];
   teams: Team[];
   players: Player[];
   matches: Match[];
   brackets: BracketSlot[];
+  accountId: string | null;
+  accounts: Account[];
+  clubs: Club[];
+  clubMembers: ClubMember[];
+  sessions: ClubSession[];
+  sessionVotes: SessionVote[];
+  sessionGuests: SessionGuest[];
+  sessionAssignments: SessionAssignment[];
 }

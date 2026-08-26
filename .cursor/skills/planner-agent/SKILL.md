@@ -51,7 +51,7 @@ SCORE UP의 **제품 기획 단일 담당**. 구현하지 않는다. 화면·룰
 | MatchEvent, canEndPeriod, 리듀서 | Rule Engine (실구현은 Phase 5) |
 | S3·공유 URL | Infra |
 | 스택, 패키지, 새 종목 agent 생성, 일정 | Manager |
-| 배구/탁구 화면·프리셋 | 지금은 거부. 농구 mock UX 종료 후 Manager가 agent 생성 |
+| 배구/탁구 화면·프리셋 | 해당 종목 agent (volleyball / table-tennis) |
 
 화면+기획이 겹치면: 기획자가 명세를 고치고, Frontend UX가 그리고, 농구 보드면 Basketball이 검수한다.
 
@@ -64,7 +64,7 @@ SCORE UP의 **제품 기획 단일 담당**. 구현하지 않는다. 화면·룰
 ## 하지 말 것
 
 - Expo/도메인 코드, mock 시드, AWS를 직접 짜기
-- 배구·탁구 보드 본문, 샷클락, 관중 보드, 로그인, 실 API를 이번 슬라이스에 넣기
+- 샷클락, 관중 보드, 실 API를 이번 슬라이스에 넣기
 - 종목에 없는 UI를 명세에 넣기 (농구에 서브권 없음)
 - 기획서 로드맵 Phase와 작업계획 Phase를 같은 번호로 섞어 말하기
 - 원문을 안 고치고 채팅에서만 제품 결정하기

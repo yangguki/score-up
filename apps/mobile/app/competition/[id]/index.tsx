@@ -1,8 +1,9 @@
 import { Link, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
-import { rulesSummary } from "@score-up/domain";
+import { sportRulesSummary } from "@score-up/domain";
 import { Btn, Card, H, P, Pill, Screen, SectionHead } from "@/components/ui";
 import { matchHref, statusLabel } from "@/lib/labels";
+import { sportLabel } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
 import { space } from "@/theme/tokens";
 
@@ -28,19 +29,20 @@ export default function CompetitionOverview() {
     <Screen>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <Pill label="농구" tone="home" />
+          <Pill label={sportLabel(competition.sportId)} tone="home" />
           <Pill
             label={competition.status === "prep" ? "준비" : competition.status === "completed" ? "종료" : "진행"}
             tone={competition.status === "completed" ? "ok" : competition.status === "prep" ? "muted" : "live"}
           />
         </View>
-        <SectionHead title={competition.name} hint={rulesSummary(competition.rules)} />
+        <SectionHead title={competition.name} hint={sportRulesSummary(competition.sportId, competition.rules)} />
         <P muted>
           {competition.dateLabel}
           {competition.courtCount ? ` · 코트 ${competition.courtCount}` : ""}
         </P>
         <P muted>
-          종료 {done} / {matches.length || 0} · 참가 팀 {teams.length}
+          종료 {done} / {matches.length || 0} · 참가{" "}
+          {competition.sportId === "table-tennis" ? `선수 ${teams.length}` : `팀 ${teams.length}`}
         </P>
         {next ? (
           <Card>

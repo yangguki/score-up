@@ -9,7 +9,7 @@
 | 상태 | **적용됨.** S3 미리보기 + GitHub Actions `Deploy S3 preview` 초록. remote `origin-hub` |
 | 에이전트 | `.cursor/skills/infra-agent/SKILL.md` |
 
-지금은 Phase 3 mock 프론트다. AWS에는 API·DB·서버가 없고, `pnpm export:web`으로 만든 **정적 파일만** 올린다. 목적은 팀 UX 검수이며 프로덕션이 아니다.
+지금은 구현 Phase 6 mock 프론트다. AWS에는 API·DB·서버가 없고, `pnpm export:web`으로 만든 **정적 파일만** 올린다. 목적은 팀 UX 검수이며 프로덕션이 아니다.
 
 ---
 
@@ -165,7 +165,7 @@ aws s3 sync apps/mobile/dist s3://버킷-전체-이름 --delete
 - [ ] 보드 URL에서 새로고침이 된다
 - [ ] AWS에 EC2/ALB/NAT/Amplify 앱이 없다
 
-mock은 브라우저 메모리다. 새로고침하면 시드로 돌아가고, 두 사람의 스코어는 공유되지 않는다. URL을 아는 사람은 화면을 볼 수 있으니 팀 안에서만 공유한다.
+mock은 이 브라우저에 persist된다. 새로고침해도 기록이 남고, 설정에서 시드로 되돌리기 전까지 유지된다. 두 사람의 스코어는 공유되지 않는다. URL을 아는 사람은 화면을 볼 수 있으니 팀 안에서만 공유한다.
 
 화면을 고친 뒤: `pnpm export:web` → 같은 버킷에 `dist`를 다시 올린다. 워크플로가 있으면 `origin-hub`의 `main` push로도 갱신된다.
 

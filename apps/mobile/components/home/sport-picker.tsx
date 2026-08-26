@@ -12,8 +12,8 @@ type Props = {
 
 const AMBER = "#F5A623";
 
-/** H1 종목 2열 모자이크. MVP는 농구만 활성. */
-export function SportPicker({ kit, selectedId = "basketball", onSelect }: Props) {
+/** H1 종목 2열 모자이크. 농구·배구·탁구 활성. */
+export function SportPicker({ kit, selectedId, onSelect }: Props) {
   const accent = kit.accent ?? AMBER;
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>

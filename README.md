@@ -1,6 +1,6 @@
 # SCORE UP
 
-종목별 스코어·룰·선수·대진을 한 흐름으로 운영하는 경기 앱. 지금은 **농구 mock 프론트**만 동작합니다.
+종목별 스코어·룰·선수·대진을 한 흐름으로 운영하는 경기 앱. 지금은 **농구·배구·탁구 mock 프론트**와 **이 기기 로그인·농구 모임**이 동작합니다. 서버 계정·API는 없습니다.
 
 패키지 매니저는 **pnpm**입니다. 루트에서 설치·실행합니다.
 
@@ -18,7 +18,7 @@ pnpm web
 ## 구조
 
 - `apps/mobile` — Expo Router 화면
-- `packages/domain` — 타입, 농구 프리셋
+- `packages/domain` — 타입, 종목 프리셋
 - `packages/mock` — 시드 데이터와 in-memory 동작
 - `docs` — 기획·룰·화면·작업 계획
-- `.cursor/skills` — Manager / Planner / Basketball / Frontend UX / Rule Engine / Infra
+- `.cursor/skills` — Manager / Planner / Basketball / Volleyball / Table Tennis / Frontend UX / Rule Engine / Infra

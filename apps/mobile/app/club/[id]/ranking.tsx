@@ -1,0 +1,68 @@
+import { useLocalSearchParams } from "expo-router";
+import { ScrollView, View } from "react-native";
+import { accountName, computeClubRanking } from "@score-up/domain";
+import { Card, H, P, Screen } from "@/components/ui";
+import { useAppStore } from "@/store/app-store";
+import { space } from "@/theme/tokens";
+
+function rate(value: number | null) {
+  if (value === null) return "—";
+  return `.${String(Math.round(value * 1000)).padStart(3, "0")}`;
+}
+
+export default function RankingScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const club = useAppStore((s) => s.clubs.find((row) => row.id === id));
+  const accounts = useAppStore((s) => s.accounts);
+  const members = useAppStore((s) => s.clubMembers.filter((row) => row.clubId === id && row.status === "active"));
+  const sessions = useAppStore((s) => s.sessions.filter((row) => row.clubId === id));
+  const matches = useAppStore((s) => s.matches.filter((row) => sessions.some((ses) => ses.id === row.sessionId)));
+  const assignments = useAppStore((s) => s.sessionAssignments);
+  const rows = computeClubRanking(
+    members.map((row) => ({ accountId: row.accountId, name: accountName(accounts, row.accountId) })),
+    matches,
+    assignments,
+  );
+
+  return (
+    <Screen>
+      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
+        <H>랭킹</H>
+        <P muted>시즌 {club?.seasonLabel ?? "2026"} · 회차 경기만</P>
+        <Card>
+          <View style={{ flexDirection: "row", marginBottom: 8 }}>
+            <P muted style={{ width: 28 }}>
+              #
+            </P>
+            <P muted style={{ flex: 1 }}>
+              이름
+            </P>
+            <P muted style={{ width: 28, textAlign: "right" }}>
+              승
+            </P>
+            <P muted style={{ width: 28, textAlign: "right" }}>
+              패
+            </P>
+            <P muted style={{ width: 48, textAlign: "right" }}>
+              승률
+            </P>
+            <P muted style={{ width: 36, textAlign: "right" }}>
+              경기
+            </P>
+          </View>
+          {rows.map((row) => (
+            <View key={row.accountId} style={{ flexDirection: "row", paddingVertical: 6 }}>
+              <P style={{ width: 28 }}>{row.rank}</P>
+              <P style={{ flex: 1 }}>{row.name}</P>
+              <P style={{ width: 28, textAlign: "right" }}>{row.wins}</P>
+              <P style={{ width: 28, textAlign: "right" }}>{row.losses}</P>
+              <P style={{ width: 48, textAlign: "right" }}>{rate(row.winRate)}</P>
+              <P style={{ width: 36, textAlign: "right" }}>{row.played}</P>
+            </View>
+          ))}
+        </Card>
+        <P muted>회차 경기만 반영됩니다</P>
+      </ScrollView>
+    </Screen>
+  );
+}

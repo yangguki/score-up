@@ -33,6 +33,7 @@ export {
 export { playerById, requestPeriodEnd, teamIdFor } from "./basketball";
 export {
   applyVolleyballPoint,
+  applyVolleyballTimeout,
   changeVolleyballServe,
   confirmVolleyballMatch,
   confirmVolleyballSet,
@@ -42,4 +43,38 @@ export {
   undoVolleyballLast,
   volleyballNotice,
 } from "./volleyball";
+export {
+  applyTableTennisPoint,
+  changeTableTennisServe,
+  confirmTableTennisMatch,
+  confirmTableTennisSet,
+  createBlankTableTennisMatch,
+  forfeitTableTennisMatch,
+  pauseTableTennisMatch,
+  resumeTableTennisMatch,
+  startTableTennisMatch,
+  tableTennisNotice,
+  tableTennisServeLine,
+  undoTableTennisLast,
+} from "./table-tennis";
 export { uid } from "./id";
+export {
+  addGuest,
+  cancelSession,
+  candidateCount,
+  closeVoting,
+  confirmSplit,
+  createClub,
+  createSessions,
+  decideJoin,
+  dissolveClub,
+  dropCandidate,
+  requestJoin,
+  setAssignment,
+  setMemberGoing,
+  setVote,
+  signIn,
+  signOut,
+  syncSessionFromMatch,
+  updateClub,
+} from "./club";

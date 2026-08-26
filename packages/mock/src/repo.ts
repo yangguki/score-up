@@ -1,10 +1,15 @@
-import type { AppData, BasketballRules, Competition, Match, Player, Team } from "@score-up/domain";
+import type { AppData, Competition, Match, Player, SportId, SportRules, Team } from "@score-up/domain";
 import {
   BASKETBALL_CLUB_PRESET,
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
   isBasketballMatch,
+  isTableTennisMatch,
+  isVolleyballMatch,
   nextTeamColor,
+  type BasketballRules,
+  type TableTennisRules,
+  type VolleyballRules,
 } from "@score-up/domain";
 import {
   applyFoul,
@@ -23,6 +28,8 @@ import {
   tickClock,
   undoLast,
 } from "./basketball";
+import { createBlankTableTennisMatch } from "./table-tennis";
+import { createBlankVolleyballMatch } from "./volleyball";
 import { uid } from "./id";
 import { createSeedState } from "./seed";
 
@@ -153,23 +160,65 @@ export function addPlayer(
   return { ...data, players: [...data.players, player] };
 }
 
+type BlankMatchInput = {
+  sportId: SportId;
+  competitionId?: string;
+  homeTeamId?: string;
+  awayTeamId?: string;
+  homeLabel: string;
+  awayLabel: string;
+  homeColor?: string;
+  awayColor?: string;
+  roundLabel: string;
+  scheduledLabel: string;
+  rules: SportRules;
+  isFriendly?: boolean;
+  status?: Match["status"];
+};
+
+function createSportMatch(input: BlankMatchInput): Match {
+  if (input.sportId === "volleyball") {
+    return createBlankVolleyballMatch({ ...input, rules: input.rules as VolleyballRules });
+  }
+  if (input.sportId === "table-tennis") {
+    return createBlankTableTennisMatch({ ...input, rules: input.rules as TableTennisRules });
+  }
+  return createBlankMatch({ ...input, rules: input.rules as BasketballRules });
+}
+
+function markByeWinner(match: Match, teamId: string, teamName: string) {
+  match.winnerTeamId = teamId;
+  match.winnerLabel = teamName;
+  if (isBasketballMatch(match)) match.snapshot.homeScore = 1;
+  if (isVolleyballMatch(match)) {
+    match.snapshot.setsWonHome = 1;
+    match.snapshot.setHistory = [{ home: 1, away: 0, winner: "home" }];
+  }
+  if (isTableTennisMatch(match)) {
+    match.snapshot.setsWonHome = 1;
+    match.snapshot.setHistory = [{ home: 1, away: 0, winner: "home" }];
+  }
+}
+
 export function createCompetition(
   data: AppData,
   input: {
     name: string;
     dateLabel: string;
     format: Competition["format"];
-    rules: BasketballRules;
+    sportId?: SportId;
+    rules: SportRules;
     officialPreset: boolean;
     teams?: { name: string; color: string }[];
     courtCount?: number;
   },
 ): { data: AppData; id: string } {
   const id = uid("comp");
+  const sportId = input.sportId ?? "basketball";
   const competition: Competition = {
     id,
     name: input.name,
-    sportId: "basketball",
+    sportId,
     status: "prep",
     format: input.format,
     dateLabel: input.dateLabel,
@@ -194,7 +243,7 @@ function generateLeagueSchedule(
   const matches = [
     ...data.matches.filter((m) => m.competitionId !== competitionId),
     ...fixtures.map(({ round, home, away }) =>
-      createBlankMatch({
+      createSportMatch({
         sportId: competition.sportId,
         competitionId,
         homeTeamId: home.id,
@@ -264,7 +313,7 @@ export function generateBracket(data: AppData, competitionId: string): AppData {
   let brackets = data.brackets.filter((b) => b.competitionId !== competitionId);
 
   if (used.length === 2) {
-    const match = createBlankMatch({
+    const match = createSportMatch({
       sportId: competition.sportId,
       competitionId,
       homeTeamId: used[0].id,
@@ -297,7 +346,7 @@ export function generateBracket(data: AppData, competitionId: string): AppData {
     const b = used[1];
     const c = used[2];
     const d = used[3] ?? undefined;
-    const sf1 = createBlankMatch({
+    const sf1 = createSportMatch({
       sportId: competition.sportId,
       competitionId,
       homeTeamId: a.id,
@@ -311,7 +360,7 @@ export function generateBracket(data: AppData, competitionId: string): AppData {
       rules,
     });
     const sf2 = d
-      ? createBlankMatch({
+      ? createSportMatch({
           sportId: competition.sportId,
           competitionId,
           homeTeamId: c.id,
@@ -324,7 +373,7 @@ export function generateBracket(data: AppData, competitionId: string): AppData {
           scheduledLabel: "미정",
           rules,
         })
-      : createBlankMatch({
+      : createSportMatch({
           sportId: competition.sportId,
           competitionId,
           homeTeamId: c.id,
@@ -338,11 +387,9 @@ export function generateBracket(data: AppData, competitionId: string): AppData {
           status: "completed",
         });
     if (!d) {
-      sf2.winnerTeamId = c.id;
-      sf2.winnerLabel = c.name;
-      if (isBasketballMatch(sf2)) sf2.snapshot.homeScore = 1;
+      markByeWinner(sf2, c.id, c.name);
     }
-    const final = createBlankMatch({
+    const final = createSportMatch({
       sportId: competition.sportId,
       competitionId,
       homeLabel: "승자",
@@ -401,11 +448,12 @@ export function generateBracket(data: AppData, competitionId: string): AppData {
 export function createFriendly(
   data: AppData,
   input: {
+    sportId?: SportId;
     homeName: string;
     awayName: string;
     homeColor?: string;
     awayColor?: string;
-    rules?: BasketballRules;
+    rules?: SportRules;
     homePlayers?: { name: string; number: number }[];
     awayPlayers?: { name: string; number: number }[];
   },
@@ -426,8 +474,11 @@ export function createFriendly(
       .map((p) => ({ id: uid("p"), teamId, name: p.name.trim(), number: p.number || 0 }));
   const players = [...toPlayers(homeTeam.id, input.homePlayers), ...toPlayers(awayTeam.id, input.awayPlayers)];
   const hasPlayers = players.length > 0;
+  const sportId = input.sportId ?? "basketball";
   const rules = input.rules ?? BASKETBALL_CLUB_PRESET.rules;
-  const match = createBlankMatch({
+  const skipLineup = sportId !== "basketball" || !hasPlayers;
+  const match = createSportMatch({
+    sportId,
     homeTeamId: homeTeam.id,
     awayTeamId: awayTeam.id,
     homeLabel: homeTeam.name,
@@ -438,9 +489,9 @@ export function createFriendly(
     scheduledLabel: "지금",
     rules,
     isFriendly: true,
-    status: hasPlayers ? "lineup" : "in_progress",
+    status: skipLineup ? "in_progress" : "lineup",
   });
-  if (!hasPlayers && isBasketballMatch(match)) {
+  if (skipLineup && isBasketballMatch(match)) {
     match.snapshot.clockRunning = false;
     match.snapshot.started = false;
   }
