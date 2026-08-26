@@ -11,6 +11,7 @@
     "web": "pnpm --filter mobile web",
     "export:web": "pnpm --filter mobile export:web",
     "android": "pnpm --filter mobile android",
-    "ios": "pnpm --filter mobile ios"
+    "ios": "pnpm --filter mobile ios",
+    "test": "pnpm --filter @score-up/domain test"
   }
 }

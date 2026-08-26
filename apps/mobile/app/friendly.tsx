@@ -67,7 +67,8 @@ export default function FriendlyScreen() {
           <PlayerDraftList players={awayPlayers} onChange={setAwayPlayers} />
         </Card>
 
-        <Btn label="경기 시작" onPress={start} />
+        <Btn label="보드로 이동" onPress={start} disabled={!home.trim() || !away.trim()} />
+        {!home.trim() || !away.trim() ? <P muted>팀 이름을 입력하세요.</P> : null}
       </ScrollView>
     </Screen>
   );

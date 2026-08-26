@@ -44,7 +44,7 @@ description: Orchestrates SCORE UP work across sport and platform agents. Use wh
 3. `AGENTS.md` 표에 행을 추가한다.
 4. 그 agent에게 일을 분배한다.
 
-지금은 배구/탁구 agent를 **예약만** 하고 생성하지 않는다. 농구 mock UX 검수가 끝난 뒤 만든다.
+지금은 탁구 agent를 **예약만** 하고 생성하지 않는다. 배구 mock UX 검수가 끝난 뒤 만든다.
 
 역할 agent(Infra 등)는 종목 템플릿을 복사하지 않고 `.cursor/skills/<name>-agent/SKILL.md`를 직접 만든다. AGENTS.md 표는 같이 갱신한다.
 

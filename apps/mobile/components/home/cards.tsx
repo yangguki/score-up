@@ -7,6 +7,7 @@ import {
   formatLabel,
   leftoverLine,
   matchClockLine,
+  matchDisplayScore,
   matchSportLine,
 } from "@/lib/home";
 import { matchHref, statusLabel } from "@/lib/labels";
@@ -53,13 +54,13 @@ export function MatchStackCard({ match, kit }: { match: Match; kit: HomeKit }) {
                 <View style={{ height: 3, width: 28, borderRadius: 2, backgroundColor: match.homeColor, marginTop: 6 }} />
               </View>
               <KitTitle kit={kit} style={{ fontSize: kit.scoreSize, marginHorizontal: 6, fontWeight: "900", letterSpacing: -1 }}>
-                {match.snapshot.homeScore}
+                {matchDisplayScore(match).home}
               </KitTitle>
               <KitText kit={kit} muted style={{ marginHorizontal: 2, fontWeight: "700" }}>
                 -
               </KitText>
               <KitTitle kit={kit} style={{ fontSize: kit.scoreSize, marginHorizontal: 6, fontWeight: "900", letterSpacing: -1 }}>
-                {match.snapshot.awayScore}
+                {matchDisplayScore(match).away}
               </KitTitle>
               <View style={{ flex: 1, alignItems: "flex-end" }}>
                 <KitText kit={kit} muted style={{ fontSize: 12, fontWeight: "600" }}>
@@ -110,99 +111,6 @@ export function MatchStackCard({ match, kit }: { match: Match; kit: HomeKit }) {
             </KitText>
             <KitText kit={kit} style={{ fontSize: 13, fontWeight: "800", color: live ? kit.live : accent }}>
               {live ? "이어하기 →" : match.status === "lineup" ? "출전 확인 →" : "경기 열기 →"}
-            </KitText>
-          </View>
-        </KitCard>
-      </Pressable>
-    </Link>
-  );
-}
-
-export function MatchRowCard({ match, kit }: { match: Match; kit: HomeKit }) {
-  const live = isLiveLike(match);
-  return (
-    <Link href={matchHref(match)} asChild>
-      <Pressable>
-        <KitCard kit={kit} style={{ paddingVertical: 12 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            <View style={{ width: 78 }}>
-              <KitText kit={kit} muted style={{ fontSize: 12 }}>
-                {live ? matchClockLine(match) : match.scheduledLabel.replace("오늘 ", "")}
-              </KitText>
-            </View>
-            <View style={{ flex: 1 }}>
-              <KitTitle kit={kit} style={{ fontSize: 16 }}>
-                {match.homeLabel} {live ? match.snapshot.homeScore : ""} {live ? "-" : "vs"}{" "}
-                {live ? match.snapshot.awayScore : ""} {match.awayLabel}
-              </KitTitle>
-              <KitText kit={kit} muted style={{ marginTop: 2, fontSize: 13 }}>
-                {sportLabel(match.sportId)} · {match.roundLabel}
-              </KitText>
-            </View>
-            <KitBadge kit={kit} label={statusLabel(match.status)} live={live} />
-          </View>
-        </KitCard>
-      </Pressable>
-    </Link>
-  );
-}
-
-export function LivePinCard({ match, kit }: { match: Match; kit: HomeKit }) {
-  const live = isLiveLike(match);
-  return (
-    <Link href={matchHref(match)} asChild>
-      <Pressable>
-        <KitCard
-          kit={kit}
-          style={{
-            backgroundColor: kit.surface2,
-            borderRadius: kit.heroRadius,
-            paddingVertical: 20,
-            borderColor: live ? kit.live : kit.line,
-            borderWidth: live ? 2 : 1,
-          }}
-        >
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <KitText kit={kit}>{matchSportLine(match)}</KitText>
-            <KitBadge kit={kit} label={statusLabel(match.status)} live={live} />
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 16 }}>
-            <View style={{ flex: 1 }}>
-              <KitTitle kit={kit} style={{ fontSize: 18 }}>
-                {match.homeLabel}
-              </KitTitle>
-              <View style={{ height: 4, borderRadius: 2, backgroundColor: match.homeColor, marginTop: 8, width: 36 }} />
-            </View>
-            <KitTitle kit={kit} style={{ fontSize: kit.scoreSize, minWidth: 56, textAlign: "center" }}>
-              {live ? match.snapshot.homeScore : "-"}
-            </KitTitle>
-            <KitText kit={kit} muted style={{ marginHorizontal: 8 }}>
-              -
-            </KitText>
-            <KitTitle kit={kit} style={{ fontSize: kit.scoreSize, minWidth: 56, textAlign: "center" }}>
-              {live ? match.snapshot.awayScore : "-"}
-            </KitTitle>
-            <View style={{ flex: 1, alignItems: "flex-end" }}>
-              <KitTitle kit={kit} style={{ fontSize: 18 }}>
-                {match.awayLabel}
-              </KitTitle>
-              <View style={{ height: 4, borderRadius: 2, backgroundColor: match.awayColor, marginTop: 8, width: 36 }} />
-            </View>
-          </View>
-          <KitText kit={kit} muted style={{ marginTop: 14 }}>
-            {live ? matchClockLine(match) : match.scheduledLabel}
-          </KitText>
-          <View
-            style={{
-              marginTop: 14,
-              backgroundColor: kit.primary,
-              borderRadius: kit.radius,
-              paddingVertical: 12,
-              alignItems: "center",
-            }}
-          >
-            <KitText kit={kit} style={{ color: kit.primaryFg, fontWeight: "700" }}>
-              {live ? "이어하기" : "경기 열기"}
             </KitText>
           </View>
         </KitCard>

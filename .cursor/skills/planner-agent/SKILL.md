@@ -20,6 +20,10 @@ SCORE UP의 **제품 기획 단일 담당**. 구현하지 않는다. 화면·룰
 | IA·화면·카피·MVP 체크 | `docs/SCORE-UP-화면기획.md` v0.2 |
 | 구현 Phase·지금 안 하는 것 | `docs/SCORE-UP-작업계획.md` v0.2 |
 | 홈 와이어·상태·카피 | `docs/SCORE-UP-홈-상세.md` |
+| 대회 만들기 와이어 | `docs/SCORE-UP-대회-만들기-상세.md` v0.1 |
+| 참가 팀/선수 와이어 | `docs/SCORE-UP-참가-상세.md` v0.1 |
+| 모임·회차·참석 투표 | `docs/SCORE-UP-모임-기획.md` v0.3 |
+| 모임 화면 와이어 | `docs/SCORE-UP-모임-상세.md` v0.1 |
 | 농구 보드 검수 항목 | `docs/SCORE-UP-스코어보드-레퍼런스-체크리스트.md` |
 
 ## 담당

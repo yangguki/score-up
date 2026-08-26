@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { router, useLocalSearchParams } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, TextInput, View } from "react-native";
+import { isBasketballMatch, isVolleyballMatch } from "@score-up/domain";
 import { Btn, Card, H, P, Screen } from "@/components/ui";
 import { scoreboardHref } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
@@ -20,8 +21,12 @@ export default function LineupScreen() {
     () => players.filter((p) => p.teamId === match?.awayTeamId),
     [players, match?.awayTeamId],
   );
-  const [home, setHome] = useState<string[]>(match?.snapshot.onCourtHome ?? []);
-  const [away, setAway] = useState<string[]>(match?.snapshot.onCourtAway ?? []);
+  const [home, setHome] = useState<string[]>(() =>
+    match && isBasketballMatch(match) ? match.snapshot.onCourtHome : [],
+  );
+  const [away, setAway] = useState<string[]>(() =>
+    match && isBasketballMatch(match) ? match.snapshot.onCourtAway : [],
+  );
   const [draftName, setDraftName] = useState("");
   const [draftNumber, setDraftNumber] = useState("");
   const [draftSide, setDraftSide] = useState<"home" | "away">("home");
@@ -30,6 +35,18 @@ export default function LineupScreen() {
     return (
       <Screen>
         <P>경기를 찾을 수 없습니다.</P>
+      </Screen>
+    );
+  }
+
+  if (isVolleyballMatch(match)) {
+    return <Redirect href={scoreboardHref(match)} />;
+  }
+
+  if (!isBasketballMatch(match)) {
+    return (
+      <Screen>
+        <P>이 종목은 출전 명단을 아직 지원하지 않습니다.</P>
       </Screen>
     );
   }
@@ -53,8 +70,13 @@ export default function LineupScreen() {
   const addDraft = () => {
     const teamId = draftSide === "home" ? match.homeTeamId : match.awayTeamId;
     if (!teamId || !draftName.trim()) return;
-    addPlayerTo(teamId, draftName.trim(), Number(draftNumber) || 0);
+    const jersey = Number.parseInt(draftNumber.trim(), 10);
+    if (!Number.isFinite(jersey)) return;
+    const taken = players.some((p) => p.teamId === teamId && p.number === jersey);
+    if (taken) return;
+    addPlayerTo(teamId, draftName.trim(), jersey);
     setDraftName("");
+    setDraftNumber("");
   };
 
   return (
@@ -140,6 +162,10 @@ export default function LineupScreen() {
             router.replace(scoreboardHref(match));
           }}
         />
+        {!ready && !match.isFriendly ? (
+          <P muted>선발을 팀당 {match.rules.starters}명 고르면 시작할 수 있습니다.</P>
+        ) : null}
+        <P muted>보드에 들어간 뒤 「경기 시작」을 눌러야 시계가 돕니다.</P>
       </ScrollView>
     </Screen>
   );

@@ -1,6 +1,6 @@
 import type { BasketballRules, BasketballSnapshot, SportPreset } from "./types";
 
-export const BASKETBALL_CLUB_PRESET: SportPreset = {
+export const BASKETBALL_CLUB_PRESET: SportPreset & { rules: BasketballRules } = {
   id: "basketball-club",
   sportId: "basketball",
   scoringType: "timed_total",
@@ -26,7 +26,7 @@ export const BASKETBALL_PERIOD_COUNT_MAX = 4;
 export const BASKETBALL_PERIOD_MINUTES = [4, 6, 8, 10, 12] as const;
 export const BASKETBALL_TIMEOUT_SECONDS = [30, 45, 60, 90] as const;
 
-export const BASKETBALL_OFFICIAL_PRESET: SportPreset = {
+export const BASKETBALL_OFFICIAL_PRESET: SportPreset & { rules: BasketballRules } = {
   ...BASKETBALL_CLUB_PRESET,
   id: "basketball-official",
   official: true,

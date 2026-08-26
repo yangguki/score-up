@@ -30,5 +30,16 @@ export {
   tickClock,
   undoLast,
 } from "./repo";
-export { playerById, teamIdFor } from "./basketball";
+export { playerById, requestPeriodEnd, teamIdFor } from "./basketball";
+export {
+  applyVolleyballPoint,
+  changeVolleyballServe,
+  confirmVolleyballMatch,
+  confirmVolleyballSet,
+  createBlankVolleyballMatch,
+  forfeitVolleyballMatch,
+  startVolleyballMatch,
+  undoVolleyballLast,
+  volleyballNotice,
+} from "./volleyball";
 export { uid } from "./id";

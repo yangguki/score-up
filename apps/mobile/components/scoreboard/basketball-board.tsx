@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { bonusFor, DEFAULT_AWAY_COLOR, DEFAULT_HOME_COLOR, formatClock, quarterLabel } from "@score-up/domain";
+import { bonusFor, DEFAULT_AWAY_COLOR, DEFAULT_HOME_COLOR, formatClock, isBasketballMatch, quarterLabel } from "@score-up/domain";
 import { Btn, P } from "@/components/ui";
 import { eventLine } from "@/lib/labels";
 import { useAppStore } from "@/store/app-store";
@@ -31,6 +31,7 @@ export function BasketballScoreboard() {
   const pause = useAppStore((s) => s.pause);
   const resume = useAppStore((s) => s.resume);
   const confirmPeriod = useAppStore((s) => s.confirmPeriod);
+  const requestPeriodEnd = useAppStore((s) => s.requestPeriodEnd);
   const confirmMatch = useAppStore((s) => s.confirmMatch);
   const goOvertime = useAppStore((s) => s.goOvertime);
   const forfeit = useAppStore((s) => s.forfeit);
@@ -41,13 +42,25 @@ export function BasketballScoreboard() {
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    if (!match) return;
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(""), 3200);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  useEffect(() => {
+    if (!match || !isBasketballMatch(match)) return;
     const ticking =
       match.snapshot.timeoutRunning || (match.status === "in_progress" && match.snapshot.clockRunning);
     if (!ticking) return;
     const t = setInterval(() => tick(match.id, 200), 200);
     return () => clearInterval(t);
-  }, [match?.id, match?.status, match?.snapshot.clockRunning, match?.snapshot.timeoutRunning, tick]);
+  }, [
+    match?.id,
+    match?.status,
+    isBasketballMatch(match!) ? match.snapshot.clockRunning : false,
+    isBasketballMatch(match!) ? match.snapshot.timeoutRunning : false,
+    tick,
+  ]);
 
   const locked =
     match?.status === "confirm_period_end" ||
@@ -58,10 +71,10 @@ export function BasketballScoreboard() {
   const homePlayers = useMemo(() => players.filter((p) => p.teamId === match?.homeTeamId), [players, match?.homeTeamId]);
   const awayPlayers = useMemo(() => players.filter((p) => p.teamId === match?.awayTeamId), [players, match?.awayTeamId]);
 
-  if (!match) {
+  if (!match || !isBasketballMatch(match)) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, justifyContent: "center", padding: 24 }}>
-        <P>경기를 찾을 수 없습니다.</P>
+        <P>농구 경기를 찾을 수 없습니다.</P>
       </View>
     );
   }
@@ -205,10 +218,13 @@ export function BasketballScoreboard() {
           >
             {formatClock(snap.clockMs)}
           </Text>
+          <Text style={{ color: "#ffffffcc", fontSize: 13, fontWeight: "700", marginTop: 2 }}>
+            팀파울 {snap.homeTeamFoulsInQuarter} - {snap.awayTeamFoulsInQuarter}
+          </Text>
           {!snap.started && match.status === "in_progress" ? (
             <Text style={{ color: colors.bonus, fontWeight: "700" }}>시작 전</Text>
           ) : null}
-          {notice && !notice.startsWith("timeout") ? <Text style={{ color: colors.bonus, fontWeight: "700" }}>{notice}</Text> : null}
+          {notice ? <Text style={{ color: colors.bonus, fontWeight: "700", marginTop: 4 }}>{notice}</Text> : null}
         </View>
         <Pressable onPress={() => setPending({ kind: "more" })} style={chromeBtn}>
           <Text style={chromeText}>더보기</Text>
@@ -313,9 +329,17 @@ export function BasketballScoreboard() {
                 onPick={(playerId) => {
                   if (pending.kind === "point") addPoint(match.id, pending.side, pending.points, playerId);
                   if (pending.kind === "foul") {
+                    const foulsBefore =
+                      pending.side === "home" ? snap.homeTeamFoulsInQuarter : snap.awayTeamFoulsInQuarter;
                     const result = addFoul(match.id, pending.side, playerId);
-                    if (result.foulOut) setNotice(`${players.find((p) => p.id === playerId)?.number ?? ""}번 파울 아웃. 교체하세요`);
-                    else if (result.nextOut) setNotice("다음 파울 시 아웃");
+                    const jersey = players.find((p) => p.id === playerId)?.number;
+                    if (result.foulOut) {
+                      setNotice(`${jersey ?? ""}번 파울 아웃 · 교체하세요`);
+                    } else if (result.nextOut) {
+                      setNotice("다음 파울 시 아웃");
+                    } else if (foulsBefore + 1 === match.rules.teamFoulBonusAt) {
+                      setNotice("보너스 상황");
+                    }
                   }
                   if (pending.kind === "sub") {
                     if (!outId) {
@@ -359,10 +383,22 @@ export function BasketballScoreboard() {
             label="룰 보기"
             variant="ghost"
             onPress={() => {
-              setNotice(`${match.rules.periodMinutes}분 × ${match.rules.periodCount}쿼터 · 작전타임 ${match.rules.timeoutSeconds}초`);
+              setNotice(
+                `${match.rules.periodMinutes}분 × ${match.rules.periodCount}쿼터 · 작전타임 ${match.rules.timeoutSeconds}초`,
+              );
               setPending(null);
             }}
           />
+          {(match.status === "in_progress" || match.status === "paused") && !snap.timeoutRunning ? (
+            <Btn
+              label="쿼터 종료"
+              variant="ghost"
+              onPress={() => {
+                requestPeriodEnd(match.id);
+                setPending(null);
+              }}
+            />
+          ) : null}
           <Btn label={`${match.homeLabel} 몰수승`} variant="danger" onPress={() => { forfeit(match.id, "home"); setPending(null); router.replace(`/match/${match.id}/result`); }} />
           <Btn label={`${match.awayLabel} 몰수승`} variant="danger" onPress={() => { forfeit(match.id, "away"); setPending(null); router.replace(`/match/${match.id}/result`); }} />
           <Btn label="경기 중단" variant="danger" onPress={() => { abandon(match.id); setPending(null); router.back(); }} />

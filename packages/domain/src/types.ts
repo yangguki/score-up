@@ -20,6 +20,7 @@ export type MatchEventType =
   | "foul"
   | "timeout"
   | "substitution"
+  | "serve_change"
   | "period_end"
   | "match_end"
   | "revoke";
@@ -39,14 +40,24 @@ export interface BasketballRules {
   forfeitScore: number;
 }
 
+export interface VolleyballRules {
+  setsToWin: number;
+  setTarget: number;
+  lastSetTarget: number;
+  winBy: number;
+  timeoutsPerSet: number;
+}
+
+export type SportRules = BasketballRules | VolleyballRules;
+
 export interface SportPreset {
   id: string;
   sportId: SportId;
-  scoringType: "timed_total";
+  scoringType: "timed_total" | "set_target";
   label: string;
   summary: string;
   official: boolean;
-  rules: BasketballRules;
+  rules: SportRules;
 }
 
 export interface Player {
@@ -70,6 +81,7 @@ export interface Competition {
   status: CompetitionStatus;
   format: CompetitionFormat;
   dateLabel: string;
+  courtCount?: number;
   rules: BasketballRules;
   officialPreset: boolean;
 }
@@ -113,6 +125,28 @@ export interface BasketballSnapshot {
   needsOvertimeDecision: boolean;
 }
 
+export interface VolleyballSetScore {
+  home: number;
+  away: number;
+  winner: Side;
+}
+
+export interface VolleyballSnapshot {
+  currentSet: number;
+  homeSetPoints: number;
+  awaySetPoints: number;
+  setsWonHome: number;
+  setsWonAway: number;
+  setHistory: VolleyballSetScore[];
+  serveSide: Side;
+  setOpeningServe: Side;
+  timeoutsLeft: Record<string, number>;
+  started: boolean;
+  deuce: boolean;
+}
+
+export type SportSnapshot = BasketballSnapshot | VolleyballSnapshot;
+
 export interface MatchEvent {
   id: string;
   matchId: string;
@@ -148,12 +182,24 @@ export interface Match {
   roundLabel: string;
   status: MatchStatus;
   scheduledLabel: string;
-  snapshot: BasketballSnapshot;
+  snapshot: SportSnapshot;
   events: MatchEvent[];
   winnerTeamId?: string;
   winnerLabel?: string;
   isFriendly: boolean;
-  rules: BasketballRules;
+  rules: SportRules;
+}
+
+export function isBasketballMatch(
+  match: Match,
+): match is Match & { sportId: "basketball"; snapshot: BasketballSnapshot; rules: BasketballRules } {
+  return match.sportId === "basketball";
+}
+
+export function isVolleyballMatch(
+  match: Match,
+): match is Match & { sportId: "volleyball"; snapshot: VolleyballSnapshot; rules: VolleyballRules } {
+  return match.sportId === "volleyball";
 }
 
 export interface AppData {

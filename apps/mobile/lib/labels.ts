@@ -61,7 +61,9 @@ export function eventLine(
     case "substitution":
       return "교체";
     case "period_end":
-      return `Q${event.payload?.quarter ?? event.quarter} 종료`;
+      return `세트 ${event.payload?.quarter ?? event.quarter} 종료`;
+    case "serve_change":
+      return `${who} 서브 변경`;
     case "match_end":
       return event.payload?.reason === "forfeit" ? "몰수 종료" : "경기 종료";
     case "revoke":

@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView, Text, View } from "react-native";
-import { formatClock, quarterLabel } from "@score-up/domain";
+import { formatClock, isBasketballMatch, quarterLabel } from "@score-up/domain";
 import { Btn, P, Screen } from "@/components/ui";
 import { eventLine } from "@/lib/labels";
 import { useAppStore } from "@/store/app-store";
@@ -36,7 +36,9 @@ export default function TimelineScreen() {
             }}
           >
             <Text style={{ color: colors.muted, fontSize: 12 }}>
-              {quarterLabel(event.quarter, match.rules.periodCount)} {formatClock(event.clockMs)}
+              {isBasketballMatch(match)
+                ? `${quarterLabel(event.quarter, match.rules.periodCount)} ${formatClock(event.clockMs)}`
+                : `SET ${event.quarter}`}
             </Text>
             <Text
               style={{

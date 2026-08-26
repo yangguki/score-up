@@ -1,5 +1,11 @@
 import type { AppData, BasketballRules, Competition, Match, Player, Team } from "@score-up/domain";
-import { BASKETBALL_CLUB_PRESET, DEFAULT_AWAY_COLOR, DEFAULT_HOME_COLOR, nextTeamColor } from "@score-up/domain";
+import {
+  BASKETBALL_CLUB_PRESET,
+  DEFAULT_AWAY_COLOR,
+  DEFAULT_HOME_COLOR,
+  isBasketballMatch,
+  nextTeamColor,
+} from "@score-up/domain";
 import {
   applyFoul,
   applyPoint,
@@ -139,7 +145,11 @@ export function addPlayer(
   name: string,
   number: number,
 ): AppData {
-  const player: Player = { id: uid("p"), teamId, name, number };
+  const trimmed = name.trim();
+  if (!trimmed) return data;
+  const duplicate = data.players.some((p) => p.teamId === teamId && p.number === number);
+  if (duplicate) return data;
+  const player: Player = { id: uid("p"), teamId, name: trimmed, number };
   return { ...data, players: [...data.players, player] };
 }
 
@@ -152,6 +162,7 @@ export function createCompetition(
     rules: BasketballRules;
     officialPreset: boolean;
     teams?: { name: string; color: string }[];
+    courtCount?: number;
   },
 ): { data: AppData; id: string } {
   const id = uid("comp");
@@ -162,6 +173,7 @@ export function createCompetition(
     status: "prep",
     format: input.format,
     dateLabel: input.dateLabel,
+    courtCount: input.courtCount,
     rules: input.rules,
     officialPreset: input.officialPreset,
   };
@@ -171,10 +183,80 @@ export function createCompetition(
   return { data: { ...data, competitions: [...data.competitions, competition], teams: [...data.teams, ...teams] }, id };
 }
 
+function generateLeagueSchedule(
+  data: AppData,
+  competitionId: string,
+  competition: Competition,
+  teams: Team[],
+): AppData {
+  const rules = competition.rules;
+  const fixtures = roundRobinFixtures(teams);
+  const matches = [
+    ...data.matches.filter((m) => m.competitionId !== competitionId),
+    ...fixtures.map(({ round, home, away }) =>
+      createBlankMatch({
+        sportId: competition.sportId,
+        competitionId,
+        homeTeamId: home.id,
+        awayTeamId: away.id,
+        homeLabel: home.name,
+        awayLabel: away.name,
+        homeColor: home.color,
+        awayColor: away.color,
+        roundLabel: `${round}라운드`,
+        scheduledLabel: `R${round}`,
+        rules,
+        status: "scheduled",
+      }),
+    ),
+  ];
+  return {
+    ...data,
+    matches,
+    brackets: data.brackets.filter((b) => b.competitionId !== competitionId),
+    competitions: data.competitions.map((c) =>
+      c.id === competitionId ? { ...c, status: "in_progress" } : c,
+    ),
+  };
+}
+
+/** 원형 일정. 홀수 팀이면 BYE 자리로 한 경기 쉬게 한다. */
+function roundRobinFixtures(teams: Team[]): { round: number; home: Team; away: Team }[] {
+  type Slot = Team | { id: "bye"; name: string; color: string; competitionId?: string };
+  const slots: Slot[] = [...teams];
+  if (slots.length % 2 === 1) {
+    slots.push({ id: "bye", name: "BYE", color: DEFAULT_AWAY_COLOR });
+  }
+  const n = slots.length;
+  const rounds = n - 1;
+  const half = n / 2;
+  const out: { round: number; home: Team; away: Team }[] = [];
+  let arr = [...slots];
+
+  for (let r = 0; r < rounds; r++) {
+    for (let i = 0; i < half; i++) {
+      const home = arr[i];
+      const away = arr[n - 1 - i];
+      if (home.id === "bye" || away.id === "bye") continue;
+      out.push({ round: r + 1, home: home as Team, away: away as Team });
+    }
+    const fixed = arr[0];
+    const rest = arr.slice(1);
+    const last = rest.pop();
+    if (last) rest.unshift(last);
+    arr = [fixed, ...rest];
+  }
+  return out;
+}
+
 export function generateBracket(data: AppData, competitionId: string): AppData {
   const teams = teamsOf(data, competitionId);
   const competition = getCompetition(data, competitionId);
   if (!competition || teams.length < 2) return data;
+
+  if (competition.format === "league") {
+    return generateLeagueSchedule(data, competitionId, competition, teams);
+  }
 
   const rules = competition.rules;
   const used = teams.slice(0, teams.length >= 4 ? 4 : teams.length);
@@ -258,7 +340,7 @@ export function generateBracket(data: AppData, competitionId: string): AppData {
     if (!d) {
       sf2.winnerTeamId = c.id;
       sf2.winnerLabel = c.name;
-      sf2.snapshot.homeScore = 1;
+      if (isBasketballMatch(sf2)) sf2.snapshot.homeScore = 1;
     }
     const final = createBlankMatch({
       sportId: competition.sportId,
@@ -358,7 +440,7 @@ export function createFriendly(
     isFriendly: true,
     status: hasPlayers ? "lineup" : "in_progress",
   });
-  if (!hasPlayers) {
+  if (!hasPlayers && isBasketballMatch(match)) {
     match.snapshot.clockRunning = false;
     match.snapshot.started = false;
   }

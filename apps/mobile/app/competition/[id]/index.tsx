@@ -36,6 +36,10 @@ export default function CompetitionOverview() {
         </View>
         <SectionHead title={competition.name} hint={rulesSummary(competition.rules)} />
         <P muted>
+          {competition.dateLabel}
+          {competition.courtCount ? ` · 코트 ${competition.courtCount}` : ""}
+        </P>
+        <P muted>
           종료 {done} / {matches.length || 0} · 참가 팀 {teams.length}
         </P>
         {next ? (
@@ -48,13 +52,25 @@ export default function CompetitionOverview() {
               <Btn label="경기 열기" style={{ marginTop: 12 }} />
             </Link>
           </Card>
-        ) : null}
+        ) : (
+          <Card>
+            <P muted>다음 경기</P>
+            <P style={{ marginTop: 6 }}>
+              {competition.format === "league"
+                ? "없음 · 일정을 만들면 생깁니다"
+                : "없음 · 대진을 만들면 생깁니다"}
+            </P>
+          </Card>
+        )}
         {teams.length === 0 ? <P>참가 팀/선수를 등록하세요.</P> : null}
         <Link href={`/competition/${id}/roster`} asChild>
           <Btn label="참가 관리" variant="ghost" />
         </Link>
         <Link href={`/competition/${id}/bracket`} asChild>
-          <Btn label="대진 보기" variant="ghost" />
+          <Btn
+            label={competition.format === "league" ? "일정 · 순위" : "대진 보기"}
+            variant="ghost"
+          />
         </Link>
         <Link href={`/competition/${id}/matches`} asChild>
           <Btn label="경기 목록" variant="ghost" />

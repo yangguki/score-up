@@ -1,13 +1,15 @@
 import {
   BASKETBALL_CLUB_PRESET,
+  VOLLEYBALL_CLUB_PRESET,
   type AppData,
   type Match,
   type MatchEvent,
   type Player,
 } from "@score-up/domain";
-import { emptySnapshot } from "@score-up/domain";
+import { emptySnapshot, emptyVolleyballSnapshot } from "@score-up/domain";
 
 const RULES = BASKETBALL_CLUB_PRESET.rules;
+const VB_RULES = VOLLEYBALL_CLUB_PRESET.rules;
 
 const TIGER = "team-tiger";
 const EAGLE = "team-eagle";
@@ -18,6 +20,7 @@ const OFFICE = "comp-office";
 const SF1 = "match-sf1";
 const SF2 = "match-sf2";
 const FINAL = "match-final";
+const VB1 = "match-vb1";
 
 function p(id: string, teamId: string, number: number, name: string): Player {
   return { id, teamId, number, name };
@@ -129,6 +132,10 @@ export function createSeedState(): AppData {
       { id: EAGLE, competitionId: COMP, name: "독수리", color: "#1D4ED8" },
       { id: SHARK, competitionId: COMP, name: "상어", color: "#0F766E" },
       { id: WOLF, competitionId: COMP, name: "늑대", color: "#111827" },
+      { id: "team-office-a", competitionId: OFFICE, name: "기획실", color: "#B45309" },
+      { id: "team-office-b", competitionId: OFFICE, name: "개발팀", color: "#1D4ED8" },
+      { id: "team-office-c", competitionId: OFFICE, name: "디자인", color: "#0F766E" },
+      { id: "team-office-d", competitionId: OFFICE, name: "영업부", color: "#7C3AED" },
     ],
     players: [
       p("p-t12", TIGER, 12, "김민수"),
@@ -194,6 +201,21 @@ export function createSeedState(): AppData {
         isFriendly: false,
         rules: RULES,
       },
+      {
+        id: VB1,
+        sportId: "volleyball",
+        homeLabel: "블루",
+        awayLabel: "레드",
+        homeColor: "#1D4ED8",
+        awayColor: "#B91C1C",
+        roundLabel: "친선",
+        scheduledLabel: "오늘 배구",
+        status: "in_progress",
+        snapshot: emptyVolleyballSnapshot(VB_RULES),
+        events: [],
+        isFriendly: true,
+        rules: VB_RULES,
+      },
     ],
     brackets: [
       {
@@ -226,4 +248,4 @@ export function createSeedState(): AppData {
   };
 }
 
-export const SEED_IDS = { COMP, OFFICE, SF1, SF2, FINAL, TIGER, EAGLE, SHARK, WOLF };
+export const SEED_IDS = { COMP, OFFICE, SF1, SF2, FINAL, VB1, TIGER, EAGLE, SHARK, WOLF };

@@ -1,4 +1,4 @@
-import { Pressable, View } from "react-native";
+import { Pressable, View, Alert, Platform } from "react-native";
 import {
   BASKETBALL_CLUB_PRESET,
   BASKETBALL_OFFICIAL_PRESET,
@@ -38,9 +38,24 @@ export function RulesEditor({
     onRules(value ? BASKETBALL_OFFICIAL_PRESET.rules : BASKETBALL_CLUB_PRESET.rules);
   };
 
+  const confirmPreset = () => {
+    const next = !official;
+    const title = next ? "공식 프리셋으로 바꿀까요?" : "동호회 기본값으로 되돌릴까요?";
+    const apply = () => applyOfficial(next);
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && window.confirm(`${title}\n지금 바꾼 룰은 덮어씁니다.`)) apply();
+      return;
+    }
+    Alert.alert(title, "지금 바꾼 룰은 덮어씁니다.", [
+      { text: "취소", style: "cancel" },
+      { text: "바꾸기", onPress: apply },
+    ]);
+  };
+
   return (
     <>
-      <Pressable onPress={() => applyOfficial(!official)}>
+      <P muted>이 대회에 적용됩니다. 경기 시작 후에는 바꿀 수 없습니다.</P>
+      <Pressable onPress={confirmPreset}>
         <Card>
           <P>{official ? "공식 프리셋" : "동호회 기본값"} · 탭해서 전환</P>
         </Card>

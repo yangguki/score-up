@@ -28,11 +28,11 @@ description: Builds SCORE UP Expo app+web screens that run on mock data for UX r
 
 ## 1차 그릴 화면 (농구만)
 
-준비: 홈, 대회 만들기 1~4단계(종목 카드는 농구만 선택 가능), 대회 개요, 참가 팀/선수, 대진 생성, 토너먼트 브래킷, 출전 명단, 빠른 친선.
+준비: 홈, 대회 만들기 1~4단계(종목 카드는 농구만 선택 가능), 대회 개요, 참가 팀/선수, 대진 생성, 토너먼트 브래킷, 리그 순위, 출전 명단, 빠른 친선.
 
-기록: 농구 스코어보드(`/match/[id]/basketball`), 선수 피커, 교체 시트, 종료 확인 팝업, 타임라인, 결과.
+기록: 농구 스코어보드(`/match/[id]/basketball`), 배구 mock 보드(`/match/[id]/volleyball`), 선수 피커, 교체 시트, 종료 확인 팝업, 타임라인, 결과.
 
-빼는 것: 배구/탁구 보드 본문, 관중용 큰 보드, 로그인, 실 API, 리그 승점 세부. 배구/탁구는 경로만 예약 (`/match/[id]/volleyball`, `/match/[id]/table-tennis`). `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다.
+빼는 것: 탁구 보드 본문, 관중용 큰 보드, 로그인, 실 API, 배구 세트 승점제. 리그 MVP는 승3/패0 순위표. 탁구는 경로만 예약. `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다.
 
 종목 레이아웃이 다르므로 스코어보드는 종목 컴포넌트 단위로 갈아끼운다. 버튼마다 종목 if문을 쓰지 않는다.
 

@@ -1,6 +1,28 @@
-import type { BasketballRules, Match, MatchEvent, Player } from "@score-up/domain";
-import { DEFAULT_AWAY_COLOR, DEFAULT_HOME_COLOR, emptySnapshot, isRegulationOver } from "@score-up/domain";
+import type { BasketballRules, BasketballSnapshot, Match, MatchEvent, Player } from "@score-up/domain";
+import {
+  applyBasketballEvent,
+  DEFAULT_AWAY_COLOR,
+  DEFAULT_HOME_COLOR,
+  emptySnapshot,
+  isBasketballMatch,
+  isRegulationOver,
+  syncScoreFieldsFromEvents,
+} from "@score-up/domain";
 import { uid } from "./id";
+
+type BasketballMatch = Match & {
+  sportId: "basketball";
+  snapshot: BasketballSnapshot;
+  rules: BasketballRules;
+};
+
+function engineCtx(match: BasketballMatch) {
+  return {
+    rules: match.rules,
+    homeTeamId: match.homeTeamId,
+    awayTeamId: match.awayTeamId,
+  };
+}
 
 function timeoutKey(match: Match, side: "home" | "away"): string {
   return side === "home"
@@ -18,7 +40,7 @@ export function teamIdFor(match: Match, side: "home" | "away"): string {
 }
 
 export function pushEvent(
-  match: Match,
+  match: BasketballMatch,
   partial: Omit<MatchEvent, "id" | "matchId" | "createdAt" | "revoked" | "clockMs" | "quarter"> &
     Partial<Pick<MatchEvent, "clockMs" | "quarter">>,
 ): MatchEvent {
@@ -39,19 +61,17 @@ export function applyPoint(
   points: 1 | 2 | 3,
   playerId?: string,
 ): Match {
+  if (!isBasketballMatch(match)) return match;
   if (match.status !== "in_progress") return match;
-  const side = sideOfTeam(match, teamId);
   const next = cloneMatch(match);
-  if (side === "home") next.snapshot.homeScore += points;
-  else next.snapshot.awayScore += points;
-  next.events.push(
-    pushEvent(next, {
-      type: "point",
-      teamId,
-      playerId,
-      payload: { points },
-    }),
-  );
+  const event = pushEvent(next, {
+    type: "point",
+    teamId,
+    playerId,
+    payload: { points },
+  });
+  next.events.push(event);
+  next.snapshot = applyBasketballEvent(next.snapshot, event, engineCtx(next));
   return next;
 }
 
@@ -61,60 +81,59 @@ export function applyFoul(
   teamId: string,
   playerId: string,
 ): { match: Match; foulOut: boolean; nextOut: boolean } {
+  if (!isBasketballMatch(match)) {
+    return { match, foulOut: false, nextOut: false };
+  }
   if (match.status !== "in_progress") {
     return { match, foulOut: false, nextOut: false };
   }
   const next = cloneMatch(match);
-  const side = sideOfTeam(match, teamId);
-  const fouls = (next.snapshot.playerFouls[playerId] ?? 0) + 1;
-  next.snapshot.playerFouls[playerId] = fouls;
-  if (side === "home") next.snapshot.homeTeamFoulsInQuarter += 1;
-  else next.snapshot.awayTeamFoulsInQuarter += 1;
-
+  const before = next.snapshot.playerFouls[playerId] ?? 0;
+  const fouls = before + 1;
   const foulOut = fouls >= rules.personalFoulLimit;
   const nextOut = fouls === rules.personalFoulLimit - 1;
-  if (foulOut) {
-    next.snapshot.onCourtHome = next.snapshot.onCourtHome.filter((id) => id !== playerId);
-    next.snapshot.onCourtAway = next.snapshot.onCourtAway.filter((id) => id !== playerId);
-  }
-
-  next.events.push(
-    pushEvent(next, {
-      type: "foul",
-      teamId,
-      playerId,
-      payload: {
-        personalFouls: fouls,
-        teamFouls:
-          side === "home"
-            ? next.snapshot.homeTeamFoulsInQuarter
-            : next.snapshot.awayTeamFoulsInQuarter,
-      },
-    }),
-  );
+  const side = sideOfTeam(match, teamId);
+  const event = pushEvent(next, {
+    type: "foul",
+    teamId,
+    playerId,
+    payload: {
+      personalFouls: fouls,
+      teamFouls:
+        (side === "home"
+          ? next.snapshot.homeTeamFoulsInQuarter
+          : next.snapshot.awayTeamFoulsInQuarter) + 1,
+    },
+  });
+  next.events.push(event);
+  next.snapshot = applyBasketballEvent(next.snapshot, event, engineCtx(next));
   return { match: next, foulOut, nextOut };
 }
 
 export function applyTimeout(match: Match, teamId: string, rules: BasketballRules): Match {
+  if (!isBasketballMatch(match)) return match;
   if (!match.snapshot.started) return match;
   if (match.snapshot.timeoutRunning) return match;
   if (match.status !== "in_progress" && match.status !== "paused") return match;
-  const next = cloneMatch(match);
-  const left = next.snapshot.timeoutsLeft[teamId] ?? 0;
+  const left = match.snapshot.timeoutsLeft[teamId] ?? 0;
   if (left <= 0) return match;
-  next.snapshot.timeoutsLeft[teamId] = left - 1;
+  const next = cloneMatch(match);
+  const event = pushEvent(next, { type: "timeout", teamId });
+  next.events.push(event);
+  next.snapshot = applyBasketballEvent(next.snapshot, event, engineCtx(next));
   next.snapshot.clockRunning = false;
   next.snapshot.timeoutRunning = true;
   next.snapshot.timeoutTeamId = teamId;
   next.snapshot.timeoutClockMs = Math.max(1, rules.timeoutSeconds) * 1000;
   next.status = "paused";
-  next.events.push(pushEvent(next, { type: "timeout", teamId }));
   return next;
 }
 
 export function endTimeout(match: Match): Match {
+  if (!isBasketballMatch(match)) return match;
   if (!match.snapshot.timeoutRunning) return match;
   const next = cloneMatch(match);
+  if (!isBasketballMatch(next)) return match;
   next.snapshot.timeoutRunning = false;
   next.snapshot.timeoutClockMs = 0;
   next.snapshot.timeoutTeamId = undefined;
@@ -129,42 +148,49 @@ export function applySub(
   outPlayerId: string,
   inPlayerId: string,
 ): Match {
-  const next = cloneMatch(match);
+  if (!isBasketballMatch(match)) return match;
   const side = sideOfTeam(match, teamId);
-  const court = side === "home" ? [...next.snapshot.onCourtHome] : [...next.snapshot.onCourtAway];
-  const idx = court.indexOf(outPlayerId);
-  if (idx < 0) return match;
-  court[idx] = inPlayerId;
-  if (side === "home") next.snapshot.onCourtHome = court;
-  else next.snapshot.onCourtAway = court;
-  next.events.push(
-    pushEvent(next, {
-      type: "substitution",
-      teamId,
-      payload: { outPlayerId, inPlayerId },
-    }),
-  );
+  const court = side === "home" ? match.snapshot.onCourtHome : match.snapshot.onCourtAway;
+  if (!court.includes(outPlayerId)) return match;
+  const next = cloneMatch(match);
+  const event = pushEvent(next, {
+    type: "substitution",
+    teamId,
+    payload: { outPlayerId, inPlayerId },
+  });
+  next.events.push(event);
+  next.snapshot = applyBasketballEvent(next.snapshot, event, engineCtx(next));
   return next;
 }
 
 export function undoLast(match: Match, rules: BasketballRules): Match {
+  if (!isBasketballMatch(match)) return match;
   const last = [...match.events].reverse().find((e) => !e.revoked);
   if (!last) return match;
   const next = cloneMatch(match);
   const target = next.events.find((e) => e.id === last.id);
   if (target) target.revoked = true;
 
-  if (last.type === "point" && last.teamId) {
-    const pts = last.payload?.points ?? 0;
-    if (sideOfTeam(next, last.teamId) === "home") next.snapshot.homeScore = Math.max(0, next.snapshot.homeScore - pts);
-    else next.snapshot.awayScore = Math.max(0, next.snapshot.awayScore - pts);
-  } else if (last.type === "foul" && last.teamId && last.playerId) {
-    const pf = next.snapshot.playerFouls[last.playerId] ?? 1;
-    next.snapshot.playerFouls[last.playerId] = Math.max(0, pf - 1);
-    if (sideOfTeam(next, last.teamId) === "home") {
-      next.snapshot.homeTeamFoulsInQuarter = Math.max(0, next.snapshot.homeTeamFoulsInQuarter - 1);
-    } else {
-      next.snapshot.awayTeamFoulsInQuarter = Math.max(0, next.snapshot.awayTeamFoulsInQuarter - 1);
+  next.events.push(
+    pushEvent(next, {
+      type: "revoke",
+      payload: { targetEventId: last.id },
+    }),
+  );
+
+  // 득점·파울은 이벤트 재생으로 맞춘다.
+  if (last.type === "point" || last.type === "foul") {
+    next.snapshot = syncScoreFieldsFromEvents(next.snapshot, next.events, engineCtx(next));
+    if (
+      last.type === "foul" &&
+      last.playerId &&
+      (last.payload?.personalFouls ?? 0) >= rules.personalFoulLimit
+    ) {
+      const side = sideOfTeam(next, last.teamId ?? "");
+      const court = side === "home" ? next.snapshot.onCourtHome : next.snapshot.onCourtAway;
+      if (!court.includes(last.playerId) && court.length < rules.starters) {
+        court.push(last.playerId);
+      }
     }
   } else if (last.type === "timeout" && last.teamId) {
     next.snapshot.timeoutsLeft[last.teamId] =
@@ -176,24 +202,16 @@ export function undoLast(match: Match, rules: BasketballRules): Match {
     if (next.status === "paused") next.status = "in_progress";
   } else if (last.type === "substitution" && last.payload?.inPlayerId && last.payload.outPlayerId) {
     const side = sideOfTeam(next, last.teamId ?? "");
-    const court = side === "home" ? [...next.snapshot.onCourtHome] : [...next.snapshot.onCourtAway];
+    const court = side === "home" ? next.snapshot.onCourtHome : next.snapshot.onCourtAway;
     const idx = court.indexOf(last.payload.inPlayerId);
     if (idx >= 0) court[idx] = last.payload.outPlayerId;
-    if (side === "home") next.snapshot.onCourtHome = court;
-    else next.snapshot.onCourtAway = court;
   }
 
-  next.events.push(
-    pushEvent(next, {
-      type: "revoke",
-      payload: { targetEventId: last.id },
-    }),
-  );
-  void rules;
   return next;
 }
 
 export function tickClock(match: Match, dtMs: number, rules: BasketballRules): Match {
+  if (!isBasketballMatch(match)) return match;
   if (match.snapshot.timeoutRunning) {
     const next = cloneMatch(match);
     next.snapshot.timeoutClockMs = Math.max(0, next.snapshot.timeoutClockMs - dtMs);
@@ -222,23 +240,43 @@ export function tickClock(match: Match, dtMs: number, rules: BasketballRules): M
   return next;
 }
 
-export function confirmPeriodEnd(match: Match, rules: BasketballRules): Match {
+/** 시계 고장 대비. 더보기 → 쿼터 종료. 확정 팝업만 연다. */
+export function requestPeriodEnd(match: Match, rules: BasketballRules): Match {
+  if (!isBasketballMatch(match)) return match;
+  if (match.status !== "in_progress" && match.status !== "paused") {
+    return match;
+  }
+  if (match.snapshot.timeoutRunning) return match;
   const next = cloneMatch(match);
-  next.events.push(
-    pushEvent(next, {
-      type: "period_end",
-      payload: { quarter: next.snapshot.quarter },
-    }),
-  );
+  next.snapshot.clockRunning = false;
+  next.snapshot.clockMs = 0;
+  const lastReg = isRegulationOver(next.snapshot.quarter, rules.periodCount) || next.snapshot.inOvertime;
+  if (lastReg && next.snapshot.homeScore !== next.snapshot.awayScore) {
+    next.status = "confirm_match_end";
+  } else if (lastReg && next.snapshot.homeScore === next.snapshot.awayScore) {
+    next.status = "confirm_period_end";
+    next.snapshot.needsOvertimeDecision = true;
+  } else {
+    next.status = "confirm_period_end";
+  }
+  return next;
+}
+
+export function confirmPeriodEnd(match: Match, rules: BasketballRules): Match {
+  if (!isBasketballMatch(match)) return match;
+  const next = cloneMatch(match);
+  const event = pushEvent(next, {
+    type: "period_end",
+    payload: { quarter: next.snapshot.quarter },
+  });
+  next.events.push(event);
   const prevHome = next.snapshot.periodScores.reduce((sum, row) => sum + row.home, 0);
   const prevAway = next.snapshot.periodScores.reduce((sum, row) => sum + row.away, 0);
   next.snapshot.periodScores.push({
     home: next.snapshot.homeScore - prevHome,
     away: next.snapshot.awayScore - prevAway,
   });
-  next.snapshot.homeTeamFoulsInQuarter = 0;
-  next.snapshot.awayTeamFoulsInQuarter = 0;
-  next.snapshot.quarter += 1;
+  next.snapshot = applyBasketballEvent(next.snapshot, event, engineCtx(next));
   next.snapshot.clockMs = rules.periodMinutes * 60 * 1000;
   next.snapshot.clockRunning = false;
   next.snapshot.timeoutRunning = false;
@@ -250,6 +288,7 @@ export function confirmPeriodEnd(match: Match, rules: BasketballRules): Match {
 }
 
 export function startOvertime(match: Match, rules: BasketballRules): Match {
+  if (!isBasketballMatch(match)) return match;
   const next = cloneMatch(match);
   const alreadyOt = match.snapshot.inOvertime;
   next.snapshot.inOvertime = true;
@@ -264,6 +303,7 @@ export function startOvertime(match: Match, rules: BasketballRules): Match {
 }
 
 export function confirmMatchEnd(match: Match): Match {
+  if (!isBasketballMatch(match)) return match;
   const next = cloneMatch(match);
   const prevHome = next.snapshot.periodScores.reduce((sum, row) => sum + row.home, 0);
   const prevAway = next.snapshot.periodScores.reduce((sum, row) => sum + row.away, 0);
@@ -289,6 +329,7 @@ export function confirmMatchEnd(match: Match): Match {
 }
 
 export function forfeitMatch(match: Match, winnerSide: "home" | "away"): Match {
+  if (!isBasketballMatch(match)) return match;
   const next = cloneMatch(match);
   const score = next.rules.forfeitScore;
   if (winnerSide === "home") {
@@ -315,6 +356,7 @@ export function forfeitMatch(match: Match, winnerSide: "home" | "away"): Match {
 }
 
 export function startMatch(match: Match, onCourtHome: string[], onCourtAway: string[]): Match {
+  if (!isBasketballMatch(match)) return match;
   const next = cloneMatch(match);
   next.status = "in_progress";
   next.snapshot.onCourtHome = onCourtHome;
@@ -325,6 +367,7 @@ export function startMatch(match: Match, onCourtHome: string[], onCourtAway: str
 }
 
 export function pauseMatch(match: Match): Match {
+  if (!isBasketballMatch(match)) return match;
   if (match.snapshot.timeoutRunning) return match;
   const next = cloneMatch(match);
   next.snapshot.clockRunning = false;
@@ -333,6 +376,7 @@ export function pauseMatch(match: Match): Match {
 }
 
 export function resumeMatch(match: Match): Match {
+  if (!isBasketballMatch(match)) return match;
   if (match.snapshot.timeoutRunning) return match;
   const next = cloneMatch(match);
   next.snapshot.clockRunning = true;
@@ -345,7 +389,9 @@ export function resumeMatch(match: Match): Match {
 }
 
 export function resetClockForPeriod(match: Match, rules: BasketballRules): Match {
+  if (!isBasketballMatch(match)) return match;
   const next = cloneMatch(match);
+  if (!isBasketballMatch(next)) return match;
   if (next.snapshot.inOvertime) {
     next.snapshot.clockMs = rules.overtimeMinutes * 60 * 1000;
   } else {
@@ -391,7 +437,7 @@ export function createBlankMatch(input: {
   };
 }
 
-function cloneMatch(match: Match): Match {
+function cloneMatch(match: BasketballMatch): BasketballMatch {
   return {
     ...match,
     snapshot: {

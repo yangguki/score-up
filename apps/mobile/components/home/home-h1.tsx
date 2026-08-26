@@ -7,7 +7,7 @@ import { KitButton, KitScreen, KitText, KitTitle } from "@/components/home/kit-u
 import { SportPicker } from "@/components/home/sport-picker";
 import { EMPTY_HOME_COPY, type buildHomeModel } from "@/lib/home";
 import { HOME_TAGLINE, HOME_VALUE_LINES } from "@/lib/home-sports";
-import { HOME_KITS } from "@/theme/home-kits";
+import { HOME_KIT, type HomeKit } from "@/theme/home-kits";
 import { space } from "@/theme/tokens";
 
 type Model = ReturnType<typeof buildHomeModel>;
@@ -21,7 +21,7 @@ function SectionTitle({
   hint,
   live,
 }: {
-  kit: (typeof HOME_KITS)["h1"];
+  kit: HomeKit;
   title: string;
   hint?: string;
   live?: boolean;
@@ -50,7 +50,7 @@ function SectionTitle({
 
 /** 검수 확정 — 스크린샷 Arena T&M 전면 + H3식 2열 종목 */
 export function HomeH1({ model }: { model: Model }) {
-  const kit = HOME_KITS.h1;
+  const kit = HOME_KIT;
   const accent = kit.accent ?? COURT_AMBER;
 
   return (
@@ -148,7 +148,7 @@ export function HomeH1({ model }: { model: Model }) {
 
         <Animated.View entering={FadeInDown.delay(120).duration(420).springify().damping(18)} style={{ gap: space.md }}>
           <SectionTitle kit={kit} title="종목 고르기" hint="아이콘으로 구분 · MVP는 농구만 활성" />
-          <SportPicker kit={kit} layout="mosaic" />
+          <SportPicker kit={kit} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(180).duration(420).springify().damping(18)} style={{ gap: 10 }}>

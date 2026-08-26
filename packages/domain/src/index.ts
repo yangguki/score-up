@@ -1,4 +1,29 @@
-export type { AppData, BasketballRules, BasketballSnapshot, BracketRound, BracketSlot, Competition, CompetitionFormat, CompetitionStatus, Match, MatchEvent, MatchEventType, MatchStatus, PeriodScore, Player, Side, SportId, SportPreset, Team } from "./types";
+export type {
+  AppData,
+  BasketballRules,
+  BasketballSnapshot,
+  BracketRound,
+  BracketSlot,
+  Competition,
+  CompetitionFormat,
+  CompetitionStatus,
+  Match,
+  MatchEvent,
+  MatchEventType,
+  MatchStatus,
+  PeriodScore,
+  Player,
+  Side,
+  SportId,
+  SportPreset,
+  SportRules,
+  SportSnapshot,
+  Team,
+  VolleyballRules,
+  VolleyballSetScore,
+  VolleyballSnapshot,
+} from "./types";
+export { isBasketballMatch, isVolleyballMatch } from "./types";
 export { DEFAULT_AWAY_COLOR, DEFAULT_HOME_COLOR, TEAM_COLOR_PRESETS, nextTeamColor } from "./colors";
 export {
   BASKETBALL_CLUB_PRESET,
@@ -16,3 +41,27 @@ export {
   quarterLabel,
   rulesSummary,
 } from "./basketball";
+export {
+  applyBasketballEvent,
+  replayBasketballScores,
+  syncScoreFieldsFromEvents,
+} from "./engine";
+export type { BasketballEngineCtx, ReplayScoreState } from "./engine";
+export {
+  LEAGUE_LOSS_POINTS,
+  LEAGUE_WIN_POINTS,
+  computeLeagueStandings,
+} from "./league";
+export type { LeagueStandingRow } from "./league";
+export {
+  VOLLEYBALL_CLUB_PRESET,
+  canEndVolleyballMatch,
+  canEndVolleyballSet,
+  emptyVolleyballSnapshot,
+  isLastVolleyballSet,
+  volleyballDeuce,
+  volleyballRulesSummary,
+  volleyballSetLabel,
+  volleyballSetPointSide,
+  volleyballTarget,
+} from "./volleyball";
