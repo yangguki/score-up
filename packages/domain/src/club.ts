@@ -1,12 +1,18 @@
 import type {
   Account,
+  ClubLadderMatch,
   ClubMember,
   ClubSession,
+  ClubSessionFormat,
+  ClubSplitFormat,
+  RallyClubFormat,
   Match,
+  MemberGrade,
   SessionAssignment,
   SessionStatus,
   VoteValue,
 } from "./types";
+import { GRADE_RANK_ORDER, gradeLabel, memberGrade } from "./ladder";
 
 export function voteLabel(value: VoteValue): string {
   if (value === "going") return "참석";
@@ -38,6 +44,7 @@ export type ClubRankingRow = {
   rank: number;
   accountId: string;
   name: string;
+  grade: MemberGrade;
   wins: number;
   losses: number;
   played: number;
@@ -45,9 +52,10 @@ export type ClubRankingRow = {
 };
 
 export function computeClubRanking(
-  members: { accountId: string; name: string }[],
+  members: { accountId: string; name: string; grade?: MemberGrade }[],
   matches: Match[],
   assignments: SessionAssignment[],
+  ladderMatches: ClubLadderMatch[] = [],
 ): ClubRankingRow[] {
   const rows = new Map<string, { wins: number; losses: number }>();
   for (const member of members) {
@@ -76,6 +84,19 @@ export function computeClubRanking(
     }
   }
 
+  for (const match of ladderMatches) {
+    const home = rows.get(match.homeAccountId);
+    const away = rows.get(match.awayAccountId);
+    if (home) {
+      if (match.winnerAccountId === match.homeAccountId) home.wins += 1;
+      else home.losses += 1;
+    }
+    if (away) {
+      if (match.winnerAccountId === match.awayAccountId) away.wins += 1;
+      else away.losses += 1;
+    }
+  }
+
   return members
     .map((member) => {
       const stat = rows.get(member.accountId) ?? { wins: 0, losses: 0 };
@@ -83,6 +104,7 @@ export function computeClubRanking(
       return {
         accountId: member.accountId,
         name: member.name,
+        grade: memberGrade(member.grade),
         wins: stat.wins,
         losses: stat.losses,
         played,
@@ -99,6 +121,16 @@ export function computeClubRanking(
       return a.name.localeCompare(b.name, "ko");
     })
     .map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+export function groupClubRanking(rows: ClubRankingRow[]) {
+  return GRADE_RANK_ORDER.map((grade) => ({
+    grade,
+    label: gradeLabel(grade),
+    rows: rows
+      .filter((row) => row.grade === grade)
+      .map((row, index) => ({ ...row, rank: index + 1 })),
+  })).filter((group) => group.rows.length > 0);
 }
 
 export function accountName(accounts: Account[], accountId?: string | null) {
@@ -131,7 +163,57 @@ export type SplitProposal = {
   reason?: string;
 };
 
-const COURT = 5;
+const COURT = { "5v5": 5, "4v4": 4 } as const;
+
+export function sessionSplitFormat(session: Pick<ClubSession, "format"> | { format?: ClubSessionFormat }): ClubSplitFormat {
+  return session.format === "4v4" ? "4v4" : "5v5";
+}
+
+export function isRallyClubFormat(format?: ClubSessionFormat | string): format is RallyClubFormat {
+  return format === "singles" || format === "doubles";
+}
+
+export function sessionRallyFormat(session: Pick<ClubSession, "format"> | { format?: ClubSessionFormat }): RallyClubFormat {
+  return session.format === "singles" ? "singles" : "doubles";
+}
+
+export function rallySideSize(format: RallyClubFormat = "doubles"): 1 | 2 {
+  return format === "singles" ? 1 : 2;
+}
+
+export function canEnterRallyBout(candidates: number, format: RallyClubFormat = "doubles") {
+  return candidates >= rallySideSize(format) * 2;
+}
+
+export function rallyBoutLockCopy(format: RallyClubFormat = "doubles") {
+  return format === "singles"
+    ? "단식은 참석 2명이 필요합니다. 게스트를 추가하세요."
+    : "복식은 참석 4명이 필요합니다. 게스트를 추가하세요.";
+}
+
+export function clubCourtSize(format: ClubSplitFormat = "5v5"): 5 | 4 {
+  return COURT[format];
+}
+
+export function canEnterFiveOnFiveSplit(candidates: number) {
+  return candidates >= COURT["5v5"] * 2;
+}
+
+/** 인원 미달 슬라이스. 10명 이상이면 5v5만. */
+export function canEnterFourOnFourSplit(candidates: number) {
+  return candidates >= COURT["4v4"] * 2 && candidates < COURT["5v5"] * 2;
+}
+
+export function clubFiveOnFiveLockCopy(candidates: number) {
+  if (canEnterFourOnFourSplit(candidates)) {
+    return "5대5는 참석 10명이 필요합니다. 게스트를 추가하거나 4대4로 나누세요.";
+  }
+  return "5대5는 참석 10명이 필요합니다. 게스트를 추가하세요.";
+}
+
+export function clubFourOnFourLockCopy() {
+  return "4대4는 참석 8명이 필요합니다. 게스트를 추가하세요.";
+}
 
 function candidateKey(row: SplitCandidate) {
   return row.accountId ? `a:${row.accountId}` : `g:${row.guestId ?? row.name}`;
@@ -141,21 +223,24 @@ function balanceScore(row: SplitCandidate) {
   return row.winRate ?? 0.5;
 }
 
-/** 농구 5v5 자동 매칭 제안. 확정은 운영자. */
+/** 농구 회차 자동 매칭 제안. 확정은 운영자. format 기본 5v5. */
 export function proposeClubSplit(
   candidates: SplitCandidate[],
-  options: { balanceByWinRate?: boolean; random?: () => number } = {},
+  options: { format?: ClubSplitFormat; balanceByWinRate?: boolean; random?: () => number } = {},
 ): SplitProposal {
+  const format: ClubSplitFormat = options.format === "4v4" ? "4v4" : "5v5";
+  const court = clubCourtSize(format);
+  const min = court * 2;
   const balance = options.balanceByWinRate ?? false;
   const random = options.random ?? Math.random;
 
-  if (candidates.length < COURT * 2) {
+  if (candidates.length < min) {
     return {
       home: [],
       away: [],
       bench: [...candidates],
       ok: false,
-      reason: `5대5는 참석 ${COURT * 2}명이 필요합니다. 게스트를 추가하세요.`,
+      reason: format === "4v4" ? clubFourOnFourLockCopy() : clubFiveOnFiveLockCopy(candidates.length),
     };
   }
 
@@ -174,8 +259,8 @@ export function proposeClubSplit(
     }
   }
 
-  const starters = ordered.slice(0, COURT * 2);
-  const bench = ordered.slice(COURT * 2);
+  const starters = ordered.slice(0, min);
+  const bench = ordered.slice(min);
   const home: SplitCandidate[] = [];
   const away: SplitCandidate[] = [];
 
@@ -189,7 +274,7 @@ export function proposeClubSplit(
     }
   } else {
     for (let i = 0; i < starters.length; i += 1) {
-      (i < COURT ? home : away).push(starters[i]!);
+      (i < court ? home : away).push(starters[i]!);
     }
   }
 

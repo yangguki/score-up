@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { ScrollView, View } from "react-native";
-import { accountName, canOperateClub, memberOf } from "@score-up/domain";
+import { Pressable, ScrollView, View } from "react-native";
+import { accountName, canOperateClub, gradeLabel, memberOf, MEMBER_GRADES, type MemberGrade } from "@score-up/domain";
 import { Btn, Card, H, P, Screen } from "@/components/ui";
 import { confirmAction } from "@/lib/confirm";
 import { copyText } from "@/lib/copy-text";
 import { useAppStore } from "@/store/app-store";
-import { space } from "@/theme/tokens";
+import { colors, space } from "@/theme/tokens";
 
 export default function ClubMembersScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,6 +16,7 @@ export default function ClubMembersScreen() {
   const clubMembers = useAppStore((s) => s.clubMembers);
   const members = useMemo(() => clubMembers.filter((row) => row.clubId === id), [clubMembers, id]);
   const decideJoinAt = useAppStore((s) => s.decideJoinAt);
+  const setMemberGradeAt = useAppStore((s) => s.setMemberGradeAt);
   const [notice, setNotice] = useState("");
 
   if (!club) {
@@ -31,6 +32,14 @@ export default function ClubMembersScreen() {
   const pending = members.filter((row) => row.status === "pending");
   const active = members.filter((row) => row.status === "active");
   const roleLabel = (role: string) => (role === "owner" ? "모임장" : role === "operator" ? "운영" : "멤버");
+
+  const setGrade = (memberId: string, grade: MemberGrade) => {
+    try {
+      setMemberGradeAt(memberId, grade);
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "급수를 바꾸지 못했습니다.");
+    }
+  };
 
   return (
     <Screen>
@@ -85,11 +94,43 @@ export default function ClubMembersScreen() {
           <Card key={row.id}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
               <P>{accountName(accounts, row.accountId)}</P>
-              <P muted>{roleLabel(row.role)}</P>
+              <P muted>
+                {roleLabel(row.role)} · {gradeLabel(row.grade)}
+              </P>
             </View>
+            {operate ? (
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+                {MEMBER_GRADES.map((grade) => (
+                  <GradeChip
+                    key={grade}
+                    label={gradeLabel(grade)}
+                    selected={row.grade === grade}
+                    onPress={() => setGrade(row.id, grade)}
+                  />
+                ))}
+              </View>
+            ) : null}
           </Card>
         ))}
       </ScrollView>
     </Screen>
+  );
+}
+
+function GradeChip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={{ flex: 1 }}>
+      <View
+        style={{
+          borderWidth: 1,
+          borderColor: selected ? colors.primary : colors.line,
+          borderRadius: 10,
+          paddingVertical: 8,
+          alignItems: "center",
+        }}
+      >
+        <P>{label}</P>
+      </View>
+    </Pressable>
   );
 }

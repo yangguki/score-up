@@ -1,12 +1,24 @@
 import { useState } from "react";
-import { Link, Redirect, useLocalSearchParams } from "expo-router";
+import { Link, Redirect, router, useLocalSearchParams } from "expo-router";
 import { ScrollView, TextInput, View } from "react-native";
 import {
   accountName,
+  canEnterFourOnFourSplit,
+  canEnterFiveOnFiveSplit,
+  canEnterRallyBout,
   canOperateClub,
+  clubCourtSize,
+  clubFourOnFourLockCopy,
+  clubFiveOnFiveLockCopy,
   memberOf,
+  rallyBoutLockCopy,
+  rallySideSize,
+  sessionRallyFormat,
+  sessionSplitFormat,
   sessionStatusLabel,
   voteLabel,
+  type ClubSplitFormat,
+  type RallyClubFormat,
   type VoteValue,
 } from "@score-up/domain";
 import { Btn, Card, H, P, Screen } from "@/components/ui";
@@ -55,6 +67,24 @@ export default function SessionDetailScreen() {
     }
   };
 
+  const enterSplit = (format: ClubSplitFormat) => {
+    data.setSessionFormatAt(session.id, format);
+    router.push(`/club/${club.id}/sessions/${session.id}/split`);
+  };
+
+  const enterBout = () => {
+    router.push(`/club/${club.id}/sessions/${session.id}/bout`);
+  };
+
+  const setRallyFormat = (format: RallyClubFormat) => {
+    data.setSessionFormatAt(session.id, format);
+  };
+
+  const isBadminton = club.sportId === "badminton";
+  const splitFormat = sessionSplitFormat(session);
+  const rallyFormat = sessionRallyFormat(session);
+  const court = isBadminton ? rallySideSize(rallyFormat) : clubCourtSize(splitFormat);
+
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
@@ -84,7 +114,11 @@ export default function SessionDetailScreen() {
             <P muted>
               참석 {goingCount} · 불참 {noCount} · 미정 {maybeCount} · 없음 {noneCount}
             </P>
-            <P muted>마감 후 참석이 10명 미만이면 게스트를 넣고 5대5로 나눕니다.</P>
+            <P muted>
+              {isBadminton
+                ? "마감 후 단식 2명 또는 복식 4명이면 한 판을 열 수 있습니다."
+                : "마감 후 참석 10명이면 5대5, 8~9명이면 4대4로 나눌 수 있습니다."}
+            </P>
             <H style={{ fontSize: 16 }}>참석</H>
             {grouped("going").map((row) => (
               <P key={row.id}>{accountName(data.accounts, row.accountId)}</P>
@@ -166,15 +200,47 @@ export default function SessionDetailScreen() {
                     }
                   }}
                 />
-                {candidates < 10 ? (
+                {isBadminton ? (
+                  <>
+                    <View style={{ flexDirection: "row", gap: 8 }}>
+                      <View style={{ flex: 1 }}>
+                        <Btn
+                          label="단식"
+                          variant={rallyFormat === "singles" ? "primary" : "ghost"}
+                          onPress={() => setRallyFormat("singles")}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Btn
+                          label="복식"
+                          variant={rallyFormat === "doubles" ? "primary" : "ghost"}
+                          onPress={() => setRallyFormat("doubles")}
+                        />
+                      </View>
+                    </View>
+                    {canEnterRallyBout(candidates, rallyFormat) ? (
+                      <Btn label="한 판 열기" onPress={enterBout} />
+                    ) : (
+                      <>
+                        <Btn label="한 판 열기" disabled />
+                        <P muted>{rallyBoutLockCopy(rallyFormat)}</P>
+                      </>
+                    )}
+                  </>
+                ) : canEnterFiveOnFiveSplit(candidates) ? (
+                  <Btn label="팀 나누기" onPress={() => enterSplit("5v5")} />
+                ) : canEnterFourOnFourSplit(candidates) ? (
                   <>
                     <Btn label="팀 나누기" disabled />
-                    <P muted>5대5는 참석 10명이 필요합니다. 게스트를 추가하세요.</P>
+                    <P muted>{clubFiveOnFiveLockCopy(candidates)}</P>
+                    <Btn label="4대4로 나누기" onPress={() => enterSplit("4v4")} />
                   </>
                 ) : (
-                  <Link href={`/club/${club.id}/sessions/${session.id}/split`} asChild>
-                    <Btn label="팀 나누기" />
-                  </Link>
+                  <>
+                    <Btn label="팀 나누기" disabled />
+                    <Btn label="4대4로 나누기" disabled />
+                    <P muted>{clubFourOnFourLockCopy()}</P>
+                  </>
                 )}
               </>
             ) : null}
@@ -184,10 +250,15 @@ export default function SessionDetailScreen() {
         {session.status === "matched" || session.status === "in_play" ? (
           <>
             <P muted>상태 {sessionStatusLabel(session.status)}</P>
+            {isBadminton ? (
+              <P muted>{rallyFormat === "singles" ? "단식" : "복식"}</P>
+            ) : splitFormat === "4v4" ? (
+              <P muted>4대4 · 출전 팀당 {court}명</P>
+            ) : null}
             {match ? (
               operate ? (
                 <Link href={matchHref(match)} asChild>
-                  <Btn label="출전 확인" />
+                  <Btn label={isBadminton ? "보드로" : "출전 확인"} />
                 </Link>
               ) : (
                 <P muted>멤버는 보드에 들어가지 않습니다.</P>
@@ -214,7 +285,13 @@ export default function SessionDetailScreen() {
           <Btn
             label="회차 취소"
             variant="ghost"
-            onPress={() => confirmAction("회차 취소", "이 회차를 취소할까요?", () => data.cancelSessionAt(session.id))}
+            onPress={() =>
+              confirmAction(
+                "회차 취소",
+                session.recurring ? "이 회차만 취소됩니다. 정기 규칙은 남습니다." : "이 회차를 취소할까요?",
+                () => data.cancelSessionAt(session.id),
+              )
+            }
           />
         ) : null}
       </ScrollView>

@@ -1,6 +1,6 @@
 import { Link, Redirect, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
-import { canOperateClub, memberOf, sessionStatusLabel, voteLabel } from "@score-up/domain";
+import { canOperateClub, memberOf, recurrenceLabel, sessionStatusLabel, voteLabel } from "@score-up/domain";
 import { Btn, Card, H, P, Pill, Screen, SectionHead } from "@/components/ui";
 import { myVoteValue, nextClubSession, sessionLine } from "@/lib/club-home";
 import { sportLabel } from "@/lib/match-routes";
@@ -41,6 +41,7 @@ export default function ClubOverviewScreen() {
         <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
           <View style={{ flex: 1 }}>
             <SectionHead title={club.name} hint={`${sportLabel(club.sportId)} · 멤버 ${activeCount}`} />
+            {recurrenceLabel(club) !== "정기 없음" ? <P muted>{recurrenceLabel(club)}</P> : null}
           </View>
           {operate ? (
             <Link href={`/club/${club.id}/settings`} asChild>
@@ -117,6 +118,18 @@ export default function ClubOverviewScreen() {
           <View style={{ flex: 1 }}>
             <Link href={`/club/${club.id}/records`} asChild>
               <Btn label="전적" variant="ghost" />
+            </Link>
+          </View>
+        </View>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flex: 1 }}>
+            <Link href={`/club/${club.id}/challenges`} asChild>
+              <Btn label="도전" variant="ghost" />
+            </Link>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Link href={`/club/${club.id}/ladder/new`} asChild>
+              <Btn label="결과 넣기" variant="ghost" />
             </Link>
           </View>
         </View>

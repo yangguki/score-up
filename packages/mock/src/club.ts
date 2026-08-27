@@ -2,13 +2,42 @@ import type {
   AppData,
   Club,
   ClubSession,
+  ClubSessionFormat,
+  MemberGrade,
+  NthWeek,
+  RecurrenceKind,
   SessionAssignment,
   SessionSide,
   SportId,
   VoteValue,
 } from "@score-up/domain";
-import { BASKETBALL_CLUB_PRESET, canOperateClub, computeClubRanking, isBasketballMatch, memberOf, proposeClubSplit } from "@score-up/domain";
+import {
+  BADMINTON_CLUB_PRESET,
+  BASKETBALL_CLUB_PRESET,
+  canChallengeGrade,
+  canOperateClub,
+  canSendChallenge,
+  challengeGradeLockCopy,
+  clampMonthDay,
+  clubCourtSize,
+  computeClubRanking,
+  hasOpenChallenge,
+  isBasketballMatch,
+  isRallyClubFormat,
+  memberGrade,
+  memberOf,
+  monthlyDayDates,
+  monthlyNthDates,
+  parseDateLabel,
+  proposeClubSplit,
+  rallySideSize,
+  sessionRallyFormat,
+  sessionSplitFormat,
+  weekdayOf,
+  weeklyDates,
+} from "@score-up/domain";
 import { createBlankMatch } from "./basketball";
+import { createBlankTableTennisMatch } from "./table-tennis";
 import { uid } from "./id";
 
 function requireAccount(data: AppData) {
@@ -37,7 +66,9 @@ export function createClub(
   const name = input.name.trim();
   if (!name) throw new Error("모임 이름을 입력하세요.");
   const sportId = input.sportId ?? "basketball";
-  if (sportId !== "basketball") throw new Error("1차 모임은 농구만 만듭니다.");
+  if (sportId !== "basketball" && sportId !== "badminton") {
+    throw new Error("모임은 농구 또는 배드민턴만 만듭니다.");
+  }
   const id = uid("club");
   const club: Club = {
     id,
@@ -54,7 +85,7 @@ export function createClub(
       clubs: [...data.clubs, club],
       clubMembers: [
         ...data.clubMembers,
-        { id: uid("cm"), clubId: id, accountId, role: "owner", status: "active" },
+        { id: uid("cm"), clubId: id, accountId, role: "owner", status: "active", grade: "intermediate" },
       ],
     },
     id,
@@ -72,7 +103,7 @@ export function requestJoin(data: AppData, token: string): AppData {
     ...data,
     clubMembers: [
       ...data.clubMembers,
-      { id: uid("cm"), clubId: club.id, accountId, role: "member", status: "pending" },
+      { id: uid("cm"), clubId: club.id, accountId, role: "member", status: "pending", grade: "intermediate" },
     ],
   };
 }
@@ -95,16 +126,6 @@ export function decideJoin(data: AppData, memberId: string, accept: boolean): Ap
   };
 }
 
-function nextDateLabel(start: string, weekIndex: number) {
-  const base = new Date(`${start}T00:00:00`);
-  if (Number.isNaN(base.getTime())) return start;
-  base.setDate(base.getDate() + weekIndex * 7);
-  const y = base.getFullYear();
-  const m = String(base.getMonth() + 1).padStart(2, "0");
-  const d = String(base.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
 function deadlineBefore(timeLabel: string) {
   const [h, m] = timeLabel.split(":").map((part) => Number(part));
   if (!Number.isFinite(h) || !Number.isFinite(m)) return "12:00";
@@ -114,11 +135,31 @@ function deadlineBefore(timeLabel: string) {
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
-export function createSessions(
-  data: AppData,
-  clubId: string,
-  input: { dateLabel: string; timeLabel: string; venue: string; weekly: boolean },
-): { data: AppData; firstId: string } {
+export type CreateSessionsInput = {
+  dateLabel: string;
+  timeLabel: string;
+  venue: string;
+  kind: "once" | RecurrenceKind;
+  nthWeek?: NthWeek;
+  weekday?: number;
+  monthDay?: number;
+};
+
+function datesForSessions(input: CreateSessionsInput, dateLabel: string): string[] {
+  if (input.kind === "weekly") return weeklyDates(dateLabel);
+  if (input.kind === "monthlyNth") {
+    const weekday = input.weekday ?? weekdayOf(dateLabel);
+    if (weekday == null) return [];
+    return monthlyNthDates(dateLabel, weekday, input.nthWeek ?? 1);
+  }
+  if (input.kind === "monthlyDate") {
+    const day = input.monthDay ?? Number.parseInt(dateLabel.slice(-2), 10);
+    return monthlyDayDates(dateLabel, day);
+  }
+  return [dateLabel];
+}
+
+export function createSessions(data: AppData, clubId: string, input: CreateSessionsInput): { data: AppData; firstId: string } {
   const accountId = requireAccount(data);
   const me = memberOf(data.clubMembers, clubId, accountId);
   if (!canOperateClub(me?.role)) throw new Error("회차는 모임장·운영만 만들 수 있습니다.");
@@ -126,27 +167,46 @@ export function createSessions(
   if (!club) throw new Error("모임을 찾을 수 없습니다.");
   const dateLabel = input.dateLabel.trim();
   const timeLabel = input.timeLabel.trim() || "14:00";
-  if (!dateLabel) throw new Error("날짜를 입력하세요.");
-  const count = input.weekly ? 8 : 1;
-  const created: ClubSession[] = [];
-  for (let i = 0; i < count; i++) {
-    created.push({
-      id: uid("ses"),
-      clubId,
-      dateLabel: nextDateLabel(dateLabel, i),
-      timeLabel,
-      venue: input.venue.trim() || club.venue || "",
-      voteDeadlineLabel: deadlineBefore(timeLabel),
-      status: "voting",
-      recurring: input.weekly,
-    });
+  if (!parseDateLabel(dateLabel)) throw new Error("날짜를 YYYY-MM-DD로 입력하세요.");
+  if (input.kind === "monthlyDate") {
+    const day = input.monthDay ?? Number.parseInt(dateLabel.slice(-2), 10);
+    if (!Number.isFinite(day) || day < 1 || day > 28) throw new Error("말일은 28일로 두세요.");
   }
+  const taken = new Set(
+    data.sessions
+      .filter((row) => row.clubId === clubId && row.status !== "cancelled")
+      .map((row) => row.dateLabel),
+  );
+  const dates = datesForSessions(input, dateLabel).filter((day) => !taken.has(day));
+  if (dates.length === 0) throw new Error("이미 같은 날짜 회차가 있습니다.");
+
+  const created: ClubSession[] = dates.map((day) => ({
+    id: uid("ses"),
+    clubId,
+    dateLabel: day,
+    timeLabel,
+    venue: input.venue.trim() || club.venue || "",
+    voteDeadlineLabel: deadlineBefore(timeLabel),
+    status: "voting",
+    recurring: input.kind !== "once",
+    format: club.sportId === "badminton" ? "doubles" : "5v5",
+  }));
   const firstId = created[0]!.id;
   let clubs = data.clubs;
-  if (input.weekly) {
-    const weekday = new Date(`${dateLabel}T00:00:00`).getDay();
+  if (input.kind !== "once") {
+    const weekday = input.weekday ?? weekdayOf(dateLabel) ?? club.weekday;
     clubs = data.clubs.map((row) =>
-      row.id === clubId ? { ...row, weekday, weeklyTime: timeLabel, venue: input.venue.trim() || row.venue } : row,
+      row.id === clubId
+        ? {
+            ...row,
+            recurrenceKind: input.kind,
+            weekday: input.kind === "monthlyDate" ? row.weekday : weekday,
+            weeklyTime: timeLabel,
+            nthWeek: input.kind === "monthlyNth" ? (input.nthWeek ?? 1) : row.nthWeek,
+            monthDay: input.kind === "monthlyDate" ? clampMonthDay(input.monthDay ?? 1) : row.monthDay,
+            venue: input.venue.trim() || row.venue,
+          }
+        : row,
     );
   }
   return { data: { ...data, clubs, sessions: [...data.sessions, ...created] }, firstId };
@@ -270,6 +330,22 @@ export function setAssignment(data: AppData, sessionId: string, key: { accountId
   return { ...data, sessionAssignments: [...data.sessionAssignments, next] };
 }
 
+export function setSessionFormat(data: AppData, sessionId: string, format: ClubSessionFormat): AppData {
+  const accountId = requireAccount(data);
+  const session = data.sessions.find((row) => row.id === sessionId);
+  if (!session) return data;
+  const me = memberOf(data.clubMembers, session.clubId, accountId);
+  if (!canOperateClub(me?.role)) return data;
+  if (session.status !== "confirming") return data;
+  const club = data.clubs.find((row) => row.id === session.clubId);
+  if (club?.sportId === "badminton" && !isRallyClubFormat(format)) return data;
+  if (club?.sportId !== "badminton" && isRallyClubFormat(format)) return data;
+  return {
+    ...data,
+    sessions: data.sessions.map((row) => (row.id === sessionId ? { ...row, format } : row)),
+  };
+}
+
 /** 자동 매칭 제안 → 배정에 반영. 확정은 confirmSplit. */
 export function applySplitProposal(
   data: AppData,
@@ -281,6 +357,10 @@ export function applySplitProposal(
   if (!session) return { data, ok: false, reason: "회차를 찾을 수 없습니다." };
   const me = memberOf(data.clubMembers, session.clubId, operatorId);
   if (!canOperateClub(me?.role)) return { data, ok: false, reason: "팀 나누기는 모임장·운영만 할 수 있습니다." };
+  const club = data.clubs.find((row) => row.id === session.clubId);
+  if (club?.sportId === "badminton") {
+    return { data, ok: false, reason: "배드민턴 회차는 한 판 열기를 쓰세요." };
+  }
 
   const members = data.clubMembers
     .filter((row) => row.clubId === session.clubId && row.status === "active")
@@ -292,6 +372,7 @@ export function applySplitProposal(
     members,
     data.matches.filter((match) => match.sessionId && data.sessions.some((s) => s.id === match.sessionId && s.clubId === session.clubId)),
     data.sessionAssignments,
+    data.ladderMatches.filter((row) => row.clubId === session.clubId),
   );
   const rateOf = (accountId?: string) => ranking.find((row) => row.accountId === accountId)?.winRate ?? null;
 
@@ -310,7 +391,8 @@ export function applySplitProposal(
       winRate: null as number | null,
     }));
   const candidates = [...going, ...guests];
-  const proposal = proposeClubSplit(candidates, { balanceByWinRate: options.balanceByWinRate });
+  const format = sessionSplitFormat(session);
+  const proposal = proposeClubSplit(candidates, { format, balanceByWinRate: options.balanceByWinRate });
   if (!proposal.ok) return { data, ok: false, reason: proposal.reason };
 
   const cleared = {
@@ -338,9 +420,14 @@ export function confirmSplit(data: AppData, sessionId: string): { data: AppData;
   if (!canOperateClub(me?.role)) throw new Error("팀 나누기는 모임장·운영만 할 수 있습니다.");
   const club = data.clubs.find((row) => row.id === session.clubId);
   if (!club) throw new Error("모임을 찾을 수 없습니다.");
+  if (club.sportId === "badminton") throw new Error("배드민턴 회차는 한 판 열기를 쓰세요.");
   const home = data.sessionAssignments.filter((row) => row.sessionId === sessionId && row.side === "home");
   const away = data.sessionAssignments.filter((row) => row.sessionId === sessionId && row.side === "away");
-  if (home.length !== 5 || away.length !== 5) throw new Error("A 5 · B 5 이어야 매칭을 확정할 수 있습니다.");
+  const format = sessionSplitFormat(session);
+  const court = clubCourtSize(format);
+  if (home.length !== court || away.length !== court) {
+    throw new Error(`A ${court} · B ${court} 이어야 매칭을 확정할 수 있습니다.`);
+  }
 
   const nameOf = (row: SessionAssignment) => {
     if (row.accountId) return data.accounts.find((acc) => acc.id === row.accountId)?.name ?? "멤버";
@@ -367,7 +454,7 @@ export function confirmSplit(data: AppData, sessionId: string): { data: AppData;
     awayColor: awayTeam.color,
     roundLabel: "회차",
     scheduledLabel: `${session.dateLabel} ${session.timeLabel}`,
-    rules: BASKETBALL_CLUB_PRESET.rules,
+    rules: { ...BASKETBALL_CLUB_PRESET.rules, starters: court },
     status: "lineup",
   });
   if (isBasketballMatch(match)) {
@@ -383,6 +470,66 @@ export function confirmSplit(data: AppData, sessionId: string): { data: AppData;
       matches: [...data.matches, match],
       sessions: data.sessions.map((row) =>
         row.id === sessionId ? { ...row, status: "matched" as const, matchId: match.id } : row,
+      ),
+    },
+    matchId: match.id,
+  };
+}
+
+export function confirmRallyBout(data: AppData, sessionId: string): { data: AppData; matchId: string } {
+  const accountId = requireAccount(data);
+  const session = data.sessions.find((row) => row.id === sessionId);
+  if (!session) throw new Error("회차를 찾을 수 없습니다.");
+  const me = memberOf(data.clubMembers, session.clubId, accountId);
+  if (!canOperateClub(me?.role)) throw new Error("한 판 열기는 모임장·운영만 할 수 있습니다.");
+  const club = data.clubs.find((row) => row.id === session.clubId);
+  if (!club) throw new Error("모임을 찾을 수 없습니다.");
+  if (club.sportId !== "badminton") throw new Error("한 판 열기는 배드민턴 모임만 씁니다.");
+  const format = sessionRallyFormat(session);
+  const court = rallySideSize(format);
+  const home = data.sessionAssignments.filter((row) => row.sessionId === sessionId && row.side === "home");
+  const away = data.sessionAssignments.filter((row) => row.sessionId === sessionId && row.side === "away");
+  if (home.length !== court || away.length !== court) {
+    throw new Error(format === "singles" ? "양쪽 1명을 고르세요." : "양쪽 2명을 고르세요.");
+  }
+
+  const nameOf = (row: SessionAssignment) => {
+    if (row.accountId) return data.accounts.find((acc) => acc.id === row.accountId)?.name ?? "멤버";
+    return data.sessionGuests.find((gst) => gst.id === row.guestId)?.name ?? "게스트";
+  };
+  const labelOf = (rows: SessionAssignment[]) => rows.map(nameOf).join(" / ");
+
+  const homeTeam = { id: uid("team"), name: labelOf(home), color: "#B91C1C" };
+  const awayTeam = { id: uid("team"), name: labelOf(away), color: "#1D4ED8" };
+  const players = [...home, ...away].map((row, index) => ({
+    id: uid("p"),
+    teamId: row.side === "home" ? homeTeam.id : awayTeam.id,
+    name: nameOf(row),
+    number: index + 1,
+  }));
+  const match = createBlankTableTennisMatch({
+    sportId: "badminton",
+    sessionId,
+    homeTeamId: homeTeam.id,
+    awayTeamId: awayTeam.id,
+    homeLabel: homeTeam.name,
+    awayLabel: awayTeam.name,
+    homeColor: homeTeam.color,
+    awayColor: awayTeam.color,
+    roundLabel: format === "singles" ? "단식" : "복식",
+    scheduledLabel: `${session.dateLabel} ${session.timeLabel}`,
+    rules: { ...BADMINTON_CLUB_PRESET.rules, doubles: format === "doubles" },
+    status: "scheduled",
+  });
+
+  return {
+    data: {
+      ...data,
+      teams: [...data.teams, homeTeam, awayTeam],
+      players: [...data.players, ...players],
+      matches: [...data.matches, match],
+      sessions: data.sessions.map((row) =>
+        row.id === sessionId ? { ...row, status: "matched" as const, matchId: match.id, format } : row,
       ),
     },
     matchId: match.id,
@@ -405,7 +552,16 @@ export function cancelSession(data: AppData, sessionId: string): AppData {
 export function updateClub(
   data: AppData,
   clubId: string,
-  patch: { name?: string; venue?: string; seasonLabel?: string },
+  patch: {
+    name?: string;
+    venue?: string;
+    seasonLabel?: string;
+    recurrenceKind?: RecurrenceKind | null;
+    weekday?: number | null;
+    weeklyTime?: string;
+    nthWeek?: NthWeek | null;
+    monthDay?: number | null;
+  },
 ): AppData {
   const accountId = requireAccount(data);
   const me = memberOf(data.clubMembers, clubId, accountId);
@@ -419,6 +575,11 @@ export function updateClub(
             name: patch.name?.trim() || row.name,
             venue: patch.venue?.trim() || row.venue,
             seasonLabel: patch.seasonLabel?.trim() || row.seasonLabel,
+            recurrenceKind: patch.recurrenceKind === null ? undefined : (patch.recurrenceKind ?? row.recurrenceKind),
+            weekday: patch.weekday === null ? undefined : (patch.weekday ?? row.weekday),
+            weeklyTime: patch.weeklyTime?.trim() || row.weeklyTime,
+            nthWeek: patch.nthWeek === null ? undefined : (patch.nthWeek ?? row.nthWeek),
+            monthDay: patch.monthDay === null ? undefined : patch.monthDay != null ? clampMonthDay(patch.monthDay) : row.monthDay,
           }
         : row,
     ),
@@ -457,5 +618,168 @@ export function dissolveClub(data: AppData, clubId: string): AppData {
     sessionVotes: data.sessionVotes.filter((row) => !sessionIds.includes(row.sessionId)),
     sessionGuests: data.sessionGuests.filter((row) => !sessionIds.includes(row.sessionId)),
     sessionAssignments: data.sessionAssignments.filter((row) => !sessionIds.includes(row.sessionId)),
+    challenges: data.challenges.filter((row) => row.clubId !== clubId),
+    ladderMatches: data.ladderMatches.filter((row) => row.clubId !== clubId),
+  };
+}
+
+function todayLabel() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function activeMember(data: AppData, clubId: string, accountId: string) {
+  return data.clubMembers.find(
+    (row) => row.clubId === clubId && row.accountId === accountId && row.status === "active",
+  );
+}
+
+export function setMemberGrade(data: AppData, memberId: string, grade: MemberGrade): AppData {
+  const accountId = requireAccount(data);
+  const member = data.clubMembers.find((row) => row.id === memberId);
+  if (!member) return data;
+  const me = memberOf(data.clubMembers, member.clubId, accountId);
+  if (!canOperateClub(me?.role) || me?.status !== "active") {
+    throw new Error("급수는 모임장·운영만 지정할 수 있습니다.");
+  }
+  if (member.status !== "active") return data;
+  return {
+    ...data,
+    clubMembers: data.clubMembers.map((row) =>
+      row.id === memberId ? { ...row, grade: memberGrade(grade) } : row,
+    ),
+  };
+}
+
+export function sendChallenge(data: AppData, clubId: string, toAccountId: string): AppData {
+  const fromAccountId = requireAccount(data);
+  const from = activeMember(data, clubId, fromAccountId);
+  const to = activeMember(data, clubId, toAccountId);
+  const check = canSendChallenge({
+    fromAccountId,
+    toAccountId,
+    fromGrade: from?.grade,
+    toGrade: to?.grade,
+    fromActive: Boolean(from),
+    toActive: Boolean(to),
+    openBetween: hasOpenChallenge(data.challenges, clubId, fromAccountId, toAccountId),
+  });
+  if (!check.ok) throw new Error(check.reason);
+  return {
+    ...data,
+    challenges: [
+      ...data.challenges,
+      {
+        id: uid("ch"),
+        clubId,
+        fromAccountId,
+        toAccountId,
+        status: "pending",
+      },
+    ],
+  };
+}
+
+export function respondChallenge(data: AppData, challengeId: string, accept: boolean): AppData {
+  const accountId = requireAccount(data);
+  const challenge = data.challenges.find((row) => row.id === challengeId);
+  if (!challenge || challenge.status !== "pending") return data;
+  if (challenge.toAccountId !== accountId) {
+    throw new Error("받은 사람만 수락하거나 거절할 수 있습니다.");
+  }
+  return {
+    ...data,
+    challenges: data.challenges.map((row) =>
+      row.id === challengeId ? { ...row, status: accept ? ("accepted" as const) : ("declined" as const) } : row,
+    ),
+  };
+}
+
+export function cancelChallenge(data: AppData, challengeId: string): AppData {
+  const accountId = requireAccount(data);
+  const challenge = data.challenges.find((row) => row.id === challengeId);
+  if (!challenge || challenge.status !== "pending") return data;
+  const me = memberOf(data.clubMembers, challenge.clubId, accountId);
+  if (challenge.fromAccountId !== accountId && !canOperateClub(me?.role)) {
+    throw new Error("보낸 사람 또는 운영만 취소할 수 있습니다.");
+  }
+  return {
+    ...data,
+    challenges: data.challenges.map((row) =>
+      row.id === challengeId ? { ...row, status: "cancelled" as const } : row,
+    ),
+  };
+}
+
+export function recordLadderResult(
+  data: AppData,
+  clubId: string,
+  input: {
+    challengeId?: string;
+    homeAccountId: string;
+    awayAccountId: string;
+    homeScore: number;
+    awayScore: number;
+  },
+): AppData {
+  const accountId = requireAccount(data);
+  const me = memberOf(data.clubMembers, clubId, accountId);
+  if (!me || me.status !== "active") throw new Error("멤버만 결과를 넣을 수 있습니다.");
+
+  const homeScore = Number(input.homeScore);
+  const awayScore = Number(input.awayScore);
+  if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore) || homeScore < 0 || awayScore < 0) {
+    throw new Error("점수는 0 이상 정수로 넣으세요.");
+  }
+  if (homeScore === awayScore) throw new Error("승패가 나야 랭킹에 넣습니다.");
+  if (input.homeAccountId === input.awayAccountId) throw new Error("서로 다른 멤버여야 합니다.");
+
+  const home = activeMember(data, clubId, input.homeAccountId);
+  const away = activeMember(data, clubId, input.awayAccountId);
+  if (!home || !away) throw new Error("활성 멤버만 급수 경기에 넣을 수 있습니다.");
+  if (!canChallengeGrade(home.grade, away.grade)) throw new Error(challengeGradeLockCopy());
+
+  const challenge = input.challengeId
+    ? data.challenges.find((row) => row.id === input.challengeId && row.clubId === clubId)
+    : undefined;
+
+  if (challenge) {
+    if (challenge.status !== "accepted") throw new Error("수락된 도전만 결과를 넣을 수 있습니다.");
+    const pair = [challenge.fromAccountId, challenge.toAccountId];
+    if (!pair.includes(input.homeAccountId) || !pair.includes(input.awayAccountId)) {
+      throw new Error("도전한 두 사람으로 점수를 넣으세요.");
+    }
+    const party = accountId === challenge.fromAccountId || accountId === challenge.toAccountId;
+    if (!party && !canOperateClub(me.role)) throw new Error("당사자 또는 운영만 결과를 넣을 수 있습니다.");
+  } else if (!canOperateClub(me.role)) {
+    throw new Error("도전 없는 결과는 모임장·운영만 넣을 수 있습니다.");
+  }
+
+  const winnerAccountId = homeScore > awayScore ? input.homeAccountId : input.awayAccountId;
+  const id = uid("lad");
+  return {
+    ...data,
+    ladderMatches: [
+      ...data.ladderMatches,
+      {
+        id,
+        clubId,
+        challengeId: challenge?.id,
+        homeAccountId: input.homeAccountId,
+        awayAccountId: input.awayAccountId,
+        homeScore,
+        awayScore,
+        winnerAccountId,
+        dateLabel: todayLabel(),
+      },
+    ],
+    challenges: challenge
+      ? data.challenges.map((row) =>
+          row.id === challenge.id ? { ...row, status: "completed" as const, ladderMatchId: id } : row,
+        )
+      : data.challenges,
   };
 }

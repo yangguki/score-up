@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
-import { accountName, canOperateClub, clubCourtSize, memberOf, sessionSplitFormat, type SessionSide } from "@score-up/domain";
+import { accountName, canOperateClub, memberOf, rallySideSize, sessionRallyFormat, type SessionSide } from "@score-up/domain";
 import { Btn, Card, H, P, Screen } from "@/components/ui";
 import { confirmAction } from "@/lib/confirm";
+import { scoreboardHref } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
 import { space } from "@/theme/tokens";
 
-export default function SplitScreen() {
+export default function BoutScreen() {
   const { id, sid } = useLocalSearchParams<{ id: string; sid: string }>();
   const data = useAppStore();
   const session = data.sessions.find((row) => row.id === sid);
   const club = data.clubs.find((row) => row.id === id);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
 
   if (!club || !session) {
     return (
@@ -22,12 +22,12 @@ export default function SplitScreen() {
       </Screen>
     );
   }
-  if (club.sportId === "badminton") return <Redirect href={`/club/${club.id}/sessions/${session.id}/bout`} />;
+  if (club.sportId !== "badminton") return <Redirect href={`/club/${club.id}/sessions/${session.id}/split`} />;
   const mine = memberOf(data.clubMembers, club.id, data.accountId);
   if (!canOperateClub(mine?.role)) return <Redirect href={`/club/${club.id}/sessions/${session.id}`} />;
 
-  const format = sessionSplitFormat(session);
-  const court = clubCourtSize(format);
+  const format = sessionRallyFormat(session);
+  const court = rallySideSize(format);
   const going = data.sessionVotes
     .filter((row) => row.sessionId === session.id && row.value === "going")
     .map((row) => ({
@@ -57,28 +57,13 @@ export default function SplitScreen() {
   const move = (person: (typeof people)[number], side: SessionSide) =>
     data.setAssignmentAt(session.id, { accountId: person.accountId, guestId: person.guestId }, side);
 
-  const propose = (balanceByWinRate: boolean) => {
-    const result = data.proposeSplitAt(session.id, balanceByWinRate);
-    if (!result.ok) {
-      setError(result.reason ?? "제안을 만들지 못했습니다.");
-      setNotice("");
-      return;
-    }
-    setError("");
-    setNotice(balanceByWinRate ? "승률 스네이크 제안 · 수정 후 확정하세요" : "무작위 제안 · 수정 후 확정하세요");
-  };
-
   const confirm = () => {
-    const body =
-      format === "4v4"
-        ? "팀을 확정하고 경기를 만들까요? 출전은 팀당 4명입니다. 이후 변경은 다시 나누기입니다."
-        : "팀을 확정하고 경기를 만들까요? 이후 변경은 다시 나누기입니다.";
-    confirmAction("매칭 확정", body, () => {
+    confirmAction("한 판 열기", "한 판을 만들고 보드로 갈까요?", () => {
       try {
-        const matchId = data.confirmSplitAt(session.id);
-        router.replace(`/match/${matchId}/lineup`);
+        const matchId = data.confirmRallyBoutAt(session.id);
+        router.replace(scoreboardHref({ id: matchId, sportId: "badminton" }));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "확정하지 못했습니다.");
+        setError(err instanceof Error ? err.message : "한 판을 열지 못했습니다.");
       }
     });
   };
@@ -86,21 +71,12 @@ export default function SplitScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
-        <H>팀 나누기</H>
+        <H>한 판 열기</H>
         {error ? <P>{error}</P> : null}
-        {notice ? <P muted>{notice}</P> : null}
         <P muted>
-          후보 {people.length}명 · 출전 {court}+{court} · 나머지 대기
+          {format === "singles" ? "단식" : "복식"} · 후보 {people.length}명 · 출전 {court}+{court} · 나머지 대기
         </P>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <View style={{ flex: 1 }}>
-            <Btn label="자동 제안" size="sm" variant="ghost" onPress={() => propose(false)} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Btn label="승률 밸런스" size="sm" variant="ghost" onPress={() => propose(true)} />
-          </View>
-        </View>
-        <H style={{ fontSize: 16 }}>A 팀 {home.length}</H>
+        <H style={{ fontSize: 16 }}>홈 {home.length}</H>
         {home.map((person) => (
           <Card key={person.accountId ?? person.guestId}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -109,7 +85,7 @@ export default function SplitScreen() {
             </View>
           </Card>
         ))}
-        <H style={{ fontSize: 16 }}>B 팀 {away.length}</H>
+        <H style={{ fontSize: 16 }}>어웨이 {away.length}</H>
         {away.map((person) => (
           <Card key={person.accountId ?? person.guestId}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -124,15 +100,15 @@ export default function SplitScreen() {
             <P>{person.name}</P>
             <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
               <View style={{ flex: 1 }}>
-                <Btn label="A" variant="ghost" size="sm" onPress={() => move(person, "home")} />
+                <Btn label="홈" variant="ghost" size="sm" onPress={() => move(person, "home")} />
               </View>
               <View style={{ flex: 1 }}>
-                <Btn label="B" variant="ghost" size="sm" onPress={() => move(person, "away")} />
+                <Btn label="어웨이" variant="ghost" size="sm" onPress={() => move(person, "away")} />
               </View>
             </View>
           </Card>
         ))}
-        <Btn label="매칭 확정" disabled={home.length !== court || away.length !== court} onPress={confirm} />
+        <Btn label="한 판 열기" disabled={home.length !== court || away.length !== court} onPress={confirm} />
       </ScrollView>
     </Screen>
   );

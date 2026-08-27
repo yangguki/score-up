@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { AppData, Match, SessionSide, Side, SportId, SportRules, VoteValue } from "@score-up/domain";
-import { APP_PERSIST_NAME, APP_PERSIST_VERSION, createAppPersistStorage, isAppData, withClubDefaults } from "./persist";
+import type { AppData, ClubSessionFormat, Match, MemberGrade, NthWeek, RecurrenceKind, SessionSide, Side, SportId, SportRules, VoteValue } from "@score-up/domain";
+import { APP_PERSIST_NAME, APP_PERSIST_VERSION, createAppPersistStorage, isAppData, mergeMissingSeedClubs, withClubDefaults } from "./persist";
 import { isBaseballMatch, isBasketballMatch, isPitchMatch, isRallySetMatch, isVolleyballMatch } from "@score-up/domain";
 import {
   addPlayer,
@@ -69,8 +69,10 @@ import {
   undoPitchLast,
   undoBaseballLast,
   addGuest,
+  cancelChallenge,
   cancelSession,
   closeVoting,
+  confirmRallyBout,
   confirmSplit,
   applySplitProposal,
   createClub,
@@ -78,15 +80,21 @@ import {
   decideJoin,
   dissolveClub,
   dropCandidate,
+  recordLadderResult,
   requestJoin,
+  respondChallenge,
   setAssignment,
   setMemberGoing,
+  setMemberGrade,
+  setSessionFormat,
   setVote,
+  sendChallenge,
   signIn,
   signOut,
   syncSessionFromMatch,
   updateClub,
 } from "@score-up/mock";
+import type { CreateSessionsInput } from "@score-up/mock";
 
 type Store = AppData & {
   patchMatch: (id: string, fn: (match: Match) => Match) => void;
@@ -140,21 +148,49 @@ type Store = AppData & {
   }) => string;
   signInAs: (name: string) => void;
   signOutAccount: () => void;
-  createClubAt: (input: { name: string; venue?: string }) => string;
+  createClubAt: (input: { name: string; venue?: string; sportId?: SportId }) => string;
   requestJoinAt: (token: string) => void;
   decideJoinAt: (memberId: string, accept: boolean) => void;
-  createSessionsAt: (clubId: string, input: { dateLabel: string; timeLabel: string; venue: string; weekly: boolean }) => string;
+  createSessionsAt: (clubId: string, input: CreateSessionsInput) => string;
   setVoteAt: (sessionId: string, value: VoteValue) => void;
   closeVotingAt: (sessionId: string) => void;
   addGuestAt: (sessionId: string, name: string) => void;
   setMemberGoingAt: (sessionId: string, accountId: string) => void;
   dropCandidateAt: (sessionId: string, accountId?: string, guestId?: string) => void;
+  setSessionFormatAt: (sessionId: string, format: ClubSessionFormat) => void;
   setAssignmentAt: (sessionId: string, key: { accountId?: string; guestId?: string }, side: SessionSide) => void;
   proposeSplitAt: (sessionId: string, balanceByWinRate: boolean) => { ok: boolean; reason?: string };
   confirmSplitAt: (sessionId: string) => string;
+  confirmRallyBoutAt: (sessionId: string) => string;
   cancelSessionAt: (sessionId: string) => void;
-  updateClubAt: (clubId: string, patch: { name?: string; venue?: string; seasonLabel?: string }) => void;
+  updateClubAt: (
+    clubId: string,
+    patch: {
+      name?: string;
+      venue?: string;
+      seasonLabel?: string;
+      recurrenceKind?: RecurrenceKind | null;
+      weekday?: number | null;
+      weeklyTime?: string;
+      nthWeek?: NthWeek | null;
+      monthDay?: number | null;
+    },
+  ) => void;
   dissolveClubAt: (clubId: string) => void;
+  setMemberGradeAt: (memberId: string, grade: MemberGrade) => void;
+  sendChallengeAt: (clubId: string, toAccountId: string) => void;
+  respondChallengeAt: (challengeId: string, accept: boolean) => void;
+  cancelChallengeAt: (challengeId: string) => void;
+  recordLadderResultAt: (
+    clubId: string,
+    input: {
+      challengeId?: string;
+      homeAccountId: string;
+      awayAccountId: string;
+      homeScore: number;
+      awayScore: number;
+    },
+  ) => void;
   reset: () => void;
 };
 
@@ -492,6 +528,7 @@ export const useAppStore = create<Store>()(
   addGuestAt: (sessionId, name) => set(addGuest(get(), sessionId, name)),
   setMemberGoingAt: (sessionId, accountId) => set(setMemberGoing(get(), sessionId, accountId)),
   dropCandidateAt: (sessionId, accountId, guestId) => set(dropCandidate(get(), sessionId, accountId, guestId)),
+  setSessionFormatAt: (sessionId, format) => set(setSessionFormat(get(), sessionId, format)),
   setAssignmentAt: (sessionId, key, side) => set(setAssignment(get(), sessionId, key, side)),
   proposeSplitAt: (sessionId, balanceByWinRate) => {
     const result = applySplitProposal(get(), sessionId, { balanceByWinRate });
@@ -503,9 +540,19 @@ export const useAppStore = create<Store>()(
     set(data);
     return matchId;
   },
+  confirmRallyBoutAt: (sessionId) => {
+    const { data, matchId } = confirmRallyBout(get(), sessionId);
+    set(data);
+    return matchId;
+  },
   cancelSessionAt: (sessionId) => set(cancelSession(get(), sessionId)),
   updateClubAt: (clubId, patch) => set(updateClub(get(), clubId, patch)),
   dissolveClubAt: (clubId) => set(dissolveClub(get(), clubId)),
+  setMemberGradeAt: (memberId, grade) => set(setMemberGrade(get(), memberId, grade)),
+  sendChallengeAt: (clubId, toAccountId) => set(sendChallenge(get(), clubId, toAccountId)),
+  respondChallengeAt: (challengeId, accept) => set(respondChallenge(get(), challengeId, accept)),
+  cancelChallengeAt: (challengeId) => set(cancelChallenge(get(), challengeId)),
+  recordLadderResultAt: (clubId, input) => set(recordLadderResult(get(), clubId, input)),
   reset: () => set(createSeedState()),
     }),
     {
@@ -527,6 +574,8 @@ export const useAppStore = create<Store>()(
         sessionVotes: state.sessionVotes,
         sessionGuests: state.sessionGuests,
         sessionAssignments: state.sessionAssignments,
+        challenges: state.challenges,
+        ladderMatches: state.ladderMatches,
       }),
       merge: (persisted, current) => {
         if (!isAppData(persisted)) return current;
@@ -545,7 +594,8 @@ export const useAppStore = create<Store>()(
           matches: extraMatches.length ? [...next.matches, ...extraMatches] : next.matches,
           teams: extraTeams.length ? [...next.teams, ...extraTeams] : next.teams,
         };
-        if (withSports.clubs.length > 0) return withSports;
+        const withClubs = mergeMissingSeedClubs(withSports, seed);
+        if (withClubs.clubs.length > 0) return withClubs;
         return {
           ...withSports,
           accountId: seed.accountId,
@@ -556,6 +606,8 @@ export const useAppStore = create<Store>()(
           sessionVotes: seed.sessionVotes,
           sessionGuests: seed.sessionGuests,
           sessionAssignments: seed.sessionAssignments,
+          challenges: seed.challenges,
+          ladderMatches: seed.ladderMatches,
         };
       },
     },

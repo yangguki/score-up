@@ -1,13 +1,20 @@
 import { useState } from "react";
 import { Redirect, router } from "expo-router";
-import { ScrollView, TextInput } from "react-native";
+import { Pressable, ScrollView, TextInput } from "react-native";
 import { Btn, Card, H, P, Screen } from "@/components/ui";
+import { sportLabel } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
 import { colors, space } from "@/theme/tokens";
+
+const CLUB_SPORTS: { id: "basketball" | "badminton"; line: string }[] = [
+  { id: "basketball", line: "5대5 · 인원 미달 시 4대4" },
+  { id: "badminton", line: "단식 · 복식 한 판" },
+];
 
 export default function NewClubScreen() {
   const accountId = useAppStore((s) => s.accountId);
   const createClubAt = useAppStore((s) => s.createClubAt);
+  const [sportId, setSportId] = useState<"basketball" | "badminton">("basketball");
   const [name, setName] = useState("");
   const [venue, setVenue] = useState("");
   const [error, setError] = useState("");
@@ -16,7 +23,7 @@ export default function NewClubScreen() {
 
   const submit = () => {
     try {
-      const id = createClubAt({ name, venue });
+      const id = createClubAt({ name, venue, sportId });
       router.replace(`/club/${id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "모임을 만들지 못했습니다.");
@@ -27,10 +34,14 @@ export default function NewClubScreen() {
     <Screen>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
         <H>종목</H>
-        <Card style={{ borderColor: colors.primary }}>
-          <H style={{ fontSize: 18 }}>농구</H>
-          <P muted>1차 모임</P>
-        </Card>
+        {CLUB_SPORTS.map((sport) => (
+          <Pressable key={sport.id} onPress={() => setSportId(sport.id)}>
+            <Card style={sportId === sport.id ? { borderColor: colors.primary } : undefined}>
+              <H style={{ fontSize: 18 }}>{sportLabel(sport.id)}</H>
+              <P muted>{sport.line}</P>
+            </Card>
+          </Pressable>
+        ))}
         <Card style={{ opacity: 0.4 }}>
           <H style={{ fontSize: 18 }}>배구</H>
           <P muted>지금은 선택할 수 없습니다</P>
@@ -46,7 +57,7 @@ export default function NewClubScreen() {
             setName(value);
             setError("");
           }}
-          placeholder="주말 농구 모임"
+          placeholder={sportId === "badminton" ? "수요일 배드민턴" : "주말 농구 모임"}
           placeholderTextColor={colors.muted}
           style={inputStyle}
         />
@@ -54,7 +65,7 @@ export default function NewClubScreen() {
         <TextInput
           value={venue}
           onChangeText={setVenue}
-          placeholder="시민체육관 3코트"
+          placeholder={sportId === "badminton" ? "시민체육관 배드민턴장" : "시민체육관 3코트"}
           placeholderTextColor={colors.muted}
           style={inputStyle}
         />

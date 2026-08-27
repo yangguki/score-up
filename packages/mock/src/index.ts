@@ -89,9 +89,11 @@ export {
 export { uid } from "./id";
 export {
   addGuest,
+  cancelChallenge,
   cancelSession,
   candidateCount,
   closeVoting,
+  confirmRallyBout,
   confirmSplit,
   applySplitProposal,
   createClub,
@@ -99,12 +101,18 @@ export {
   decideJoin,
   dissolveClub,
   dropCandidate,
+  recordLadderResult,
   requestJoin,
+  respondChallenge,
   setAssignment,
   setMemberGoing,
+  setMemberGrade,
+  setSessionFormat,
   setVote,
+  sendChallenge,
   signIn,
   signOut,
   syncSessionFromMatch,
   updateClub,
 } from "./club";
+export type { CreateSessionsInput } from "./club";

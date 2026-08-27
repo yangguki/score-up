@@ -7,8 +7,8 @@
 | 기준 | 화면 기획 v0.2 §4.1, 기획서 v0.2 |
 | 담당 | Frontend UX (카피·상태 검수는 Basketball) |
 | 디바이스 | 폰 세로 (대회 준비). 웹도 같은 레이아웃, 최대 폭 ~430 |
-| 상태 | **H1 Arena 톤 확정** (2026-08-26). H7 기각. 시안 바·V1~V3·H2~H6 앱에서 제거 |
-| 기획 화면 | `docs/home-brand-sport-hub-wire.html`. 비교 아카이브: `docs/home-hub-versions.html` |
+| 상태 | **H1 Arena · 제품 방향 A 잠금** (2026-08-27). H7 기각. B·C 홈 시안 앱에서 제거 |
+| 기획 화면 | `docs/home-brand-sport-hub-wire.html`. 톤 아카이브: `docs/home-hub-versions.html`. CTA 아카이브: `docs/product-direction-versions.html` |
 | 벤치마크 | `docs/SCORE-UP-홈-벤치마크.md` |
 
 홈은 스코어보드가 아니다. **먼저 서비스가 무엇인지(브랜드·종목)를 보여 주고**, 이어서 30초 안에 ‘지금 기록할 경기’ 또는 ‘만들 일’을 고르게 한다.
@@ -47,7 +47,7 @@ V3에서 가져온 것: 라이브 점수 크기(약 32~36pt).
 | Primary CTA | **대회 만들기** (종목 아래). 타일은 `?sport=` | 스코어 앱으로만 쓰이지 않게 |
 | Secondary CTA | **빠른 친선경기** ghost, 그 아래 | 숨기면 당일 픽업이 대회 생성 4단계로 새게 된다 |
 | 계정 | MVP는 라벨만 (`운영자`). 탭 → 설정 | 로그인 없음 |
-| 종목 | 홈 타일 8종목 활성. 모임은 농구만 | 대회·친선 보드 mock |
+| 종목 | 홈 타일 8종목 활성. 모임은 농구 + 배드민턴 1차 | 대회·친선 보드 mock |
 | 홈 톤 | **H1 Arena** (다크·앰버) | H7 민트는 보드와 톤이 갈라지고, 운영 툴보다 피트니스 앱처럼 읽힘 |
 
 비교 레퍼런스: 운영자 홈 IA는 Scoreholio·NX League, 라이브 카드만 GameChanger. 팬 피드·단발 점수판 홈은 쓰지 않는다.
@@ -311,8 +311,8 @@ V3에서 가져올 수 있는 것: 라이브 카드 점수만 조금 더 크게 
 
 홈 톤·시안 바·종목 모자이크(8종목)·`내 모임` mock은 **닫힘** (작업계획 Phase 6). H1 Arena·대회 만들기 Primary는 **현행(A)**.
 
-제품 중심·홈 CTA 후보 비교는 **미잠금:** [`docs/SCORE-UP-제품방향-비교.md`](SCORE-UP-제품방향-비교.md) · 와이어 [`docs/product-direction-versions.html`](product-direction-versions.html) (A 현장 대회 / B 모임 OS·회차 CTA / C 듀얼 CTA).
+제품 중심·홈 CTA는 **A 잠금:** [`docs/SCORE-UP-제품방향-비교.md`](SCORE-UP-제품방향-비교.md). B·C 아카이브 [`docs/product-direction-versions.html`](product-direction-versions.html).
 
-`내 모임`은 홈 `내 대회` 아래. **탭은 추가하지 않는다.** 필드: `docs/SCORE-UP-모임-상세.md` 5장. 1차=농구 5v5.
+`내 모임`은 홈 `내 대회` 아래. **탭은 추가하지 않는다.** 필드: `docs/SCORE-UP-모임-상세.md` 5장. 기본=농구 5v5. 인원 미달 시 4v4. 배드민턴 모임 카드는 Phase 8 mock (`docs/SCORE-UP-모임-기획.md` §21).
 
-다음은 API 후 실시간 공유 링크·이미지. 폰/태블릿 가로 보드 실물 검수는 선택. 제품 방향 A/B/C 결정 후 이 문서 §1·§3을 개정한다.
+다음은 API 후 실시간 공유 링크·이미지. 폰/태블릿 가로 보드 실물 검수는 선택.

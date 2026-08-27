@@ -13,7 +13,8 @@ description: Owns SCORE UP basketball preset, quarter timer, 1/2/3 scoring, pers
 - 득점 +2 / +3 / +1 (자유투)
 - 개인 파울 아웃 6, 팀 파울 보너스 쿼터 5번째부터
 - 타임아웃 팀당 경기 2회, 작전타임 기본 60초 (30/45/60/90)
-- 출전 5명, 샷클락 없음
+- 출전 5명 (대회·친선 프리셋). 모임 4v4 회차만 `Match.rules.starters=4`. 3x3 없음
+- 샷클락 없음
 - 몰수 기본 20-0
 - 토너먼트는 무승부 불가 → 연장 없음 설정이면 대회 생성에서 막기
 

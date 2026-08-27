@@ -37,3 +37,4 @@ description: Owns SCORE UP badminton preset, rally set scoring, scorer serve, do
 - 복식 코트 위치/서브 순서 강제
 - 농구 시계·파울, 배구 로테이션을 섞기
 - 렛 이벤트
+- 배드민턴 모임 **2차** — 멀티코트·남복 자동·회비. 1차 한 판은 Frontend UX (`docs/SCORE-UP-모임-기획.md` §21)

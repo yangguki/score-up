@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { computeClubRanking, proposeClubSplit, voteLabel } from "./club";
+import { canEnterRallyBout, computeClubRanking, proposeClubSplit, voteLabel } from "./club";
 import { BASKETBALL_CLUB_PRESET, emptySnapshot } from "./basketball";
 import type { Match, SessionAssignment } from "./types";
 
@@ -54,9 +54,17 @@ test("computeClubRanking counts session matches only and skips guests", () => {
   assert.equal(rows[0]?.losses, 1);
   assert.equal(rows.find((row) => row.accountId === "c")?.played, 0);
   assert.equal(rows.find((row) => row.accountId === "c")?.winRate, null);
+  assert.equal(rows.find((row) => row.accountId === "a")?.grade, "intermediate");
 });
 
-test("proposeClubSplit locks under 10 candidates", () => {
+test("canEnterRallyBout uses 2 for singles and 4 for doubles", () => {
+  assert.equal(canEnterRallyBout(1, "singles"), false);
+  assert.equal(canEnterRallyBout(2, "singles"), true);
+  assert.equal(canEnterRallyBout(3, "doubles"), false);
+  assert.equal(canEnterRallyBout(4, "doubles"), true);
+});
+
+test("proposeClubSplit locks under 10", () => {
   const people = Array.from({ length: 7 }, (_, i) => ({
     accountId: `a${i}`,
     name: `P${i}`,
@@ -66,6 +74,41 @@ test("proposeClubSplit locks under 10 candidates", () => {
   assert.equal(proposal.ok, false);
   assert.equal(proposal.bench.length, 7);
   assert.match(proposal.reason ?? "", /10명/);
+});
+
+test("proposeClubSplit 4v4 locks under 8 and splits 8 into 4+4", () => {
+  const seven = Array.from({ length: 7 }, (_, i) => ({
+    accountId: `a${i}`,
+    name: `P${i}`,
+    winRate: null as number | null,
+  }));
+  const locked = proposeClubSplit(seven, { format: "4v4" });
+  assert.equal(locked.ok, false);
+  assert.match(locked.reason ?? "", /8명/);
+
+  const eight = Array.from({ length: 8 }, (_, i) => ({
+    accountId: `a${i}`,
+    name: `P${i}`,
+    winRate: 1 - i * 0.08,
+  }));
+  const split = proposeClubSplit(eight, { format: "4v4", balanceByWinRate: true });
+  assert.equal(split.ok, true);
+  assert.equal(split.home.length, 4);
+  assert.equal(split.away.length, 4);
+  assert.equal(split.bench.length, 0);
+});
+
+test("proposeClubSplit 4v4 puts the 9th on bench", () => {
+  const people = Array.from({ length: 9 }, (_, i) => ({
+    accountId: `a${i}`,
+    name: `P${i}`,
+    winRate: null as number | null,
+  }));
+  const proposal = proposeClubSplit(people, { format: "4v4", balanceByWinRate: false, random: () => 0 });
+  assert.equal(proposal.ok, true);
+  assert.equal(proposal.home.length, 4);
+  assert.equal(proposal.away.length, 4);
+  assert.equal(proposal.bench.length, 1);
 });
 
 test("proposeClubSplit snake balances by win rate", () => {

@@ -80,12 +80,14 @@ export function createBlankTableTennisMatch(input: {
   rules: TableTennisRules;
   isFriendly?: boolean;
   status?: Match["status"];
+  sessionId?: string;
 }): Match {
   const id = input.id ?? uid("match");
   return {
     id,
     sportId: input.sportId ?? "table-tennis",
     competitionId: input.competitionId,
+    sessionId: input.sessionId,
     homeTeamId: input.homeTeamId,
     awayTeamId: input.awayTeamId,
     homeLabel: input.homeLabel,

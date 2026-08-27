@@ -8,6 +8,7 @@ import { SportPicker } from "@/components/home/sport-picker";
 import { EMPTY_HOME_COPY, type buildHomeModel } from "@/lib/home";
 import { HOME_TAGLINE, HOME_VALUE_LINES, type HomeSport } from "@/lib/home-sports";
 import type { HomeClubCard } from "@/lib/club-home";
+import { sportLabel } from "@/lib/match-routes";
 import { HOME_KIT, type HomeKit } from "@/theme/home-kits";
 import { space } from "@/theme/tokens";
 
@@ -239,7 +240,7 @@ export function HomeH1({
                         {club.name}
                       </KitText>
                       <KitText kit={kit} muted style={{ fontSize: 12, fontWeight: "700" }}>
-                        농구
+                        {sportLabel(club.sportId)}
                       </KitText>
                     </View>
                     <KitText kit={kit} muted style={{ fontSize: 13 }}>

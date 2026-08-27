@@ -278,6 +278,10 @@ export interface MatchEvent {
 
 export type ClubRole = "owner" | "operator" | "member";
 export type ClubMemberStatus = "active" | "pending";
+export type MemberGrade = "beginner" | "intermediate" | "advanced";
+export type ClubChallengeStatus = "pending" | "accepted" | "declined" | "cancelled" | "completed";
+export type RecurrenceKind = "weekly" | "monthlyNth" | "monthlyDate";
+export type NthWeek = 1 | 2 | 3 | 4 | 5;
 export type SessionStatus =
   | "draft"
   | "voting"
@@ -288,6 +292,9 @@ export type SessionStatus =
   | "cancelled";
 export type VoteValue = "going" | "not_going" | "maybe" | "none";
 export type SessionSide = "home" | "away" | "bench";
+export type ClubSplitFormat = "5v5" | "4v4";
+export type RallyClubFormat = "singles" | "doubles";
+export type ClubSessionFormat = ClubSplitFormat | RallyClubFormat;
 
 export interface Account {
   id: string;
@@ -302,8 +309,11 @@ export interface Club {
   inviteToken: string;
   ownerAccountId: string;
   seasonLabel: string;
+  recurrenceKind?: RecurrenceKind;
   weekday?: number;
   weeklyTime?: string;
+  nthWeek?: NthWeek;
+  monthDay?: number;
 }
 
 export interface ClubMember {
@@ -312,6 +322,8 @@ export interface ClubMember {
   accountId: string;
   role: ClubRole;
   status: ClubMemberStatus;
+  /** 기본 중급. 운영자가 지정. ELO 아님. */
+  grade: MemberGrade;
 }
 
 export interface ClubSession {
@@ -323,6 +335,8 @@ export interface ClubSession {
   voteDeadlineLabel: string;
   status: SessionStatus;
   recurring: boolean;
+  /** 농구 5v5/4v4. 배드민턴 singles/doubles. */
+  format: ClubSessionFormat;
   matchId?: string;
 }
 
@@ -345,6 +359,28 @@ export interface SessionAssignment {
   accountId?: string;
   guestId?: string;
   side: SessionSide;
+}
+
+export interface ClubChallenge {
+  id: string;
+  clubId: string;
+  fromAccountId: string;
+  toAccountId: string;
+  status: ClubChallengeStatus;
+  ladderMatchId?: string;
+}
+
+/** 보드 없는 멤버 대 멤버 전적. 대회 Match와 섞지 않는다. */
+export interface ClubLadderMatch {
+  id: string;
+  clubId: string;
+  challengeId?: string;
+  homeAccountId: string;
+  awayAccountId: string;
+  homeScore: number;
+  awayScore: number;
+  winnerAccountId: string;
+  dateLabel: string;
 }
 
 export interface Match {
@@ -431,4 +467,6 @@ export interface AppData {
   sessionVotes: SessionVote[];
   sessionGuests: SessionGuest[];
   sessionAssignments: SessionAssignment[];
+  challenges: ClubChallenge[];
+  ladderMatches: ClubLadderMatch[];
 }

@@ -373,7 +373,9 @@ export function createSeedState(): AppData {
 }
 
 const CLUB = "club-weekend";
+const CLUB_BD = "club-bd";
 const SES_VOTE = "ses-vote";
+const SES_BD_VOTE = "ses-bd-vote";
 const SES_DONE_1 = "ses-done-1";
 const SES_DONE_2 = "ses-done-2";
 const SES_DONE_3 = "ses-done-3";
@@ -403,6 +405,22 @@ const CLUB_PEOPLE = [
   ["acc-minho", "이민호"],
 ] as const;
 
+const CLUB_GRADES: Record<string, "beginner" | "intermediate" | "advanced"> = {
+  "acc-minsu": "intermediate",
+  "acc-jihun": "intermediate",
+  "acc-seoyeon": "advanced",
+  "acc-jiho": "beginner",
+  "acc-woosung": "beginner",
+  "acc-sehun": "intermediate",
+  "acc-dahye": "intermediate",
+  "acc-yujin": "advanced",
+  "acc-taemin": "beginner",
+  "acc-haneul": "intermediate",
+  "acc-seojiho": "advanced",
+  "acc-doyun": "beginner",
+  "acc-minho": "intermediate",
+};
+
 function seedClubFields(): Pick<
   AppData,
   | "accountId"
@@ -413,6 +431,8 @@ function seedClubFields(): Pick<
   | "sessionVotes"
   | "sessionGuests"
   | "sessionAssignments"
+  | "challenges"
+  | "ladderMatches"
 > {
   const accounts = CLUB_PEOPLE.map(([id, name]) => ({ id, name }));
   const active = CLUB_PEOPLE.slice(0, 12);
@@ -453,6 +473,19 @@ function seedClubFields(): Pick<
         seasonLabel: "2026",
         weekday: 6,
         weeklyTime: "14:00",
+        recurrenceKind: "weekly",
+      },
+      {
+        id: CLUB_BD,
+        name: "수요일 배드민턴",
+        sportId: "badminton",
+        venue: "시민체육관 배드민턴장",
+        inviteToken: "bd12cd",
+        ownerAccountId: "acc-minsu",
+        seasonLabel: "2026",
+        weekday: 3,
+        weeklyTime: "20:00",
+        recurrenceKind: "weekly",
       },
     ],
     clubMembers: [
@@ -462,8 +495,24 @@ function seedClubFields(): Pick<
         accountId,
         role: index === 0 ? ("owner" as const) : index === 1 ? ("operator" as const) : ("member" as const),
         status: "active" as const,
+        grade: CLUB_GRADES[accountId] ?? ("intermediate" as const),
       })),
-      { id: "cm-pending", clubId: CLUB, accountId: "acc-minho", role: "member", status: "pending" },
+      {
+        id: "cm-pending",
+        clubId: CLUB,
+        accountId: "acc-minho",
+        role: "member",
+        status: "pending",
+        grade: "intermediate",
+      },
+      ...active.slice(0, 6).map(([accountId], index) => ({
+        id: `cm-bd-${index}`,
+        clubId: CLUB_BD,
+        accountId,
+        role: index === 0 ? ("owner" as const) : index === 1 ? ("operator" as const) : ("member" as const),
+        status: "active" as const,
+        grade: CLUB_GRADES[accountId] ?? ("intermediate" as const),
+      })),
     ],
     sessions: [
       {
@@ -475,6 +524,7 @@ function seedClubFields(): Pick<
         voteDeadlineLabel: "12:00",
         status: "voting",
         recurring: true,
+        format: "5v5",
       },
       {
         id: SES_DONE_1,
@@ -485,6 +535,7 @@ function seedClubFields(): Pick<
         voteDeadlineLabel: "12:00",
         status: "completed",
         recurring: true,
+        format: "5v5",
         matchId: MATCH_CLUB_1,
       },
       {
@@ -496,6 +547,7 @@ function seedClubFields(): Pick<
         voteDeadlineLabel: "12:00",
         status: "completed",
         recurring: true,
+        format: "5v5",
         matchId: MATCH_CLUB_2,
       },
       {
@@ -507,7 +559,19 @@ function seedClubFields(): Pick<
         voteDeadlineLabel: "12:00",
         status: "completed",
         recurring: true,
+        format: "5v5",
         matchId: MATCH_CLUB_3,
+      },
+      {
+        id: SES_BD_VOTE,
+        clubId: CLUB_BD,
+        dateLabel: "2026-08-26",
+        timeLabel: "20:00",
+        venue: "시민체육관 배드민턴장",
+        voteDeadlineLabel: "18:00",
+        status: "voting",
+        recurring: true,
+        format: "doubles",
       },
     ],
     sessionVotes: [
@@ -529,6 +593,12 @@ function seedClubFields(): Pick<
         accountId,
         value: "not_going" as const,
       })),
+      ...active.slice(0, 4).map(([accountId], index) => ({
+        id: `vote-bd-g-${index}`,
+        sessionId: SES_BD_VOTE,
+        accountId,
+        value: "going" as const,
+      })),
     ],
     sessionGuests: [],
     sessionAssignments: [
@@ -538,6 +608,36 @@ function seedClubFields(): Pick<
       ...assignment(SES_DONE_2, away2, "away", "asg2a"),
       ...assignment(SES_DONE_3, home3, "home", "asg3h"),
       ...assignment(SES_DONE_3, away3, "away", "asg3a"),
+    ],
+    challenges: [
+      {
+        id: "ch-pending",
+        clubId: CLUB,
+        fromAccountId: "acc-jiho",
+        toAccountId: "acc-minsu",
+        status: "pending",
+      },
+      {
+        id: "ch-done",
+        clubId: CLUB,
+        fromAccountId: "acc-minsu",
+        toAccountId: "acc-jihun",
+        status: "completed",
+        ladderMatchId: "lad-1",
+      },
+    ],
+    ladderMatches: [
+      {
+        id: "lad-1",
+        clubId: CLUB,
+        challengeId: "ch-done",
+        homeAccountId: "acc-minsu",
+        awayAccountId: "acc-jihun",
+        homeScore: 21,
+        awayScore: 18,
+        winnerAccountId: "acc-minsu",
+        dateLabel: "2026-08-20",
+      },
     ],
   };
 }
@@ -592,5 +692,7 @@ export const SEED_IDS = {
   SHARK,
   WOLF,
   CLUB,
+  CLUB_BD,
   SES_VOTE,
+  SES_BD_VOTE,
 };

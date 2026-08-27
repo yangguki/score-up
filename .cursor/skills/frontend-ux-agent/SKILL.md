@@ -30,11 +30,11 @@ description: Builds SCORE UP Expo app+web screens that run on mock data for UX r
 
 ## 1차 그릴 화면 (농구만)
 
-준비: 홈, 대회 만들기 1~4단계(홈 8종목), 대회 개요, 참가 팀/선수, 대진 생성, 토너먼트 브래킷, 리그 순위, 출전 명단, 빠른 친선, 이 기기 로그인, 모임·회차·참석 투표(농구).
+준비: 홈, 대회 만들기 1~4단계(홈 8종목), 대회 개요, 참가 팀/선수, 대진 생성, 토너먼트 브래킷, 리그 순위, 출전 명단, 빠른 친선, 이 기기 로그인, 모임·회차·참석 투표(농구·배드민턴 1차).
 
 기록: 농구 스코어보드(`/match/[id]/basketball`), 배구 mock 보드(`/match/[id]/volleyball`), 탁구 mock 보드(`/match/[id]/table-tennis`), 배드민턴(`/match/[id]/badminton`), 스쿼시(`/match/[id]/squash`), 축구(`/match/[id]/soccer`), 풋살(`/match/[id]/futsal`), 야구(`/match/[id]/baseball`), 선수 피커, 교체 시트, 종료 확인 팝업, 타임라인, 결과.
 
-빼는 것: 관중용 큰 보드, 실 API/Cognito, 배구 세트 승점제, 자동 매칭. 리그 MVP는 승3/패0 순위표. `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다.
+빼는 것: 관중용 큰 보드, 실 API/Cognito, 배구 세트 승점제, 3x3. 리그 MVP는 승3/패0 순위표. `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다. 홈은 **H1 · 대회 만들기 Primary(A 잠금)**. 모임 매칭은 5v5·인원 미달 시 4v4(운영자 확정). 월 정기는 매달 N번째 요일 또는 D일(1~28). 급수 시즌은 초급/중급/상급·도전·결과 넣기. 배드민턴 모임 1차는 한 판 열기(단식/복식). 농구 1v1 보드·사진 업로드·ELO 없음. 설정 A/B/C 시안 전환 없음.
 
 종목 레이아웃이 다르므로 스코어보드는 종목 컴포넌트 단위로 갈아끼운다. 버튼마다 종목 if문을 쓰지 않는다.
 
