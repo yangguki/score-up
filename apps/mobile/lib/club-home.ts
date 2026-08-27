@@ -29,6 +29,8 @@ export type HomeClubCard = {
   club: Club;
   nextLine: string;
   voteLine?: string;
+  sessionId?: string;
+  sessionStatus?: ClubSession["status"];
 };
 
 export function myClubCards(
@@ -52,6 +54,8 @@ export function myClubCards(
         club,
         nextLine: next ? sessionLine(next) : "다음 회차 없음",
         voteLine: vote,
+        sessionId: next?.id,
+        sessionStatus: next?.status,
       };
     });
 }

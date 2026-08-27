@@ -13,6 +13,7 @@ export default function SplitScreen() {
   const session = data.sessions.find((row) => row.id === sid);
   const club = data.clubs.find((row) => row.id === id);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   if (!club || !session) {
     return (
@@ -26,10 +27,18 @@ export default function SplitScreen() {
 
   const going = data.sessionVotes
     .filter((row) => row.sessionId === session.id && row.value === "going")
-    .map((row) => ({ accountId: row.accountId as string, guestId: undefined as string | undefined, name: accountName(data.accounts, row.accountId) }));
+    .map((row) => ({
+      accountId: row.accountId as string,
+      guestId: undefined as string | undefined,
+      name: accountName(data.accounts, row.accountId),
+    }));
   const guests = data.sessionGuests
     .filter((row) => row.sessionId === session.id)
-    .map((row) => ({ accountId: undefined as string | undefined, guestId: row.id, name: `게스트 ${row.name}` }));
+    .map((row) => ({
+      accountId: undefined as string | undefined,
+      guestId: row.id,
+      name: `게스트 ${row.name}`,
+    }));
   const people = [...going, ...guests];
   const sideOf = (person: (typeof people)[number]): SessionSide =>
     data.sessionAssignments.find(
@@ -42,6 +51,17 @@ export default function SplitScreen() {
   const bench = people.filter((person) => sideOf(person) === "bench");
   const move = (person: (typeof people)[number], side: SessionSide) =>
     data.setAssignmentAt(session.id, { accountId: person.accountId, guestId: person.guestId }, side);
+
+  const propose = (balanceByWinRate: boolean) => {
+    const result = data.proposeSplitAt(session.id, balanceByWinRate);
+    if (!result.ok) {
+      setError(result.reason ?? "제안을 만들지 못했습니다.");
+      setNotice("");
+      return;
+    }
+    setError("");
+    setNotice(balanceByWinRate ? "승률 스네이크 제안 · 수정 후 확정하세요" : "무작위 제안 · 수정 후 확정하세요");
+  };
 
   const confirm = () => {
     confirmAction("매칭 확정", "팀을 확정하고 경기를 만들까요? 이후 변경은 다시 나누기입니다.", () => {
@@ -59,15 +79,24 @@ export default function SplitScreen() {
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
         <H>팀 나누기</H>
         {error ? <P>{error}</P> : null}
+        {notice ? <P muted>{notice}</P> : null}
         <P muted>
           후보 {people.length}명 · 출전 5+5 · 나머지 대기
         </P>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={{ flex: 1 }}>
+            <Btn label="자동 제안" size="sm" variant="ghost" onPress={() => propose(false)} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Btn label="승률 밸런스" size="sm" variant="ghost" onPress={() => propose(true)} />
+          </View>
+        </View>
         <H style={{ fontSize: 16 }}>A 팀 {home.length}</H>
         {home.map((person) => (
           <Card key={person.accountId ?? person.guestId}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <P>{person.name}</P>
-              <Btn label="→" variant="ghost" onPress={() => move(person, "away")} />
+              <Btn label="→" variant="ghost" size="sm" onPress={() => move(person, "away")} />
             </View>
           </Card>
         ))}
@@ -75,7 +104,7 @@ export default function SplitScreen() {
         {away.map((person) => (
           <Card key={person.accountId ?? person.guestId}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Btn label="←" variant="ghost" onPress={() => move(person, "home")} />
+              <Btn label="←" variant="ghost" size="sm" onPress={() => move(person, "home")} />
               <P>{person.name}</P>
             </View>
           </Card>
@@ -86,10 +115,10 @@ export default function SplitScreen() {
             <P>{person.name}</P>
             <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
               <View style={{ flex: 1 }}>
-                <Btn label="A" variant="ghost" onPress={() => move(person, "home")} />
+                <Btn label="A" variant="ghost" size="sm" onPress={() => move(person, "home")} />
               </View>
               <View style={{ flex: 1 }}>
-                <Btn label="B" variant="ghost" onPress={() => move(person, "away")} />
+                <Btn label="B" variant="ghost" size="sm" onPress={() => move(person, "away")} />
               </View>
             </View>
           </Card>

@@ -7,7 +7,7 @@ import type {
   SportId,
   VoteValue,
 } from "@score-up/domain";
-import { BASKETBALL_CLUB_PRESET, canOperateClub, isBasketballMatch, memberOf } from "@score-up/domain";
+import { BASKETBALL_CLUB_PRESET, canOperateClub, computeClubRanking, isBasketballMatch, memberOf, proposeClubSplit } from "@score-up/domain";
 import { createBlankMatch } from "./basketball";
 import { uid } from "./id";
 
@@ -268,6 +268,66 @@ export function setAssignment(data: AppData, sessionId: string, key: { accountId
     side,
   };
   return { ...data, sessionAssignments: [...data.sessionAssignments, next] };
+}
+
+/** 자동 매칭 제안 → 배정에 반영. 확정은 confirmSplit. */
+export function applySplitProposal(
+  data: AppData,
+  sessionId: string,
+  options: { balanceByWinRate?: boolean } = {},
+): { data: AppData; ok: boolean; reason?: string } {
+  const operatorId = requireAccount(data);
+  const session = data.sessions.find((row) => row.id === sessionId);
+  if (!session) return { data, ok: false, reason: "회차를 찾을 수 없습니다." };
+  const me = memberOf(data.clubMembers, session.clubId, operatorId);
+  if (!canOperateClub(me?.role)) return { data, ok: false, reason: "팀 나누기는 모임장·운영만 할 수 있습니다." };
+
+  const members = data.clubMembers
+    .filter((row) => row.clubId === session.clubId && row.status === "active")
+    .map((row) => ({
+      accountId: row.accountId,
+      name: data.accounts.find((acc) => acc.id === row.accountId)?.name ?? "멤버",
+    }));
+  const ranking = computeClubRanking(
+    members,
+    data.matches.filter((match) => match.sessionId && data.sessions.some((s) => s.id === match.sessionId && s.clubId === session.clubId)),
+    data.sessionAssignments,
+  );
+  const rateOf = (accountId?: string) => ranking.find((row) => row.accountId === accountId)?.winRate ?? null;
+
+  const going = data.sessionVotes
+    .filter((row) => row.sessionId === sessionId && row.value === "going" && row.accountId)
+    .map((row) => ({
+      accountId: row.accountId!,
+      name: data.accounts.find((acc) => acc.id === row.accountId)?.name ?? "멤버",
+      winRate: rateOf(row.accountId),
+    }));
+  const guests = data.sessionGuests
+    .filter((row) => row.sessionId === sessionId)
+    .map((row) => ({
+      guestId: row.id,
+      name: row.name,
+      winRate: null as number | null,
+    }));
+  const candidates = [...going, ...guests];
+  const proposal = proposeClubSplit(candidates, { balanceByWinRate: options.balanceByWinRate });
+  if (!proposal.ok) return { data, ok: false, reason: proposal.reason };
+
+  const cleared = {
+    ...data,
+    sessionAssignments: data.sessionAssignments.filter((row) => row.sessionId !== sessionId),
+  };
+  let next = cleared;
+  for (const person of proposal.home) {
+    next = setAssignment(next, sessionId, { accountId: person.accountId, guestId: person.guestId }, "home");
+  }
+  for (const person of proposal.away) {
+    next = setAssignment(next, sessionId, { accountId: person.accountId, guestId: person.guestId }, "away");
+  }
+  for (const person of proposal.bench) {
+    next = setAssignment(next, sessionId, { accountId: person.accountId, guestId: person.guestId }, "bench");
+  }
+  return { data: next, ok: true };
 }
 
 export function confirmSplit(data: AppData, sessionId: string): { data: AppData; matchId: string } {

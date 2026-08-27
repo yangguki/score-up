@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { computeClubRanking, voteLabel } from "./club";
+import { computeClubRanking, proposeClubSplit, voteLabel } from "./club";
 import { BASKETBALL_CLUB_PRESET, emptySnapshot } from "./basketball";
 import type { Match, SessionAssignment } from "./types";
 
@@ -54,4 +54,49 @@ test("computeClubRanking counts session matches only and skips guests", () => {
   assert.equal(rows[0]?.losses, 1);
   assert.equal(rows.find((row) => row.accountId === "c")?.played, 0);
   assert.equal(rows.find((row) => row.accountId === "c")?.winRate, null);
+});
+
+test("proposeClubSplit locks under 10 candidates", () => {
+  const people = Array.from({ length: 7 }, (_, i) => ({
+    accountId: `a${i}`,
+    name: `P${i}`,
+    winRate: null as number | null,
+  }));
+  const proposal = proposeClubSplit(people, { balanceByWinRate: true });
+  assert.equal(proposal.ok, false);
+  assert.equal(proposal.bench.length, 7);
+  assert.match(proposal.reason ?? "", /10명/);
+});
+
+test("proposeClubSplit snake balances by win rate", () => {
+  const people = Array.from({ length: 10 }, (_, i) => ({
+    accountId: `a${i}`,
+    name: `P${i}`,
+    winRate: 1 - i * 0.08,
+  }));
+  const proposal = proposeClubSplit(people, { balanceByWinRate: true });
+  assert.equal(proposal.ok, true);
+  assert.equal(proposal.home.length, 5);
+  assert.equal(proposal.away.length, 5);
+  assert.equal(proposal.home[0]?.accountId, "a0");
+  assert.equal(proposal.away[0]?.accountId, "a1");
+  assert.equal(proposal.away[1]?.accountId, "a2");
+  assert.equal(proposal.home[1]?.accountId, "a3");
+});
+
+test("proposeClubSplit random puts extras on bench", () => {
+  let n = 0;
+  const random = () => {
+    n += 1;
+    return (n % 10) / 10;
+  };
+  const people = Array.from({ length: 12 }, (_, i) => ({
+    accountId: `a${i}`,
+    name: `P${i}`,
+    winRate: null as number | null,
+  }));
+  const proposal = proposeClubSplit(people, { balanceByWinRate: false, random });
+  assert.equal(proposal.ok, true);
+  assert.equal(proposal.home.length + proposal.away.length, 10);
+  assert.equal(proposal.bench.length, 2);
 });

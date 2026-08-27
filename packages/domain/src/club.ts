@@ -114,3 +114,86 @@ export function memberOf(members: ClubMember[], clubId: string, accountId: strin
 export function canOperateClub(role?: ClubMember["role"]) {
   return role === "owner" || role === "operator";
 }
+
+export type SplitCandidate = {
+  accountId?: string;
+  guestId?: string;
+  name: string;
+  /** 시즌 승률. 게스트·경기 0은 null → 밸런스 시 0.5로 취급 */
+  winRate: number | null;
+};
+
+export type SplitProposal = {
+  home: SplitCandidate[];
+  away: SplitCandidate[];
+  bench: SplitCandidate[];
+  ok: boolean;
+  reason?: string;
+};
+
+const COURT = 5;
+
+function candidateKey(row: SplitCandidate) {
+  return row.accountId ? `a:${row.accountId}` : `g:${row.guestId ?? row.name}`;
+}
+
+function balanceScore(row: SplitCandidate) {
+  return row.winRate ?? 0.5;
+}
+
+/** 농구 5v5 자동 매칭 제안. 확정은 운영자. */
+export function proposeClubSplit(
+  candidates: SplitCandidate[],
+  options: { balanceByWinRate?: boolean; random?: () => number } = {},
+): SplitProposal {
+  const balance = options.balanceByWinRate ?? false;
+  const random = options.random ?? Math.random;
+
+  if (candidates.length < COURT * 2) {
+    return {
+      home: [],
+      away: [],
+      bench: [...candidates],
+      ok: false,
+      reason: `5대5는 참석 ${COURT * 2}명이 필요합니다. 게스트를 추가하세요.`,
+    };
+  }
+
+  let ordered: SplitCandidate[];
+  if (balance) {
+    ordered = [...candidates].sort((a, b) => {
+      const diff = balanceScore(b) - balanceScore(a);
+      if (diff !== 0) return diff;
+      return a.name.localeCompare(b.name, "ko");
+    });
+  } else {
+    ordered = [...candidates];
+    for (let i = ordered.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(random() * (i + 1));
+      [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+    }
+  }
+
+  const starters = ordered.slice(0, COURT * 2);
+  const bench = ordered.slice(COURT * 2);
+  const home: SplitCandidate[] = [];
+  const away: SplitCandidate[] = [];
+
+  if (balance) {
+    // 스네이크: 1홈 2어웨이 3어웨이 4홈 …
+    for (let i = 0; i < starters.length; i += 1) {
+      const round = Math.floor(i / 2);
+      const firstInRound = i % 2 === 0;
+      const toHome = round % 2 === 0 ? firstInRound : !firstInRound;
+      (toHome ? home : away).push(starters[i]!);
+    }
+  } else {
+    for (let i = 0; i < starters.length; i += 1) {
+      (i < COURT ? home : away).push(starters[i]!);
+    }
+  }
+
+  return { home, away, bench, ok: true };
+}
+
+export { candidateKey };

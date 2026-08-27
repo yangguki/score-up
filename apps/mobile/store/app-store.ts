@@ -72,6 +72,7 @@ import {
   cancelSession,
   closeVoting,
   confirmSplit,
+  applySplitProposal,
   createClub,
   createSessions,
   decideJoin,
@@ -149,6 +150,7 @@ type Store = AppData & {
   setMemberGoingAt: (sessionId: string, accountId: string) => void;
   dropCandidateAt: (sessionId: string, accountId?: string, guestId?: string) => void;
   setAssignmentAt: (sessionId: string, key: { accountId?: string; guestId?: string }, side: SessionSide) => void;
+  proposeSplitAt: (sessionId: string, balanceByWinRate: boolean) => { ok: boolean; reason?: string };
   confirmSplitAt: (sessionId: string) => string;
   cancelSessionAt: (sessionId: string) => void;
   updateClubAt: (clubId: string, patch: { name?: string; venue?: string; seasonLabel?: string }) => void;
@@ -491,6 +493,11 @@ export const useAppStore = create<Store>()(
   setMemberGoingAt: (sessionId, accountId) => set(setMemberGoing(get(), sessionId, accountId)),
   dropCandidateAt: (sessionId, accountId, guestId) => set(dropCandidate(get(), sessionId, accountId, guestId)),
   setAssignmentAt: (sessionId, key, side) => set(setAssignment(get(), sessionId, key, side)),
+  proposeSplitAt: (sessionId, balanceByWinRate) => {
+    const result = applySplitProposal(get(), sessionId, { balanceByWinRate });
+    if (result.ok) set(result.data);
+    return { ok: result.ok, reason: result.reason };
+  },
   confirmSplitAt: (sessionId) => {
     const { data, matchId } = confirmSplit(get(), sessionId);
     set(data);

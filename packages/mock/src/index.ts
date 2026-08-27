@@ -93,6 +93,7 @@ export {
   candidateCount,
   closeVoting,
   confirmSplit,
+  applySplitProposal,
   createClub,
   createSessions,
   decideJoin,

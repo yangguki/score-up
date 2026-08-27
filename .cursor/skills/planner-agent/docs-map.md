@@ -14,6 +14,8 @@
 | `docs/SCORE-UP-참가-상세.md` | 참가 팀/선수 와이어, 등번호·인원 경고 | 개요 다음. 만들기 마법사 밖 |
 | `docs/SCORE-UP-홈-벤치마크.md` | 경쟁 홈 IA 비교 | 레퍼런스. 제품 결정의 근거 |
 | `docs/home-hub-versions.html` | H1~H7 시안 아카이브 | **닫힘.** H1 채택, H7 기각 |
+| `docs/product-direction-versions.html` | 제품 방향 A/B/C · 홈 CTA 비교 와이어 | **미잠금.** A=현행 대회 도구 |
+| `docs/SCORE-UP-제품방향-비교.md` | A 현장 대회 / B·C 모임 OS · CTA 결정표 | 비교 중. 잠그면 홈·모임 원문 동시 개정 |
 | `docs/home-brand-sport-hub-wire.html` | 브랜드+종목 허브 와이어 | 홈 상세와 같이 봄 |
 | `docs/SCORE-UP-스코어보드-레퍼런스-체크리스트.md` | 농구 보드 × Basket Timer/BT 검수표 | Phase 4 검수 목록. 룰 원문은 명세서 |
 | `docs/SCORE-UP-작업계획.md` | 구현 Phase, 기술 조합, agent, **지금 그리는 화면** | 일정·범위. 제품 비전을 여기서 바꾸지 않음 |

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SCORE UP — 제품 방향 · 홈 CTA 비교</title>
+  <style>
+    :root {
+      --bg: #121721;
+      --card: #1a222f;
+      --text: #f8fafc;
+      --muted: #a8b4c4;
+      --line: rgba(248,250,252,.14);
+      --accent: #f5a623;
+      --club: #3d8bff;
+      --ok: #10b981;
+      --phone: #0b1220;
+      --surface: #1e2736;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(420px 280px at 90% -10%, rgba(245,166,35,.2), transparent 55%),
+        radial-gradient(360px 240px at 0% 30%, rgba(61,139,255,.16), transparent 55%),
+        var(--bg);
+      color: var(--text);
+      padding: 24px 16px 72px;
+      line-height: 1.45;
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    h1 { font-size: 1.55rem; margin: 0 0 8px; letter-spacing: -0.03em; font-weight: 800; }
+    .lead { color: var(--muted); margin: 0 0 16px; max-width: 52rem; }
+    .note {
+      background: rgba(245,166,35,.12);
+      border: 1px solid rgba(245,166,35,.35);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: .9rem;
+      margin-bottom: 20px;
+    }
+    .note b { color: var(--accent); }
+    .switch {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .switch button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: .85rem;
+      cursor: pointer;
+    }
+    .switch button[aria-pressed="true"] {
+      border-color: var(--accent);
+      background: rgba(245,166,35,.18);
+      color: #fff;
+    }
+    .switch button.club[aria-pressed="true"] {
+      border-color: var(--club);
+      background: rgba(61,139,255,.2);
+    }
+    .panel { display: none; }
+    .panel.on { display: block; }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .meta .cell {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .meta .k { font-size: .72rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    .meta .v { margin-top: 4px; font-weight: 700; }
+    .phones {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      align-items: start;
+    }
+    .phone {
+      background: var(--phone);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      overflow: hidden;
+      max-width: 340px;
+      margin: 0 auto;
+      width: 100%;
+      box-shadow: 0 12px 32px rgba(0,0,0,.35);
+    }
+    .notch {
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--line);
+    }
+    .notch span { width: 68px; height: 5px; border-radius: 3px; background: #2a3444; }
+    .screen { padding: 14px 14px 10px; min-height: 560px; }
+    .tabs {
+      display: flex;
+      border-top: 1px solid var(--line);
+      padding: 10px 6px;
+      font-size: .75rem;
+      color: var(--muted);
+      background: #0e1520;
+    }
+    .tabs span { flex: 1; text-align: center; }
+    .tabs .on { color: var(--text); font-weight: 700; }
+    .brand { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.03em; }
+    .sub { color: var(--muted); font-size: .8rem; margin-top: 4px; }
+    .row-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .op { font-size: .72rem; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+    .mosaic {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .tile {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 8px;
+      font-size: .72rem;
+      font-weight: 700;
+      min-height: 44px;
+    }
+    .cta {
+      margin-top: 10px;
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      font-weight: 800;
+      font-size: .88rem;
+    }
+    .cta.primary { background: var(--accent); color: #0b1220; }
+    .cta.club { background: var(--club); color: #fff; }
+    .cta.ghost {
+      margin-top: 8px;
+      background: transparent;
+      border: 1.5px solid var(--line);
+      color: var(--text);
+      font-weight: 700;
+    }
+    .cta.dual {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 0;
+      background: transparent;
+    }
+    .cta.dual > span {
+      border-radius: 10px;
+      padding: 12px 8px;
+      font-size: .78rem;
+      font-weight: 800;
+      text-align: center;
+    }
+    .cta.dual .a { background: var(--accent); color: #0b1220; }
+    .cta.dual .b { background: var(--club); color: #fff; }
+    .sec { margin-top: 14px; }
+    .sec h3 {
+      margin: 0 0 8px;
+      font-size: .72rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      font-size: .8rem;
+    }
+    .card .t { font-weight: 800; }
+    .card .m { color: var(--muted); font-size: .72rem; margin-top: 2px; }
+    .live { color: var(--accent); font-weight: 800; font-variant-numeric: tabular-nums; }
+    .tag {
+      display: inline-block;
+      font-size: .68rem;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin-bottom: 8px;
+      background: #242d3c;
+    }
+    .tag.on { background: var(--accent); color: #0b1220; }
+    .tag.club { background: var(--club); color: #fff; }
+    .caption { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 10px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 28px;
+    }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { background: #151c2a; }
+    .ok { color: var(--ok); font-weight: 700; }
+    code { font-size: .8em; color: #c5d4e8; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>제품 방향 · 홈 CTA 비교</h1>
+    <p class="lead">
+      현행 <b>현장 대회 도구(A)</b>는 유지한다. 후보 <b>모임 OS(B·C)</b>를 새 버전으로 두고 CTA를 나란히 비교한다.
+      앱에서 <b>설정 → 홈 시안 비교</b>로 A/B/C를 전환한다. HTML은 아카이브·검수 질문용.
+    </p>
+    <div class="note">
+      <b>미잠금 · 2026-08-27.</b> 보드·룰 엔진은 세 버전 공통. 차이는 홈 중심·기본 CTA·IA 우선순위다.
+      채팅형 GPT 홈은 후보에 넣지 않았다(칩/카드 하이브리드만).
+    </div>
+
+    <div class="switch" role="tablist" aria-label="버전 선택">
+      <button type="button" id="tab-a" aria-pressed="true" data-panel="a">A · 현장 대회 도구</button>
+      <button type="button" class="club" id="tab-b" aria-pressed="false" data-panel="b">B · 모임 OS · 회차 CTA</button>
+      <button type="button" class="club" id="tab-c" aria-pressed="false" data-panel="c">C · 모임 OS · 듀얼 CTA</button>
+    </div>
+
+    <!-- A -->
+    <section class="panel on" id="panel-a" role="tabpanel">
+      <div class="meta">
+        <div class="cell"><div class="k">제품 한 줄</div><div class="v">현장 대회 도구 (현행)</div></div>
+        <div class="cell"><div class="k">Primary CTA</div><div class="v">대회 만들기</div></div>
+        <div class="cell"><div class="k">Secondary</div><div class="v">빠른 친선 · 내 모임은 섹션</div></div>
+        <div class="cell"><div class="k">상태</div><div class="v">구현 Phase 6 · H1 Arena</div></div>
+      </div>
+      <div class="phones">
+        <div>
+          <div class="phone">
+            <div class="notch"><span></span></div>
+            <div class="screen">
+              <div class="row-top">
+                <div>
+                  <div class="brand">SCORE UP</div>
+                  <div class="sub">지금 할 일과 만들 일</div>
+                </div>
+                <span class="op">운영자</span>
+              </div>
+              <div class="mosaic">
+                <div class="tile">농구</div><div class="tile">배구</div>
+                <div class="tile">탁구</div><div class="tile">축구 …</div>
+              </div>
+              <div class="cta primary">대회 만들기</div>
+              <div class="cta ghost">빠른 친선경기</div>
+              <div class="sec">
+                <h3>지금 할 일</h3>
+                <div class="card"><div class="t">호랑이 vs 독수리</div><div class="m">주말리그 · <span class="live">24–18</span></div></div>
+                <div class="card"><div class="t">호랑이 vs 사자</div><div class="m">오늘 대기 · vs</div></div>
+              </div>
+              <div class="sec">
+                <h3>내 대회</h3>
+                <div class="card"><div class="t">주말 농구 리그</div><div class="m">다음 미진행 2경기</div></div>
+              </div>
+              <div class="sec">
+                <h3>내 모임</h3>
+                <div class="card"><div class="t">주말 농구 모임</div><div class="m">토 14:00 · 투표 중</div></div>
+              </div>
+            </div>
+            <div class="tabs"><span class="on">홈</span><span>대회</span><span>설정</span></div>
+          </div>
+          <p class="caption"><span class="tag on">A · 현행</span> 종목 → 대회 만들기가 먼저. 모임은 아래 섹션.</p>
+        </div>
+        <div>
+          <div class="phone" style="opacity:.92">
+            <div class="notch"><span></span></div>
+            <div class="screen">
+              <div class="brand" style="font-size:1.2rem">빈 홈</div>
+              <div class="sub">첫 대회를 만들면 선수, 대진, 스코어가 하나로 이어집니다.</div>
+              <div class="mosaic" style="margin-top:16px">
+                <div class="tile">농구</div><div class="tile">배구</div>
+              </div>
+              <div class="cta primary">대회 만들기</div>
+              <div class="cta ghost">빠른 친선경기</div>
+              <div class="sec"><h3>내 모임</h3><div class="card"><div class="m">섹션 숨김 (0)</div></div></div>
+            </div>
+            <div class="tabs"><span class="on">홈</span><span>대회</span><span>설정</span></div>
+          </div>
+          <p class="caption">빈 상태도 대회 생성으로 유도.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- B -->
+    <section class="panel" id="panel-b" role="tabpanel">
+      <div class="meta">
+        <div class="cell"><div class="k">제품 한 줄</div><div class="v">모임 OS · 보드 포함 (후보)</div></div>
+        <div class="cell"><div class="k">Primary CTA</div><div class="v">이번 회차 / 내 모임</div></div>
+        <div class="cell"><div class="k">Secondary</div><div class="v">대회 만들기 · 친선</div></div>
+        <div class="cell"><div class="k">상태</div><div class="v">시안만 · 앱 미적용</div></div>
+      </div>
+      <div class="phones">
+        <div>
+          <div class="phone">
+            <div class="notch"><span></span></div>
+            <div class="screen">
+              <div class="row-top">
+                <div>
+                  <div class="brand">SCORE UP</div>
+                  <div class="sub">모임으로 이어 치고, 보드로 기록</div>
+                </div>
+                <span class="op">민수</span>
+              </div>
+              <div class="cta club" style="margin-top:14px">이번 회차 · 투표하기</div>
+              <div class="cta ghost">내 모임 전체</div>
+              <div class="sec">
+                <h3>내 모임</h3>
+                <div class="card"><div class="t">주말 농구 모임</div><div class="m">토 14:00 · 참석 미정 · 코트 체육관</div></div>
+                <div class="card"><div class="t">화요 픽업</div><div class="m">다음 회차 없음</div></div>
+              </div>
+              <div class="sec">
+                <h3>예정 · 진행</h3>
+                <div class="card"><div class="t">회차 경기 A조</div><div class="m">토 · 출전 확인</div></div>
+                <div class="card"><div class="t">호랑이 vs 독수리</div><div class="m">대회 · <span class="live">24–18</span></div></div>
+              </div>
+              <div class="sec">
+                <h3>더 보기</h3>
+                <div class="cta ghost" style="margin-top:0">대회 만들기</div>
+                <div class="cta ghost">빠른 친선경기</div>
+              </div>
+            </div>
+            <div class="tabs"><span class="on">홈</span><span>대회</span><span>설정</span></div>
+          </div>
+          <p class="caption"><span class="tag club">B · 후보</span> 회차·모임이 위. 대회 CTA는 아래로.</p>
+        </div>
+        <div>
+          <div class="phone">
+            <div class="notch"><span></span></div>
+            <div class="screen">
+              <div class="brand" style="font-size:1.25rem">시작하기</div>
+              <div class="sub">기존 모임을 찾거나, 새 모임을 만드세요.</div>
+              <div class="cta club" style="margin-top:18px">기존 모임 찾기</div>
+              <div class="cta club" style="background:#2a5a9e">새 모임 만들기</div>
+              <div class="cta ghost">대회만 열기</div>
+              <div class="sec">
+                <h3>도움 (칩)</h3>
+                <div class="card"><div class="m">종목이 있으실까요? · 농구 / 배구 / …</div></div>
+                <div class="card"><div class="m">GPT 풀채팅 홈 아님 · 칩으로 Needs만</div></div>
+              </div>
+            </div>
+            <div class="tabs"><span class="on">홈</span><span>대회</span><span>설정</span></div>
+          </div>
+          <p class="caption">신규 온보딩. 대회는 선택지 하나.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- C -->
+    <section class="panel" id="panel-c" role="tabpanel">
+      <div class="meta">
+        <div class="cell"><div class="k">제품 한 줄</div><div class="v">모임 OS · 보드 포함 (후보)</div></div>
+        <div class="cell"><div class="k">Primary CTA</div><div class="v">듀얼 · 대회 만들기 | 내 모임</div></div>
+        <div class="cell"><div class="k">비교 목적</div><div class="v">CTA만 A와 공정 비교</div></div>
+        <div class="cell"><div class="k">상태</div><div class="v">시안만 · 앱 미적용</div></div>
+      </div>
+      <div class="phones">
+        <div>
+          <div class="phone">
+            <div class="notch"><span></span></div>
+            <div class="screen">
+              <div class="row-top">
+                <div>
+                  <div class="brand">SCORE UP</div>
+                  <div class="sub">모임 OS · CTA 동등 비교용</div>
+                </div>
+                <span class="op">민수</span>
+              </div>
+              <div class="cta dual" style="margin-top:14px">
+                <span class="a">대회 만들기</span>
+                <span class="b">내 모임 / 회차</span>
+              </div>
+              <div class="cta ghost">빠른 친선경기</div>
+              <div class="sec">
+                <h3>지금 할 일</h3>
+                <div class="card"><div class="t">주말 농구 모임 · 회차</div><div class="m">투표 마감 D-1</div></div>
+                <div class="card"><div class="t">호랑이 vs 독수리</div><div class="m">대회 · <span class="live">24–18</span></div></div>
+              </div>
+              <div class="sec">
+                <h3>내 모임</h3>
+                <div class="card"><div class="t">주말 농구 모임</div><div class="m">토 14:00</div></div>
+              </div>
+              <div class="sec">
+                <h3>내 대회</h3>
+                <div class="card"><div class="t">주말 농구 리그</div><div class="m">다음 미진행 2경기</div></div>
+              </div>
+            </div>
+            <div class="tabs"><span class="on">홈</span><span>대회</span><span>설정</span></div>
+          </div>
+          <p class="caption"><span class="tag club">C · 후보</span> 모임 OS IA + 듀얼 CTA. A의 ‘대회 만들기’와 B의 ‘회차’를 한 줄에.</p>
+        </div>
+        <div>
+          <div class="phone">
+            <div class="notch"><span></span></div>
+            <div class="screen">
+              <div class="brand" style="font-size:1.2rem">빈 홈 · 듀얼</div>
+              <div class="sub">대회를 열거나, 모임을 시작할 수 있습니다.</div>
+              <div class="cta dual" style="margin-top:18px">
+                <span class="a">대회 만들기</span>
+                <span class="b">모임 만들기</span>
+              </div>
+              <div class="cta ghost">빠른 친선경기</div>
+              <div class="sec">
+                <h3>검수 포인트</h3>
+                <div class="card"><div class="m">두 CTA가 동등하면 ‘지금 할 일’이 흐려지는지</div></div>
+                <div class="card"><div class="m">스코어 앱 인식 vs 동호회 앱 인식</div></div>
+              </div>
+            </div>
+            <div class="tabs"><span class="on">홈</span><span>대회</span><span>설정</span></div>
+          </div>
+          <p class="caption">빈 홈에서 듀얼이 갈등을 만드는지 확인용.</p>
+        </div>
+      </div>
+    </section>
+
+    <table>
+      <thead>
+        <tr><th>축</th><th>A 현장 대회 (현행)</th><th>B 모임 OS · 회차 CTA</th><th>C 모임 OS · 듀얼 CTA</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>제품 중심</td><td>대회 → 대진 → 보드</td><td>모임 → 회차 → 보드 (+대회)</td><td>동</td></tr>
+        <tr><td>홈 Primary</td><td>대회 만들기</td><td>이번 회차 / 내 모임</td><td>둘 다 동등</td></tr>
+        <tr><td>빈 홈 유도</td><td>대회</td><td>모임 찾기·만들기</td><td>대회 | 모임</td></tr>
+        <tr><td>보드·룰</td><td class="ok">공통</td><td class="ok">공통</td><td class="ok">공통</td></tr>
+        <tr><td>기간형 급수 리그·도전</td><td>로드맵 뒤</td><td>모임 OS에 자연</td><td>동</td></tr>
+        <tr><td>안내 AI</td><td>선택</td><td>온보딩 칩에 적합</td><td>동</td></tr>
+        <tr><td>리스크</td><td>모임이 묻힘</td><td>대회 CTA 약화</td><td>CTA 경쟁·혼선</td></tr>
+        <tr><td>앱 코드</td><td class="ok">설정 → A</td><td class="ok">설정 → B</td><td class="ok">설정 → C</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <script>
+    const buttons = document.querySelectorAll(".switch button");
+    const panels = { a: document.getElementById("panel-a"), b: document.getElementById("panel-b"), c: document.getElementById("panel-c") };
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-panel");
+        buttons.forEach((b) => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+        Object.entries(panels).forEach(([key, el]) => el.classList.toggle("on", key === id));
+      });
+    });
+  </script>
+</body>
+</html>
