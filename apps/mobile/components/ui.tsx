@@ -72,10 +72,15 @@ export function Btn({
   label,
   onPress,
   variant = "primary",
+  size = "md",
   disabled,
   style,
   ...rest
-}: PressableProps & { label: string; variant?: "primary" | "ghost" | "danger" | "home" | "away" }) {
+}: PressableProps & {
+  label: string;
+  variant?: "primary" | "ghost" | "danger" | "home" | "away";
+  size?: "md" | "sm";
+}) {
   const bg =
     variant === "ghost"
       ? colors.ghost
@@ -94,6 +99,7 @@ export function Btn({
       : colors.ghostFg;
   const borderWidth = variant === "ghost" ? 1.5 : 0;
   const borderColor = variant === "ghost" ? colors.ghostLine : "transparent";
+  const compact = size === "sm";
 
   return (
     <Pressable
@@ -106,17 +112,17 @@ export function Btn({
           borderColor,
           opacity: disabled ? 0.4 : pressed ? 0.88 : 1,
           borderRadius: arena.radius,
-          paddingVertical: 15,
-          paddingHorizontal: 16,
+          paddingVertical: compact ? 8 : 15,
+          paddingHorizontal: compact ? 12 : 16,
           alignItems: "center",
-          minHeight: 52,
+          minHeight: compact ? 38 : 52,
           transform: [{ scale: pressed ? 0.985 : 1 }],
         },
         style,
       ]}
       {...rest}
     >
-      <Text style={{ color: fg, fontWeight: "800", fontSize: 16, letterSpacing: -0.2 }}>{label}</Text>
+      <Text style={{ color: fg, fontWeight: "800", fontSize: compact ? 13 : 16, letterSpacing: -0.2 }}>{label}</Text>
     </Pressable>
   );
 }

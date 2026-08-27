@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { bonusFor, DEFAULT_AWAY_COLOR, DEFAULT_HOME_COLOR, formatClock, isBasketballMatch, quarterLabel } from "@score-up/domain";
 import { Btn, P } from "@/components/ui";
+import { BoardKey } from "@/components/scoreboard/scoreboard-chrome";
 import { eventLine } from "@/lib/labels";
+import { useScoreboardLayout } from "@/lib/scoreboard-layout";
 import { useAppStore } from "@/store/app-store";
 import { colors } from "@/theme/tokens";
 
@@ -16,8 +18,7 @@ type Pending =
 
 export function BasketballScoreboard() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { width, height } = useWindowDimensions();
-  const stacked = width < 820;
+  const { stacked, compact, scoreSize } = useScoreboardLayout();
   const match = useAppStore((s) => s.matches.find((m) => m.id === id));
   const teams = useAppStore((s) => s.teams);
   const players = useAppStore((s) => s.players);
@@ -98,7 +99,6 @@ export function BasketballScoreboard() {
   const awayTo = snap.timeoutsLeft[match.awayTeamId ?? "away"] ?? 0;
   const homeColor = teams.find((t) => t.id === match.homeTeamId)?.color ?? match.homeColor ?? DEFAULT_HOME_COLOR;
   const awayColor = teams.find((t) => t.id === match.awayTeamId)?.color ?? match.awayColor ?? DEFAULT_AWAY_COLOR;
-  const scoreSize = stacked ? Math.min(120, height * 0.18) : Math.min(180, width * 0.22);
   const playLocked = locked || !snap.started || snap.timeoutRunning;
   const timeoutTeam =
     snap.timeoutTeamId === match.awayTeamId || snap.timeoutTeamId === "away" ? match.awayLabel : match.homeLabel;
@@ -184,17 +184,22 @@ export function BasketballScoreboard() {
     return (
       <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: side === "home" ? "flex-start" : "flex-end" }}>
         {pointOrder.map((pts) => (
-          <MiniKey
+          <BoardKey
             key={pts}
             label={`+${pts}`}
+            variant={pts === 1 && bonus ? "primary" : "ghost"}
             emphasize={pts === 1 && bonus}
             disabled={playLocked}
             onPress={() => setPending({ kind: "point", side, points: pts })}
           />
         ))}
-        <MiniKey label="파울" disabled={playLocked} onPress={() => setPending({ kind: "foul", side })} />
-        <MiniKey label="교체" disabled={playLocked || (side === "home" ? homePlayers.length === 0 : awayPlayers.length === 0)} onPress={() => setPending({ kind: "sub", side })} />
-        <MiniKey label={`T/O ${to}`} disabled={timeoutLocked} onPress={() => addTimeout(match.id, side)} />
+        <BoardKey label="파울" disabled={playLocked} onPress={() => setPending({ kind: "foul", side })} />
+        <BoardKey
+          label="교체"
+          disabled={playLocked || (side === "home" ? homePlayers.length === 0 : awayPlayers.length === 0)}
+          onPress={() => setPending({ kind: "sub", side })}
+        />
+        <BoardKey label={`T/O ${to}`} disabled={timeoutLocked} onPress={() => addTimeout(match.id, side)} />
       </View>
     );
   };
@@ -416,36 +421,6 @@ export function BasketballScoreboard() {
         </Dialog>
       </Modal>
     </View>
-  );
-}
-
-function MiniKey({
-  label,
-  onPress,
-  disabled,
-  emphasize,
-}: {
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  emphasize?: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={{
-        backgroundColor: emphasize ? colors.bonus : colors.surface2,
-        opacity: disabled ? 0.35 : 1,
-        paddingVertical: 7,
-        paddingHorizontal: 10,
-        borderRadius: 8,
-        minHeight: 34,
-        justifyContent: "center",
-      }}
-    >
-      <Text style={{ color: emphasize ? colors.primaryFg : colors.text, fontWeight: "800", fontSize: 13 }}>{label}</Text>
-    </Pressable>
   );
 }
 

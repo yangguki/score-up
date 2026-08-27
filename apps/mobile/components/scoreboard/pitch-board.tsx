@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { Modal, Pressable, useWindowDimensions, View } from "react-native";
+import { Modal, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   DEFAULT_AWAY_COLOR,
@@ -12,15 +12,22 @@ import {
 } from "@score-up/domain";
 import { pitchNotice } from "@score-up/mock";
 import { Btn, P } from "@/components/ui";
+import {
+  BoardKey,
+  ScoreboardHeader,
+  ScoreboardScrollBody,
+  scoreboardSideGap,
+  scoreboardTeamsRow,
+} from "@/components/scoreboard/scoreboard-chrome";
 import { eventLine } from "@/lib/labels";
 import { sportLabel } from "@/lib/match-routes";
+import { useScoreboardLayout } from "@/lib/scoreboard-layout";
 import { useAppStore } from "@/store/app-store";
 import { colors } from "@/theme/tokens";
 
 export function PitchScoreboard() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { width, height } = useWindowDimensions();
-  const stacked = width < 820;
+  const { stacked, compact, scoreSize } = useScoreboardLayout();
   const match = useAppStore((s) => s.matches.find((m) => m.id === id));
   const players = useAppStore((s) => s.players);
   const competition = useAppStore((s) => s.competitions.find((c) => c.id === match?.competitionId));
@@ -79,7 +86,6 @@ export function PitchScoreboard() {
     match.status === "completed" ||
     match.status === "forfeited";
   const playLocked = locked || !snap.started;
-  const scoreSize = stacked ? Math.min(120, height * 0.18) : Math.min(180, width * 0.22);
   const homeColor = match.homeColor ?? DEFAULT_HOME_COLOR;
   const awayColor = match.awayColor ?? DEFAULT_AWAY_COLOR;
   const headerTitle = competition?.name ?? match.roundLabel;
@@ -110,21 +116,15 @@ export function PitchScoreboard() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", padding: 12, alignItems: "center" }}>
-        <Pressable onPress={leave}>
-          <P>나가기</P>
-        </Pressable>
-        <P muted>
-          {headerTitle} · {sportLabel(match.sportId)} · {period} {formatClock(snap.clockMs)}
-        </P>
-        <Pressable onPress={() => setMoreOpen(true)}>
-          <P>더보기</P>
-        </Pressable>
-      </View>
+      <ScoreboardHeader
+        title={`${headerTitle} · ${sportLabel(match.sportId)} · ${period} ${formatClock(snap.clockMs)}`}
+        onLeave={leave}
+        onMore={() => setMoreOpen(true)}
+      />
 
-      <View style={{ flex: 1, paddingHorizontal: 16, justifyContent: "center", gap: 16 }}>
-        <View style={{ alignItems: "center", gap: 6 }}>
-          <P style={{ fontSize: 28, fontWeight: "800" }}>{formatClock(snap.clockMs)}</P>
+      <ScoreboardScrollBody compact={compact}>
+        <View style={{ alignItems: "center", gap: compact ? 4 : 6 }}>
+          <P style={{ fontSize: compact ? 22 : 28, fontWeight: "800" }}>{formatClock(snap.clockMs)}</P>
           <P muted>
             {period} · 카드 옐로 {snap.yellowHome}-{snap.yellowAway} · 레드 {snap.redHome}-{snap.redAway}
           </P>
@@ -138,14 +138,7 @@ export function PitchScoreboard() {
           ) : null}
         </View>
 
-        <View
-          style={{
-            flexDirection: stacked ? "column" : "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 20,
-          }}
-        >
+        <View style={scoreboardTeamsRow(stacked)}>
           <PitchSide
             label={match.homeLabel}
             color={homeColor}
@@ -154,6 +147,7 @@ export function PitchScoreboard() {
             yellow={snap.yellowHome}
             red={snap.redHome}
             fouls={showFouls ? snap.teamFoulsHome : undefined}
+            compact={compact}
             disabled={playLocked}
             onGoal={() => addPoint(match.id, "home", 1)}
             onYellow={() => addSanction(match.id, "home", "yellow")}
@@ -168,6 +162,7 @@ export function PitchScoreboard() {
             yellow={snap.yellowAway}
             red={snap.redAway}
             fouls={showFouls ? snap.teamFoulsAway : undefined}
+            compact={compact}
             disabled={playLocked}
             onGoal={() => addPoint(match.id, "away", 1)}
             onYellow={() => addSanction(match.id, "away", "yellow")}
@@ -176,8 +171,8 @@ export function PitchScoreboard() {
           />
         </View>
 
-        {!snap.started ? <Btn label="경기 시작" onPress={() => startPitch(match.id)} /> : null}
-      </View>
+        {!snap.started ? <Btn label="경기 시작" size="sm" onPress={() => startPitch(match.id)} /> : null}
+      </ScoreboardScrollBody>
 
       <View style={{ gap: 10, padding: 12, borderTopWidth: 1, borderTopColor: colors.line }}>
         <Pressable onPress={() => router.push(`/match/${match.id}/timeline`)}>
@@ -185,9 +180,9 @@ export function PitchScoreboard() {
             최근: {recent.length ? recent.map((event) => eventLine(event, players, match)).join(" · ") : "없음"}
           </P>
         </Pressable>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <Btn label={clockLabel} variant="ghost" style={{ flex: 1 }} disabled={!snap.started || locked} onPress={clockAction} />
-          <Btn label="실행 취소" variant="ghost" style={{ flex: 1 }} onPress={() => undo(match.id)} />
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Btn label={clockLabel} variant="ghost" size="sm" style={{ flex: 1 }} disabled={!snap.started || locked} onPress={clockAction} />
+          <Btn label="실행 취소" variant="ghost" size="sm" style={{ flex: 1 }} onPress={() => undo(match.id)} />
         </View>
       </View>
 
@@ -328,6 +323,7 @@ function PitchSide({
   yellow,
   red,
   fouls,
+  compact,
   disabled,
   onGoal,
   onYellow,
@@ -341,27 +337,29 @@ function PitchSide({
   yellow: number;
   red: number;
   fouls?: number;
+  compact: boolean;
   disabled: boolean;
   onGoal: () => void;
   onYellow: () => void;
   onRed: () => void;
   onFoul?: () => void;
 }) {
+  const gap = scoreboardSideGap(compact);
   return (
-    <View style={{ flex: 1, alignItems: "center", gap: 10, minWidth: 160 }}>
+    <View style={{ flex: 1, alignItems: "center", gap, minWidth: 0, width: "100%" }}>
       <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: color }} />
       <P style={{ fontWeight: "800" }}>{label}</P>
-      <P style={{ fontSize: scoreSize, fontWeight: "800", lineHeight: scoreSize + 8 }}>{score}</P>
-      <P muted>
+      <P style={{ fontSize: scoreSize, fontWeight: "900", lineHeight: scoreSize * 1.02 }}>{score}</P>
+      <P muted style={{ fontSize: 12 }}>
         옐로 {yellow} · 레드 {red}
         {fouls !== undefined ? ` · 파울 ${fouls}` : ""}
       </P>
-      <Btn label="+1 골" disabled={disabled} onPress={onGoal} />
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <Btn label="경고" variant="ghost" disabled={disabled} onPress={onYellow} />
-        <Btn label="레드" variant="ghost" disabled={disabled} onPress={onRed} />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
+        <BoardKey label="+1 골" variant="primary" disabled={disabled} onPress={onGoal} />
+        <BoardKey label="경고" disabled={disabled} onPress={onYellow} />
+        <BoardKey label="레드" disabled={disabled} onPress={onRed} />
+        {onFoul ? <BoardKey label="팀 파울" disabled={disabled} onPress={onFoul} /> : null}
       </View>
-      {onFoul ? <Btn label="팀 파울" variant="ghost" disabled={disabled} onPress={onFoul} /> : null}
     </View>
   );
 }

@@ -42,7 +42,7 @@ description: Builds SCORE UP Expo app+web screens that run on mock data for UX r
 
 - 대회 준비: 폰 세로
 - 스코어보드: 태블릿 가로 우선. 웹에서는 min-width를 가로 보드에 맞춘다
-- 총점이 가장 크다. 연한 회색 위 연한 숫자는 쓰지 않는다
+- 총점이 가장 크다. 액션은 BoardKey/sm. 연한 회색 위 연한 숫자는 쓰지 않는다
 - 몰수/경기종료는 더보기 안
 
 ## 카피

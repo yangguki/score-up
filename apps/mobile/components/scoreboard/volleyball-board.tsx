@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { Modal, Pressable, useWindowDimensions, View } from "react-native";
+import { Modal, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   DEFAULT_AWAY_COLOR,
@@ -13,14 +13,21 @@ import {
 } from "@score-up/domain";
 import { volleyballNotice } from "@score-up/mock";
 import { Btn, P } from "@/components/ui";
+import {
+  BoardKey,
+  ScoreboardHeader,
+  ScoreboardScrollBody,
+  scoreboardSideGap,
+  scoreboardTeamsRow,
+} from "@/components/scoreboard/scoreboard-chrome";
 import { eventLine } from "@/lib/labels";
+import { useScoreboardLayout } from "@/lib/scoreboard-layout";
 import { useAppStore } from "@/store/app-store";
 import { colors } from "@/theme/tokens";
 
 export function VolleyballScoreboard() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { width, height } = useWindowDimensions();
-  const stacked = width < 820;
+  const { stacked, compact, scoreSize } = useScoreboardLayout();
   const match = useAppStore((s) => s.matches.find((m) => m.id === id));
   const players = useAppStore((s) => s.players);
   const competition = useAppStore((s) => s.competitions.find((c) => c.id === match?.competitionId));
@@ -59,7 +66,6 @@ export function VolleyballScoreboard() {
     match.status === "completed" ||
     match.status === "forfeited";
   const playLocked = locked || !snap.started;
-  const scoreSize = stacked ? Math.min(120, height * 0.18) : Math.min(180, width * 0.22);
   const homeColor = match.homeColor ?? DEFAULT_HOME_COLOR;
   const awayColor = match.awayColor ?? DEFAULT_AWAY_COLOR;
   const timeoutMax = match.rules.timeoutsPerSet;
@@ -96,20 +102,14 @@ export function VolleyballScoreboard() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", padding: 12, alignItems: "center" }}>
-        <Pressable onPress={leave}>
-          <P>나가기</P>
-        </Pressable>
-        <P muted>
-          {headerTitle} · {volleyballSetLabel(snap)}
-        </P>
-        <Pressable onPress={() => setMoreOpen(true)}>
-          <P>더보기</P>
-        </Pressable>
-      </View>
+      <ScoreboardHeader
+        title={`${headerTitle} · ${volleyballSetLabel(snap)}`}
+        onLeave={leave}
+        onMore={() => setMoreOpen(true)}
+      />
 
-      <View style={{ flex: 1, paddingHorizontal: 16, justifyContent: "center", gap: 16 }}>
-        <View style={{ alignItems: "center", gap: 6 }}>
+      <ScoreboardScrollBody compact={compact}>
+        <View style={{ alignItems: "center", gap: compact ? 4 : 6 }}>
           <P muted>
             세트 {snap.setsWonHome} - {snap.setsWonAway}
           </P>
@@ -122,14 +122,7 @@ export function VolleyballScoreboard() {
           {sanctionLine ? <P muted>{sanctionLine}</P> : null}
         </View>
 
-        <View
-          style={{
-            flexDirection: stacked ? "column" : "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 20,
-          }}
-        >
+        <View style={scoreboardTeamsRow(stacked)}>
           <SideBlock
             label={match.homeLabel}
             color={homeColor}
@@ -137,6 +130,7 @@ export function VolleyballScoreboard() {
             scoreSize={scoreSize}
             serving={snap.serveSide === "home"}
             rotation={rotationOn ? volleyballFrontLine(snap.rotationHome) : undefined}
+            compact={compact}
             disabled={playLocked}
             timeoutLeft={timeoutLeft("home")}
             timeoutMax={timeoutMax}
@@ -152,6 +146,7 @@ export function VolleyballScoreboard() {
             scoreSize={scoreSize}
             serving={snap.serveSide === "away"}
             rotation={rotationOn ? volleyballFrontLine(snap.rotationAway) : undefined}
+            compact={compact}
             disabled={playLocked}
             timeoutLeft={timeoutLeft("away")}
             timeoutMax={timeoutMax}
@@ -167,11 +162,11 @@ export function VolleyballScoreboard() {
             <P muted style={{ textAlign: "center" }}>
               선서브 · 고르지 않으면 홈
             </P>
-            <Btn label="홈 선서브로 시작" onPress={() => startVolleyball(match.id, "home")} />
-            <Btn label="어웨이 선서브로 시작" variant="ghost" onPress={() => startVolleyball(match.id, "away")} />
+            <Btn label="홈 선서브로 시작" size="sm" onPress={() => startVolleyball(match.id, "home")} />
+            <Btn label="어웨이 선서브로 시작" size="sm" variant="ghost" onPress={() => startVolleyball(match.id, "away")} />
           </View>
         ) : null}
-      </View>
+      </ScoreboardScrollBody>
 
       <View
         style={{
@@ -186,15 +181,16 @@ export function VolleyballScoreboard() {
             최근: {recent.length ? recent.map((event) => eventLine(event, players, match)).join(" · ") : "없음"}
           </P>
         </Pressable>
-        <View style={{ flexDirection: "row", gap: 10 }}>
+        <View style={{ flexDirection: "row", gap: 8 }}>
           <Btn
             label="서브 변경"
             variant="ghost"
+            size="sm"
             style={{ flex: 1 }}
             disabled={!snap.started || locked}
             onPress={() => changeServe(match.id)}
           />
-          <Btn label="실행 취소" variant="ghost" style={{ flex: 1 }} onPress={() => undo(match.id)} />
+          <Btn label="실행 취소" variant="ghost" size="sm" style={{ flex: 1 }} onPress={() => undo(match.id)} />
         </View>
       </View>
 
@@ -323,6 +319,7 @@ function SideBlock({
   scoreSize,
   serving,
   rotation,
+  compact,
   disabled,
   timeoutLeft,
   timeoutMax,
@@ -337,6 +334,7 @@ function SideBlock({
   scoreSize: number;
   serving: boolean;
   rotation?: string;
+  compact: boolean;
   disabled: boolean;
   timeoutLeft: number;
   timeoutMax: number;
@@ -345,26 +343,21 @@ function SideBlock({
   onYellow: () => void;
   onRed: () => void;
 }) {
+  const gap = scoreboardSideGap(compact);
   return (
-    <View style={{ flex: 1, alignItems: "center", gap: 10, minWidth: 140 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+    <View style={{ flex: 1, alignItems: "center", gap, minWidth: compact ? 0 : 140, width: "100%" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
         <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: color }} />
         <P style={{ fontWeight: "800" }}>{label}</P>
         {serving ? <P style={{ color: colors.primary, fontWeight: "800" }}>●서브</P> : null}
       </View>
       {rotation ? <P muted>전열 {rotation}</P> : null}
-      <P style={{ fontSize: scoreSize, fontWeight: "900", lineHeight: scoreSize * 1.05 }}>{score}</P>
-      <Btn label="+1" disabled={disabled} onPress={onPoint} style={{ minWidth: 120 }} />
-      <Btn
-        label={`타임아웃 ${timeoutLeft}/${timeoutMax}`}
-        variant="ghost"
-        disabled={disabled || timeoutLeft <= 0}
-        onPress={onTimeout}
-        style={{ minWidth: 120 }}
-      />
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <Btn label="경고" variant="ghost" disabled={disabled} onPress={onYellow} />
-        <Btn label="레드" variant="ghost" disabled={disabled} onPress={onRed} />
+      <P style={{ fontSize: scoreSize, fontWeight: "900", lineHeight: scoreSize * 1.02 }}>{score}</P>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
+        <BoardKey label="+1" variant="primary" disabled={disabled} onPress={onPoint} />
+        <BoardKey label={`T/O ${timeoutLeft}/${timeoutMax}`} disabled={disabled || timeoutLeft <= 0} onPress={onTimeout} />
+        <BoardKey label="경고" disabled={disabled} onPress={onYellow} />
+        <BoardKey label="레드" disabled={disabled} onPress={onRed} />
       </View>
     </View>
   );

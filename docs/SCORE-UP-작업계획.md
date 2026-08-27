@@ -197,7 +197,7 @@ Manager는 배구·탁구 작업 요청이 와도 **농구 mock UX가 끝나기 
 1. ~~Frontend UX: 대회 만들기를 **4단계**로 맞춤~~ (`docs/SCORE-UP-대회-만들기-상세.md`)
 2. ~~Frontend UX: 참가 팀/선수~~ (`docs/SCORE-UP-참가-상세.md`)
 3. ~~홈 **H1 Arena** 톤 검수~~ — H1 채택, H7 기각. 시안 바·V1~V3·H2~H7 앱에서 제거
-4. ~~Phase 4: 농구 보드 UX 검수~~ — 체크리스트 A~F 코드 통과. 웹에서 시드 보드·가로/세로 접힘(820) 확인
+4. ~~Phase 4: 농구 보드 UX 검수~~ — 체크리스트 A~F 코드 통과. 세로·좁으면 스택, 가로는 좌우(짧은 높이 compact)
 5. ~~Phase 3 잔여 준비 화면~~ — 대진·경기 목록·출전·친선
 6. ~~Phase 5: mock apply* 를 엔진 리듀서로 교체~~ — `applyBasketballEvent`. 시계·작전타임 UI 상태는 mock 유지. 그 전 배구/탁구 보드 금지
 
