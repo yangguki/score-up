@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView } from "react-native";
 import {
   ALL_SPORT_IDS,
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
   clubRulesFor,
+  isSportId,
   type SportId,
   type SportRules,
   type TableTennisRules,
@@ -26,15 +27,24 @@ function toPlayers(drafts: DraftPlayer[]) {
 
 const CREATE_SPORTS: SportId[] = [...ALL_SPORT_IDS];
 
+function sportFromQuery(value?: string | string[]): SportId | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return isSportId(raw) ? raw : null;
+}
+
 export default function FriendlyScreen() {
+  const params = useLocalSearchParams<{ sport?: string }>();
   const makeFriendly = useAppStore((s) => s.makeFriendly);
-  const [sportId, setSportId] = useState<SportId>("basketball");
+  const querySport = sportFromQuery(params.sport);
+  const sportLocked = querySport != null;
+  const initialSport = querySport ?? "basketball";
+  const [sportId, setSportId] = useState<SportId>(initialSport);
   const [home, setHome] = useState("홈");
   const [away, setAway] = useState("어웨이");
   const [homeColor, setHomeColor] = useState<string>(DEFAULT_HOME_COLOR);
   const [awayColor, setAwayColor] = useState<string>(DEFAULT_AWAY_COLOR);
   const [official, setOfficial] = useState(false);
-  const [rules, setRules] = useState<SportRules>(clubRulesFor("basketball"));
+  const [rules, setRules] = useState<SportRules>(clubRulesFor(initialSport));
   const [homePlayers, setHomePlayers] = useState<DraftPlayer[]>([]);
   const [awayPlayers, setAwayPlayers] = useState<DraftPlayer[]>([]);
 
@@ -43,6 +53,13 @@ export default function FriendlyScreen() {
     setOfficial(false);
     setRules(clubRulesFor(next));
   };
+
+  useEffect(() => {
+    const next = sportFromQuery(params.sport) ?? "basketball";
+    setSportId(next);
+    setOfficial(false);
+    setRules(clubRulesFor(next));
+  }, [params.sport]);
 
   const rally = sportId === "table-tennis" || sportId === "badminton" || sportId === "squash";
   const doubles = rally && (rules as TableTennisRules).doubles;
@@ -70,16 +87,27 @@ export default function FriendlyScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: 48 }}>
-        <SectionHead title="빠른 친선경기" hint="종목과 룰을 정하고 팀을 만든 뒤, 필요하면 선수를 넣습니다." />
+        <SectionHead
+          title="빠른 친선경기"
+          hint={
+            sportLocked
+              ? `${sportLabel(sportId)} · 룰을 정하고 팀을 만듭니다.`
+              : "종목과 룰을 정하고 팀을 만든 뒤, 필요하면 선수를 넣습니다."
+          }
+        />
 
-        <H style={{ fontSize: 18 }}>종목</H>
-        {CREATE_SPORTS.map((id) => (
-          <Pressable key={id} onPress={() => selectSport(id)}>
-            <Card style={{ borderColor: sportId === id ? colors.primary : colors.line }}>
-              <H style={{ fontSize: 18 }}>{sportLabel(id)}</H>
-            </Card>
-          </Pressable>
-        ))}
+        {sportLocked ? null : (
+          <>
+            <H style={{ fontSize: 18 }}>종목</H>
+            {CREATE_SPORTS.map((id) => (
+              <Pressable key={id} onPress={() => selectSport(id)}>
+                <Card style={{ borderColor: sportId === id ? colors.primary : colors.line }}>
+                  <H style={{ fontSize: 18 }}>{sportLabel(id)}</H>
+                </Card>
+              </Pressable>
+            ))}
+          </>
+        )}
 
         <H style={{ fontSize: 18 }}>룰</H>
         <SportRulesEditor

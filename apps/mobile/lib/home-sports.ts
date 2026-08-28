@@ -29,7 +29,7 @@ export const HOME_SPORTS: HomeSport[] = [
   { id: "futsal", name: "풋살", line: "전후반", tint: "#1D4ED8", active: true },
 ];
 
-export const HOME_TAGLINE = "종목 룰로 대회를 만들고, 현장에서 스코어를 이어 갑니다.";
+export const HOME_TAGLINE = "지금 할 일과 만들 일";
 
 export const HOME_VALUE_LINES = [
   "종목 프리셋으로 대회·친선 시작",

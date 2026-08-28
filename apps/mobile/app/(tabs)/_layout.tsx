@@ -1,8 +1,19 @@
 import { SymbolView } from "expo-symbols";
 import { Tabs } from "expo-router";
+import { useUiPrefsStore } from "@/store/ui-prefs";
 import { colors } from "@/theme/tokens";
+import { lift } from "@/theme/lift";
+import { play } from "@/theme/play";
 
 export default function TabLayout() {
+  const homeVersion = useUiPrefsStore((s) => s.homeVersion);
+  const chrome =
+    homeVersion === "h9"
+      ? { bg: play.bg, line: play.line, muted: play.muted, active: play.navy }
+      : homeVersion === "h8"
+        ? { bg: lift.bg, line: lift.line, muted: lift.muted, active: lift.primary }
+        : { bg: colors.bg, line: colors.line, muted: colors.muted, active: colors.primary };
+
   return (
     <Tabs
       screenOptions={{
@@ -11,12 +22,12 @@ export default function TabLayout() {
         headerTitleStyle: { fontWeight: "800" },
         headerShadowVisible: false,
         tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.line,
+          backgroundColor: chrome.bg,
+          borderTopColor: chrome.line,
           borderTopWidth: 1,
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
+        tabBarActiveTintColor: chrome.active,
+        tabBarInactiveTintColor: chrome.muted,
         tabBarLabelStyle: { fontWeight: "700", fontSize: 11 },
       }}
     >

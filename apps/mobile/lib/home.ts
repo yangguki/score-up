@@ -48,8 +48,12 @@ export function leftoverCount(competitionId: string, matches: Match[]) {
   return matches.filter((match) => match.competitionId === competitionId && isOpenMatch(match)).length;
 }
 
+export function openCompetitions(competitions: Competition[]) {
+  return competitions.filter((comp) => comp.status !== "completed");
+}
+
 export function myCompetitions(competitions: Competition[]) {
-  return competitions.filter((comp) => comp.status !== "completed").slice(0, 5);
+  return openCompetitions(competitions).slice(0, 5);
 }
 
 export function matchDisplayScore(match: Match): { home: number; away: number } {
@@ -166,13 +170,15 @@ const NOW_LIMIT = 5;
 
 export function buildHomeModel(competitions: Competition[], matches: Match[]) {
   const now = nowMatches(matches);
+  const mine = openCompetitions(competitions);
   return {
     now: now.slice(0, NOW_LIMIT),
     nowOverflow: now.length > NOW_LIMIT,
-    competitions: myCompetitions(competitions).map((competition) => ({
+    competitions: mine.slice(0, 5).map((competition) => ({
       competition,
       leftover: leftoverCount(competition.id, matches),
     })),
+    competitionOverflow: mine.length > 5,
     action: nextHomeAction(competitions, matches),
     empty: competitions.length === 0 && matches.length === 0,
   };

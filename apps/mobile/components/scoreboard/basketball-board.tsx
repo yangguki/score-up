@@ -1,12 +1,22 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { bonusFor, DEFAULT_AWAY_COLOR, DEFAULT_HOME_COLOR, formatClock, isBasketballMatch, quarterLabel } from "@score-up/domain";
 import { Btn, P } from "@/components/ui";
+import {
+  ArenaActionRow,
+  ArenaBoardShell,
+  ArenaDialog,
+  ArenaDockRow,
+  ArenaMeta,
+  arenaBottomGhost,
+  arenaBottomGhostText,
+  arenaDialogTitle,
+  arenaOverlayBox,
+  arenaStartBtn,
+} from "@/components/scoreboard/arena-board";
 import { BoardKey } from "@/components/scoreboard/scoreboard-chrome";
 import { eventLine } from "@/lib/labels";
-import { useScoreboardLayout } from "@/lib/scoreboard-layout";
 import { useAppStore } from "@/store/app-store";
 import { colors } from "@/theme/tokens";
 
@@ -18,7 +28,6 @@ type Pending =
 
 export function BasketballScoreboard() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { stacked, compact, scoreSize } = useScoreboardLayout();
   const match = useAppStore((s) => s.matches.find((m) => m.id === id));
   const teams = useAppStore((s) => s.teams);
   const players = useAppStore((s) => s.players);
@@ -143,30 +152,20 @@ export function BasketballScoreboard() {
           ? "재개"
           : "일시정지";
 
-  const teamHalf = (side: "home" | "away") => {
-    const bg = side === "home" ? homeColor : awayColor;
-    const label = side === "home" ? match.homeLabel : match.awayLabel;
-    const score = side === "home" ? snap.homeScore : snap.awayScore;
+  const teamPanel = (side: "home" | "away") => {
     const fouls = side === "home" ? snap.homeTeamFoulsInQuarter : snap.awayTeamFoulsInQuarter;
     const bonus = side === "home" ? homeBonus : awayBonus;
-    return (
-      <View style={{ flex: 1, backgroundColor: bg, justifyContent: "center", alignItems: "center", paddingHorizontal: 12 }}>
-        <Text style={{ color: "#fff", fontSize: 22, fontWeight: "800", letterSpacing: 0.4 }}>{label}</Text>
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: scoreSize,
-            fontWeight: "900",
-            lineHeight: scoreSize * 1.05,
-            fontVariant: ["tabular-nums"],
-          }}
-        >
-          {score}
-        </Text>
-        <Text style={{ color: "#ffffffcc", fontSize: 14, fontWeight: "700" }}>팀파울 {fouls}</Text>
-        {bonus ? <Text style={{ color: colors.bonus, fontWeight: "800", marginTop: 4 }}>보너스</Text> : null}
-      </View>
-    );
+    return {
+      label: side === "home" ? match.homeLabel : match.awayLabel,
+      color: side === "home" ? homeColor : awayColor,
+      score: side === "home" ? snap.homeScore : snap.awayScore,
+      meta: (
+        <>
+          <ArenaMeta>팀파울 {fouls}</ArenaMeta>
+          {bonus ? <Text style={{ color: colors.bonus, fontWeight: "800", marginTop: 4 }}>보너스</Text> : null}
+        </>
+      ),
+    };
   };
 
   const actionRow = (side: "home" | "away") => {
@@ -182,7 +181,7 @@ export function BasketballScoreboard() {
       match.status === "completed" ||
       match.status === "period_break";
     return (
-      <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: side === "home" ? "flex-start" : "flex-end" }}>
+      <ArenaActionRow side={side}>
         {pointOrder.map((pts) => (
           <BoardKey
             key={pts}
@@ -200,98 +199,69 @@ export function BasketballScoreboard() {
           onPress={() => setPending({ kind: "sub", side })}
         />
         <BoardKey label={`T/O ${to}`} disabled={timeoutLocked} onPress={() => addTimeout(match.id, side)} />
-      </View>
+      </ArenaActionRow>
     );
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <View style={{ flex: 1, flexDirection: stacked ? "column" : "row" }}>
-        {teamHalf("home")}
-        {teamHalf("away")}
-      </View>
-
-      <SafeAreaView
-        pointerEvents="box-none"
-        style={{ position: "absolute", top: 0, left: 0, right: 0, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", paddingHorizontal: 12 }}
-      >
-        <Pressable onPress={leave} style={chromeBtn}>
-          <Text style={chromeText}>나가기</Text>
-        </Pressable>
-        <View style={{ alignItems: "center", backgroundColor: "#0009", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 16, marginTop: 4 }}>
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "800" }}>
-            {q} · {match.roundLabel}
-          </Text>
-          <Text
-            style={{
-              color: snap.timeoutRunning ? "#ffffff99" : "#fff",
-              fontSize: stacked ? 44 : 56,
-              fontWeight: "900",
-              lineHeight: stacked ? 48 : 60,
-              fontVariant: ["tabular-nums"],
-            }}
-          >
-            {formatClock(snap.clockMs)}
-          </Text>
-          <Text style={{ color: "#ffffffcc", fontSize: 13, fontWeight: "700", marginTop: 2 }}>
-            팀파울 {snap.homeTeamFoulsInQuarter} - {snap.awayTeamFoulsInQuarter}
-          </Text>
-          {!snap.started && match.status === "in_progress" ? (
-            <Text style={{ color: colors.bonus, fontWeight: "700" }}>시작 전</Text>
-          ) : null}
-          {notice ? <Text style={{ color: colors.bonus, fontWeight: "700", marginTop: 4 }}>{notice}</Text> : null}
-        </View>
-        <Pressable onPress={() => setPending({ kind: "more" })} style={chromeBtn}>
-          <Text style={chromeText}>더보기</Text>
-        </Pressable>
-      </SafeAreaView>
-
-      {snap.timeoutRunning ? (
-        <View pointerEvents="box-none" style={overlayBox}>
-          <Text style={{ color: colors.bonus, fontSize: 18, fontWeight: "800" }}>작전타임</Text>
-          <Text style={{ color: "#fff", fontSize: 20, fontWeight: "800" }}>{timeoutTeam}</Text>
-          <Text style={{ color: "#fff", fontSize: stacked ? 64 : 80, fontWeight: "900", fontVariant: ["tabular-nums"] }}>
-            {formatClock(snap.timeoutClockMs)}
-          </Text>
-          <Pressable onPress={() => finishTimeout(match.id)} style={startBtn}>
-            <Text style={{ color: colors.primaryFg, fontSize: 16, fontWeight: "800" }}>타임아웃 종료</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {!snap.started && match.status === "in_progress" ? (
-        <View pointerEvents="box-none" style={overlayBox}>
-          <Pressable onPress={() => resume(match.id)} style={startBtn}>
-            <Text style={{ color: colors.primaryFg, fontSize: 22, fontWeight: "900" }}>경기 시작</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      <View style={{ backgroundColor: colors.bg, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 10, gap: 8 }}>
-        <View style={{ flexDirection: stacked ? "column" : "row", gap: 8 }}>
-          {actionRow("home")}
-          {actionRow("away")}
-        </View>
-        <Pressable onPress={() => router.push(`/match/${match.id}/timeline`)}>
-          <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
-            최근: {recent.length ? recent.map((e) => eventLine(e, players, match)).join(" · ") : "없음"}
-          </Text>
-        </Pressable>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Pressable onPress={() => undo(match.id)} style={bottomGhost}>
-            <Text style={bottomGhostText}>실행 취소</Text>
-          </Pressable>
-          <Pressable onPress={clockAction} style={bottomGhost}>
-            <Text style={bottomGhostText}>{clockLabel}</Text>
-          </Pressable>
-        </View>
-      </View>
+      <ArenaBoardShell
+        home={teamPanel("home")}
+        away={teamPanel("away")}
+        centerTitle={`${q} · ${match.roundLabel}`}
+        centerMain={formatClock(snap.clockMs)}
+        centerSub={`팀파울 ${snap.homeTeamFoulsInQuarter} - ${snap.awayTeamFoulsInQuarter}`}
+        notice={[!snap.started && match.status === "in_progress" ? "시작 전" : null, notice].filter(Boolean).join(" · ") || undefined}
+        onLeave={leave}
+        onMore={() => setPending({ kind: "more" })}
+        overlay={
+          snap.timeoutRunning ? (
+            <View pointerEvents="box-none" style={arenaOverlayBox}>
+              <Text style={{ color: colors.bonus, fontSize: 18, fontWeight: "800" }}>작전타임</Text>
+              <Text style={{ color: "#fff", fontSize: 20, fontWeight: "800" }}>{timeoutTeam}</Text>
+              <Text style={{ color: "#fff", fontSize: 80, fontWeight: "900", fontVariant: ["tabular-nums"] }}>
+                {formatClock(snap.timeoutClockMs)}
+              </Text>
+              <Pressable onPress={() => finishTimeout(match.id)} style={arenaStartBtn}>
+                <Text style={{ color: colors.primaryFg, fontSize: 16, fontWeight: "800" }}>타임아웃 종료</Text>
+              </Pressable>
+            </View>
+          ) : !snap.started && match.status === "in_progress" ? (
+            <View pointerEvents="box-none" style={arenaOverlayBox}>
+              <Pressable onPress={() => resume(match.id)} style={arenaStartBtn}>
+                <Text style={{ color: colors.primaryFg, fontSize: 22, fontWeight: "900" }}>경기 시작</Text>
+              </Pressable>
+            </View>
+          ) : null
+        }
+        dock={
+          <>
+            <ArenaDockRow>
+              {actionRow("home")}
+              {actionRow("away")}
+            </ArenaDockRow>
+            <Pressable onPress={() => router.push(`/match/${match.id}/timeline`)}>
+              <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
+                최근: {recent.length ? recent.map((e) => eventLine(e, players, match)).join(" · ") : "없음"}
+              </Text>
+            </Pressable>
+            <ArenaDockRow>
+              <Pressable onPress={() => undo(match.id)} style={arenaBottomGhost}>
+                <Text style={arenaBottomGhostText}>실행 취소</Text>
+              </Pressable>
+              <Pressable onPress={clockAction} style={arenaBottomGhost}>
+                <Text style={arenaBottomGhostText}>{clockLabel}</Text>
+              </Pressable>
+            </ArenaDockRow>
+          </>
+        }
+      />
 
       <Modal visible={match.status === "confirm_period_end"} transparent animationType="fade">
-        <Dialog>
+        <ArenaDialog>
           {snap.needsOvertimeDecision ? (
             <>
-              <Text style={dialogTitle}>연장으로 갈까요?</Text>
+              <Text style={arenaDialogTitle}>연장으로 갈까요?</Text>
               <P muted>
                 {match.homeLabel} {snap.homeScore} - {snap.awayScore} {match.awayLabel}
               </P>
@@ -299,18 +269,18 @@ export function BasketballScoreboard() {
             </>
           ) : (
             <>
-              <Text style={dialogTitle}>쿼터 종료</Text>
+              <Text style={arenaDialogTitle}>쿼터 종료</Text>
               <P muted>{q} 종료를 확정할까요?</P>
               <Btn label="마지막 점수 취소" variant="ghost" onPress={() => undo(match.id)} />
               <Btn label="확정" onPress={() => confirmPeriod(match.id)} />
             </>
           )}
-        </Dialog>
+        </ArenaDialog>
       </Modal>
 
       <Modal visible={match.status === "confirm_match_end"} transparent animationType="fade">
-        <Dialog>
-          <Text style={dialogTitle}>경기 종료</Text>
+        <ArenaDialog>
+          <Text style={arenaDialogTitle}>경기 종료</Text>
           <P muted>
             {match.homeLabel} {snap.homeScore} - {snap.awayScore} {match.awayLabel}
           </P>
@@ -322,7 +292,7 @@ export function BasketballScoreboard() {
               router.replace(`/match/${match.id}/result`);
             }}
           />
-        </Dialog>
+        </ArenaDialog>
       </Modal>
 
       <Modal visible={pending != null && pending.kind !== "more"} transparent animationType="slide">
@@ -376,8 +346,8 @@ export function BasketballScoreboard() {
       </Modal>
 
       <Modal visible={leaveOpen} transparent animationType="fade">
-        <Dialog>
-          <Text style={dialogTitle}>경기 중 · 나가기</Text>
+        <ArenaDialog>
+          <Text style={arenaDialogTitle}>경기 중 · 나가기</Text>
           <P muted>기록은 계속 저장됩니다. 시계는 일시정지합니다.</P>
           <Btn label="머무르기" variant="ghost" onPress={() => setLeaveOpen(false)} />
           <Btn
@@ -388,11 +358,11 @@ export function BasketballScoreboard() {
               router.back();
             }}
           />
-        </Dialog>
+        </ArenaDialog>
       </Modal>
       <Modal visible={pending?.kind === "more"} transparent animationType="fade">
-        <Dialog>
-          <Text style={dialogTitle}>더보기</Text>
+        <ArenaDialog>
+          <Text style={arenaDialogTitle}>더보기</Text>
           <Btn label="타임라인" variant="ghost" onPress={() => { setPending(null); router.push(`/match/${match.id}/timeline`); }} />
           <Btn
             label="룰 보기"
@@ -418,41 +388,11 @@ export function BasketballScoreboard() {
           <Btn label={`${match.awayLabel} 몰수승`} variant="danger" onPress={() => { forfeit(match.id, "away"); setPending(null); router.replace(`/match/${match.id}/result`); }} />
           <Btn label="경기 중단" variant="danger" onPress={() => { abandon(match.id); setPending(null); router.back(); }} />
           <Btn label="닫기" variant="ghost" onPress={() => setPending(null)} />
-        </Dialog>
+        </ArenaDialog>
       </Modal>
     </View>
   );
 }
-
-function Dialog({ children }: { children: ReactNode }) {
-  return (
-    <View style={{ flex: 1, backgroundColor: "#0009", justifyContent: "center", padding: 24 }}>
-      <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 20, gap: 12 }}>{children}</View>
-    </View>
-  );
-}
-
-const dialogTitle = { color: colors.text, fontSize: 20, fontWeight: "800" as const };
-const chromeBtn = { backgroundColor: "#0006", paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, marginTop: 6 };
-const chromeText = { color: "#fff", fontWeight: "700" as const, fontSize: 13 };
-const bottomGhost = { flex: 1, backgroundColor: colors.surface2, borderRadius: 8, paddingVertical: 8, alignItems: "center" as const };
-const bottomGhostText = { color: colors.text, fontWeight: "700" as const, fontSize: 13 };
-const overlayBox = {
-  position: "absolute" as const,
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 88,
-  justifyContent: "center" as const,
-  alignItems: "center" as const,
-  backgroundColor: "#0007",
-};
-const startBtn = {
-  backgroundColor: colors.primary,
-  paddingHorizontal: 28,
-  paddingVertical: 16,
-  borderRadius: 16,
-};
 
 function PickerBody({
   pending,

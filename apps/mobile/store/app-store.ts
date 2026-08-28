@@ -35,6 +35,7 @@ import {
   confirmBaseballMatch,
   createCompetition,
   createFriendly,
+  updateCompetitionRules,
   createSeedState,
   endTimeout,
   forfeitMatch,
@@ -75,6 +76,9 @@ import {
   confirmRallyBout,
   confirmSplit,
   applySplitProposal,
+  kickMember,
+  reopenSessionMatch,
+  setMemberRole,
   createClub,
   createSessions,
   decideJoin,
@@ -136,6 +140,7 @@ type Store = AppData & {
   updateTeamAt: (teamId: string, patch: { name?: string; color?: string }) => void;
   addPlayerTo: (teamId: string, name: string, number: number) => void;
   makeBracket: (competitionId: string) => void;
+  updateCompRulesAt: (competitionId: string, rules: SportRules, officialPreset: boolean) => void;
   makeFriendly: (input: {
     sportId?: SportId;
     homeName: string;
@@ -162,6 +167,9 @@ type Store = AppData & {
   proposeSplitAt: (sessionId: string, balanceByWinRate: boolean) => { ok: boolean; reason?: string };
   confirmSplitAt: (sessionId: string) => string;
   confirmRallyBoutAt: (sessionId: string) => string;
+  reopenSessionMatchAt: (sessionId: string) => void;
+  kickMemberAt: (memberId: string) => void;
+  setMemberRoleAt: (memberId: string, role: "operator" | "member") => void;
   cancelSessionAt: (sessionId: string) => void;
   updateClubAt: (
     clubId: string,
@@ -504,6 +512,8 @@ export const useAppStore = create<Store>()(
   updateTeamAt: (teamId, patch) => set(updateTeam(get(), teamId, patch)),
   addPlayerTo: (teamId, name, number) => set(addPlayer(get(), teamId, name, number)),
   makeBracket: (competitionId) => set(generateBracket(get(), competitionId)),
+  updateCompRulesAt: (competitionId, rules, officialPreset) =>
+    set(updateCompetitionRules(get(), competitionId, rules, officialPreset)),
   makeFriendly: (input) => {
     const { data, matchId } = createFriendly(get(), input);
     set(data);
@@ -545,6 +555,9 @@ export const useAppStore = create<Store>()(
     set(data);
     return matchId;
   },
+  reopenSessionMatchAt: (sessionId) => set(reopenSessionMatch(get(), sessionId)),
+  kickMemberAt: (memberId) => set(kickMember(get(), memberId)),
+  setMemberRoleAt: (memberId, role) => set(setMemberRole(get(), memberId, role)),
   cancelSessionAt: (sessionId) => set(cancelSession(get(), sessionId)),
   updateClubAt: (clubId, patch) => set(updateClub(get(), clubId, patch)),
   dissolveClubAt: (clubId) => set(dissolveClub(get(), clubId)),

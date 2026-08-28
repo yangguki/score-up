@@ -66,6 +66,12 @@ export default function CompetitionOverview() {
           </Card>
         )}
         {teams.length === 0 ? <P>참가 팀/선수를 등록하세요.</P> : null}
+        <Link href={`/competition/${id}/rules`} asChild>
+          <Btn
+            label={competition.status === "prep" ? "룰 수정" : "룰 보기"}
+            variant="ghost"
+          />
+        </Link>
         <Link href={`/competition/${id}/roster`} asChild>
           <Btn label="참가 관리" variant="ghost" />
         </Link>

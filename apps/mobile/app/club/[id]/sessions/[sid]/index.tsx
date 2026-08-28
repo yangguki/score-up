@@ -14,6 +14,7 @@ import {
   rallyBoutLockCopy,
   rallySideSize,
   sessionRallyFormat,
+  sessionSideLabel,
   sessionSplitFormat,
   sessionStatusLabel,
   voteLabel,
@@ -249,17 +250,63 @@ export default function SessionDetailScreen() {
 
         {session.status === "matched" || session.status === "in_play" ? (
           <>
-            <P muted>상태 {sessionStatusLabel(session.status)}</P>
             {isBadminton ? (
               <P muted>{rallyFormat === "singles" ? "단식" : "복식"}</P>
             ) : splitFormat === "4v4" ? (
               <P muted>4대4 · 출전 팀당 {court}명</P>
             ) : null}
+            {(["home", "away", "bench"] as const).map((side) => {
+              const rows = data.sessionAssignments.filter((row) => row.sessionId === session.id && row.side === side);
+              if (rows.length === 0 && side === "bench") return null;
+              return (
+                <View key={side} style={{ gap: 4 }}>
+                  <H style={{ fontSize: 16 }}>{sessionSideLabel(side)}</H>
+                  {rows.length === 0 ? <P muted>없음</P> : null}
+                  {rows.map((row) => (
+                    <P key={row.id}>
+                      {row.accountId
+                        ? accountName(data.accounts, row.accountId)
+                        : `게스트 ${data.sessionGuests.find((guest) => guest.id === row.guestId)?.name ?? ""}`}
+                    </P>
+                  ))}
+                </View>
+              );
+            })}
+            {data.accountId ? (
+              <P>
+                내 팀{" "}
+                {sessionSideLabel(
+                  data.sessionAssignments.find((row) => row.sessionId === session.id && row.accountId === data.accountId)
+                    ?.side ?? "bench",
+                )}
+              </P>
+            ) : null}
             {match ? (
               operate ? (
-                <Link href={matchHref(match)} asChild>
-                  <Btn label={isBadminton ? "보드로" : "출전 확인"} />
-                </Link>
+                <>
+                  <Link href={matchHref(match)} asChild>
+                    <Btn
+                      label={
+                        session.status === "in_play" ? "이어하기" : isBadminton ? "보드로" : "출전 확인"
+                      }
+                    />
+                  </Link>
+                  {session.status === "matched" ? (
+                    <Btn
+                      label="다시 나누기"
+                      variant="ghost"
+                      onPress={() =>
+                        confirmAction("다시 나누기", "만든 경기를 지우고 팀을 다시 나눌까요?", () => {
+                          try {
+                            data.reopenSessionMatchAt(session.id);
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : "다시 나누지 못했습니다.");
+                          }
+                        })
+                      }
+                    />
+                  ) : null}
+                </>
               ) : (
                 <P muted>멤버는 보드에 들어가지 않습니다.</P>
               )

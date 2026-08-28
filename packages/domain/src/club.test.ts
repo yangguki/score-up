@@ -1,8 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canEnterRallyBout, computeClubRanking, proposeClubSplit, voteLabel } from "./club";
+import { canEnterRallyBout, computeClubRanking, proposeClubSplit, sessionSideLabel, voteLabel } from "./club";
 import { BASKETBALL_CLUB_PRESET, emptySnapshot } from "./basketball";
 import type { Match, SessionAssignment } from "./types";
+
+test("sessionSideLabel maps A / B / 대기", () => {
+  assert.equal(sessionSideLabel("home"), "A");
+  assert.equal(sessionSideLabel("away"), "B");
+  assert.equal(sessionSideLabel("bench"), "대기");
+});
 
 test("voteLabel uses 참석/불참/미정", () => {
   assert.equal(voteLabel("going"), "참석");

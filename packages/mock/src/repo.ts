@@ -256,6 +256,26 @@ export function createCompetition(
   return { data: { ...data, competitions: [...data.competitions, competition], teams: [...data.teams, ...teams] }, id };
 }
 
+/** 대진·일정 만들기 전(prep)만. 경기 시작 후 룰 변경 금지. */
+export function updateCompetitionRules(
+  data: AppData,
+  competitionId: string,
+  rules: SportRules,
+  officialPreset: boolean,
+): AppData {
+  const competition = data.competitions.find((row) => row.id === competitionId);
+  if (!competition) throw new Error("대회를 찾을 수 없습니다.");
+  if (competition.status !== "prep") {
+    throw new Error("경기가 생기면 룰을 바꾸지 않습니다.");
+  }
+  return {
+    ...data,
+    competitions: data.competitions.map((row) =>
+      row.id === competitionId ? { ...row, rules, officialPreset } : row,
+    ),
+  };
+}
+
 function generateLeagueSchedule(
   data: AppData,
   competitionId: string,

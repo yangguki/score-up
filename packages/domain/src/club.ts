@@ -9,6 +9,7 @@ import type {
   Match,
   MemberGrade,
   SessionAssignment,
+  SessionSide,
   SessionStatus,
   VoteValue,
 } from "./types";
@@ -38,6 +39,12 @@ export function sessionStatusLabel(status: SessionStatus): string {
     case "cancelled":
       return "취소";
   }
+}
+
+export function sessionSideLabel(side: SessionSide): string {
+  if (side === "home") return "A";
+  if (side === "away") return "B";
+  return "대기";
 }
 
 export type ClubRankingRow = {

@@ -17,6 +17,8 @@ export default function ClubMembersScreen() {
   const members = useMemo(() => clubMembers.filter((row) => row.clubId === id), [clubMembers, id]);
   const decideJoinAt = useAppStore((s) => s.decideJoinAt);
   const setMemberGradeAt = useAppStore((s) => s.setMemberGradeAt);
+  const kickMemberAt = useAppStore((s) => s.kickMemberAt);
+  const setMemberRoleAt = useAppStore((s) => s.setMemberRoleAt);
   const [notice, setNotice] = useState("");
 
   if (!club) {
@@ -29,6 +31,7 @@ export default function ClubMembersScreen() {
 
   const mine = memberOf(members, club.id, accountId);
   const operate = canOperateClub(mine?.role);
+  const isOwner = mine?.role === "owner";
   const pending = members.filter((row) => row.status === "pending");
   const active = members.filter((row) => row.status === "active");
   const roleLabel = (role: string) => (role === "owner" ? "모임장" : role === "operator" ? "운영" : "멤버");
@@ -108,6 +111,38 @@ export default function ClubMembersScreen() {
                     onPress={() => setGrade(row.id, grade)}
                   />
                 ))}
+              </View>
+            ) : null}
+            {isOwner && row.role !== "owner" ? (
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Btn
+                    label={row.role === "operator" ? "멤버로" : "운영으로"}
+                    variant="ghost"
+                    onPress={() => {
+                      try {
+                        setMemberRoleAt(row.id, row.role === "operator" ? "member" : "operator");
+                      } catch (err) {
+                        setNotice(err instanceof Error ? err.message : "역할을 바꾸지 못했습니다.");
+                      }
+                    }}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Btn
+                    label="강퇴"
+                    variant="ghost"
+                    onPress={() =>
+                      confirmAction("강퇴", `${accountName(accounts, row.accountId)}를 모임에서 내보낼까요?`, () => {
+                        try {
+                          kickMemberAt(row.id);
+                        } catch (err) {
+                          setNotice(err instanceof Error ? err.message : "강퇴하지 못했습니다.");
+                        }
+                      })
+                    }
+                  />
+                </View>
               </View>
             ) : null}
           </Card>

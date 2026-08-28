@@ -1,0 +1,36 @@
+/** SCORE UP Lift — H8 비교 시안. 로고 블루 · 라이트 캔버스. 제품 기본(H1 Arena)을 대체하지 않는다. */
+export const lift = {
+  bg: "#E8F3FC",
+  bgWash: "#F7FBFF",
+  surface: "#FFFFFF",
+  surface2: "#F3F8FD",
+  text: "#0C1B2E",
+  muted: "#5A7190",
+  line: "rgba(47, 128, 237, 0.16)",
+  lineStrong: "rgba(47, 128, 237, 0.32)",
+  primary: "#2F80ED",
+  primarySoft: "#6BB0FF",
+  primaryFg: "#FFFFFF",
+  ghost: "transparent",
+  ghostFg: "#2F80ED",
+  ghostLine: "rgba(47, 128, 237, 0.38)",
+  live: "#E11D48",
+  liveFg: "#FFFFFF",
+  ok: "#12B886",
+  danger: "#E11D48",
+  ink: "#0C1B2E",
+  markBg: "#E6F4FE",
+  glow: "rgba(47, 128, 237, 0.2)",
+  radius: 22,
+  heroRadius: 26,
+  pill: 999,
+  shadow: "rgba(47, 128, 237, 0.16)",
+} as const;
+
+export const liftNavScreenOptions = {
+  headerStyle: { backgroundColor: lift.bg },
+  headerTintColor: lift.text,
+  headerTitleStyle: { fontWeight: "800" as const },
+  headerShadowVisible: false,
+  contentStyle: { backgroundColor: lift.bg },
+};

@@ -3,6 +3,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import Animated, { FadeInDown, FadeInRight } from "react-native-reanimated";
 import { CompetitionCard, MatchStackCard } from "@/components/home/cards";
 import { CourtAtmosphere, ScoreStrip } from "@/components/home/court-atmosphere";
+import { HomeVersionSwitch } from "@/components/home/home-version-switch";
 import { KitButton, KitScreen, KitText, KitTitle } from "@/components/home/kit-ui";
 import { SportPicker } from "@/components/home/sport-picker";
 import { EMPTY_HOME_COPY, type buildHomeModel } from "@/lib/home";
@@ -69,6 +70,8 @@ export function HomeH1({
         contentContainerStyle={{ paddingHorizontal: space.lg, paddingTop: space.sm, paddingBottom: 56, gap: space.lg }}
         showsVerticalScrollIndicator={false}
       >
+        <HomeVersionSwitch tone="dark" />
+
         <View style={{ overflow: "hidden", marginHorizontal: -space.lg, paddingHorizontal: space.lg, paddingBottom: 4 }}>
           <CourtAtmosphere
             line="rgba(248,250,252,0.12)"
@@ -157,12 +160,12 @@ export function HomeH1({
         </View>
 
         <Animated.View entering={FadeInDown.delay(120).duration(420).springify().damping(18)} style={{ gap: space.md }}>
-          <SectionTitle kit={kit} title="종목 고르기" hint="활성 종목으로 대회를 만듭니다" />
+          <SectionTitle kit={kit} title="종목 고르기" hint="종목을 고르면 빠른 친선이 열립니다" />
           <SportPicker
             kit={kit}
             onSelect={(sport: HomeSport) => {
               if (sport.active) {
-                router.push(`/competition/new?sport=${sport.id}` as Href);
+                router.push(`/friendly?sport=${sport.id}` as Href);
               }
             }}
           />
@@ -197,6 +200,15 @@ export function HomeH1({
           ) : (
             model.now.map((match) => <MatchStackCard key={match.id} match={match} kit={kit} />)
           )}
+          {model.nowOverflow ? (
+            <Link href="/competitions" asChild>
+              <Pressable style={{ paddingVertical: 8 }}>
+                <KitText kit={kit} style={{ fontSize: 14, fontWeight: "700", color: accent }}>
+                  오늘 경기 더보기
+                </KitText>
+              </Pressable>
+            </Link>
+          ) : null}
         </Animated.View>
 
         {model.empty ? null : (
@@ -205,6 +217,15 @@ export function HomeH1({
             {model.competitions.map(({ competition, leftover }) => (
               <CompetitionCard key={competition.id} competition={competition} leftover={leftover} kit={kit} />
             ))}
+            {model.competitionOverflow ? (
+              <Link href="/competitions" asChild>
+                <Pressable style={{ paddingVertical: 8 }}>
+                  <KitText kit={kit} style={{ fontSize: 14, fontWeight: "700", color: accent }}>
+                    대회 모두 보기
+                  </KitText>
+                </Pressable>
+              </Link>
+            ) : null}
           </Animated.View>
         )}
 

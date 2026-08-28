@@ -536,6 +536,76 @@ export function confirmRallyBout(data: AppData, sessionId: string): { data: AppD
   };
 }
 
+/** 팁오프 전 matched → confirming. 배정은 남기고 만든 경기만 지운다. */
+export function reopenSessionMatch(data: AppData, sessionId: string): AppData {
+  const accountId = requireAccount(data);
+  const session = data.sessions.find((row) => row.id === sessionId);
+  if (!session) throw new Error("회차를 찾을 수 없습니다.");
+  const me = memberOf(data.clubMembers, session.clubId, accountId);
+  if (!canOperateClub(me?.role)) throw new Error("다시 나누기는 모임장·운영만 할 수 있습니다.");
+  if (session.status !== "matched") throw new Error("팀 확정 뒤에만 다시 나눌 수 있습니다.");
+  const match = session.matchId ? data.matches.find((row) => row.id === session.matchId) : undefined;
+  if (!match) throw new Error("경기를 찾을 수 없습니다.");
+  if (match.status !== "scheduled" && match.status !== "lineup") {
+    throw new Error("경기가 시작되면 다시 나누지 않습니다.");
+  }
+  const teamIds = [match.homeTeamId, match.awayTeamId].filter((id): id is string => Boolean(id));
+  return {
+    ...data,
+    matches: data.matches.filter((row) => row.id !== match.id),
+    teams: data.teams.filter((row) => !teamIds.includes(row.id)),
+    players: data.players.filter((row) => !teamIds.includes(row.teamId)),
+    sessions: data.sessions.map((row) =>
+      row.id === sessionId ? { ...row, status: "confirming" as const, matchId: undefined } : row,
+    ),
+  };
+}
+
+export function kickMember(data: AppData, memberId: string): AppData {
+  const accountId = requireAccount(data);
+  const member = data.clubMembers.find((row) => row.id === memberId);
+  if (!member) throw new Error("멤버를 찾을 수 없습니다.");
+  const me = memberOf(data.clubMembers, member.clubId, accountId);
+  if (me?.role !== "owner" || me.status !== "active") throw new Error("강퇴는 모임장만 할 수 있습니다.");
+  if (member.role === "owner") throw new Error("모임장은 강퇴할 수 없습니다.");
+  if (member.accountId === accountId) throw new Error("자신을 강퇴할 수 없습니다.");
+  if (member.status !== "active") return data;
+  const openSessionIds = data.sessions
+    .filter((row) => row.clubId === member.clubId && (row.status === "voting" || row.status === "confirming"))
+    .map((row) => row.id);
+  return {
+    ...data,
+    clubMembers: data.clubMembers.filter((row) => row.id !== memberId),
+    sessionVotes: data.sessionVotes.filter(
+      (row) => !(row.accountId === member.accountId && openSessionIds.includes(row.sessionId)),
+    ),
+    sessionAssignments: data.sessionAssignments.filter(
+      (row) => !(row.accountId === member.accountId && openSessionIds.includes(row.sessionId)),
+    ),
+    challenges: data.challenges.map((row) =>
+      row.clubId === member.clubId &&
+      row.status === "pending" &&
+      (row.fromAccountId === member.accountId || row.toAccountId === member.accountId)
+        ? { ...row, status: "cancelled" as const }
+        : row,
+    ),
+  };
+}
+
+export function setMemberRole(data: AppData, memberId: string, role: "operator" | "member"): AppData {
+  const accountId = requireAccount(data);
+  const member = data.clubMembers.find((row) => row.id === memberId);
+  if (!member) throw new Error("멤버를 찾을 수 없습니다.");
+  const me = memberOf(data.clubMembers, member.clubId, accountId);
+  if (me?.role !== "owner" || me.status !== "active") throw new Error("역할 변경은 모임장만 할 수 있습니다.");
+  if (member.role === "owner") throw new Error("모임장 역할은 바꾸지 않습니다.");
+  if (member.status !== "active") return data;
+  return {
+    ...data,
+    clubMembers: data.clubMembers.map((row) => (row.id === memberId ? { ...row, role } : row)),
+  };
+}
+
 export function cancelSession(data: AppData, sessionId: string): AppData {
   const accountId = requireAccount(data);
   const session = data.sessions.find((row) => row.id === sessionId);

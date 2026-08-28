@@ -84,6 +84,7 @@ export {
   rallyBoutLockCopy,
   rallySideSize,
   sessionRallyFormat,
+  sessionSideLabel,
   sessionSplitFormat,
   sessionStatusLabel,
   voteLabel,

@@ -21,6 +21,7 @@ export default function RootLayout() {
         <Stack.Screen name="club" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: "시작" }} />
         <Stack.Screen name="friendly" options={{ title: "빠른 친선경기" }} />
+        <Stack.Screen name="kit" options={{ headerShown: false }} />
       </Stack>
     </HydrateGate>
   );

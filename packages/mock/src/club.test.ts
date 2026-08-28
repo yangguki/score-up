@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createSeedState } from "./seed";
-import { closeVoting, confirmRallyBout, confirmSplit, applySplitProposal, createClub, createSessions, recordLadderResult, requestJoin, respondChallenge, sendChallenge, setAssignment, setSessionFormat, setVote, signIn, signOut } from "./club";
+import { closeVoting, confirmRallyBout, confirmSplit, applySplitProposal, createClub, createSessions, kickMember, recordLadderResult, reopenSessionMatch, requestJoin, respondChallenge, sendChallenge, setAssignment, setMemberRole, setSessionFormat, setVote, signIn, signOut } from "./club";
 import { isBasketballMatch, isRallySetMatch } from "@score-up/domain";
 
 test("seed operator is signed in and weekend club is voting", () => {
@@ -183,6 +183,33 @@ test("confirmRallyBout singles locks until both sides have one player", () => {
   let data = closeVoting(createSeedState(), "ses-bd-vote");
   data = setSessionFormat(data, "ses-bd-vote", "singles");
   assert.throws(() => confirmRallyBout(data, "ses-bd-vote"), /양쪽 1명/);
+});
+
+test("reopenSessionMatch after confirmSplit returns confirming and keeps assignments", () => {
+  let data = closeVoting(createSeedState(), "ses-vote");
+  data = setSessionFormat(data, "ses-vote", "4v4");
+  const proposed = applySplitProposal(data, "ses-vote", { balanceByWinRate: false });
+  data = proposed.data;
+  const { data: matched, matchId } = confirmSplit(data, "ses-vote");
+  const next = reopenSessionMatch(matched, "ses-vote");
+  const session = next.sessions.find((row) => row.id === "ses-vote");
+  assert.equal(session?.status, "confirming");
+  assert.equal(session?.matchId, undefined);
+  assert.equal(next.matches.some((row) => row.id === matchId), false);
+  assert.ok(next.sessionAssignments.some((row) => row.sessionId === "ses-vote" && row.side === "home"));
+});
+
+test("owner can kick a member and cannot kick the owner", () => {
+  const data = createSeedState();
+  const next = kickMember(data, "cm-2");
+  assert.equal(next.clubMembers.some((row) => row.id === "cm-2"), false);
+  assert.throws(() => kickMember(data, "cm-0"), /모임장은 강퇴/);
+});
+
+test("owner can promote a member to operator", () => {
+  const data = createSeedState();
+  const next = setMemberRole(data, "cm-2", "operator");
+  assert.equal(next.clubMembers.find((row) => row.id === "cm-2")?.role, "operator");
 });
 
 test("applySplitProposal rejects a badminton session", () => {

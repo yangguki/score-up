@@ -101,7 +101,14 @@ export default function ClubOverviewScreen() {
                 </Link>
               );
             })}
+            <Link href={`/club/${club.id}/sessions`} asChild>
+              <Btn label="회차 모두 보기" variant="ghost" />
+            </Link>
           </>
+        ) : sessions.some((row) => row.clubId === club.id) ? (
+          <Link href={`/club/${club.id}/sessions`} asChild>
+            <Btn label="회차 모두 보기" variant="ghost" />
+          </Link>
         ) : null}
 
         {operate && next ? (

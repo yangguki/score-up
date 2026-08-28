@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { Modal, Pressable, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Modal, Pressable, Text, View } from "react-native";
 import {
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
@@ -14,20 +13,25 @@ import {
 import { volleyballNotice } from "@score-up/mock";
 import { Btn, P } from "@/components/ui";
 import {
-  BoardKey,
-  ScoreboardHeader,
-  ScoreboardScrollBody,
-  scoreboardSideGap,
-  scoreboardTeamsRow,
-} from "@/components/scoreboard/scoreboard-chrome";
+  ArenaActionRow,
+  ArenaBoardShell,
+  ArenaDialog,
+  ArenaDockRow,
+  ArenaMeta,
+  ArenaRecent,
+  arenaBottomGhost,
+  arenaBottomGhostText,
+  arenaDialogTitle,
+  arenaOverlayBox,
+  arenaStartBtn,
+} from "@/components/scoreboard/arena-board";
+import { BoardKey } from "@/components/scoreboard/scoreboard-chrome";
 import { eventLine } from "@/lib/labels";
-import { useScoreboardLayout } from "@/lib/scoreboard-layout";
 import { useAppStore } from "@/store/app-store";
 import { colors } from "@/theme/tokens";
 
 export function VolleyballScoreboard() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { stacked, compact, scoreSize } = useScoreboardLayout();
   const match = useAppStore((s) => s.matches.find((m) => m.id === id));
   const players = useAppStore((s) => s.players);
   const competition = useAppStore((s) => s.competitions.find((c) => c.id === match?.competitionId));
@@ -100,265 +104,197 @@ export function VolleyballScoreboard() {
     router.back();
   };
 
+  const teamPanel = (side: Side) => {
+    const serving = snap.serveSide === side;
+    const rotation = rotationOn
+      ? volleyballFrontLine(side === "home" ? snap.rotationHome : snap.rotationAway)
+      : undefined;
+    return {
+      label: side === "home" ? match.homeLabel : match.awayLabel,
+      color: side === "home" ? homeColor : awayColor,
+      score: side === "home" ? snap.homeSetPoints : snap.awaySetPoints,
+      meta: (
+        <>
+          {serving ? <ArenaMeta>●서브</ArenaMeta> : null}
+          {rotation ? <ArenaMeta>전열 {rotation}</ArenaMeta> : null}
+        </>
+      ),
+    };
+  };
+
+  const actionRow = (side: Side) => {
+    const left = timeoutLeft(side);
+    return (
+      <ArenaActionRow side={side}>
+        <BoardKey label="+1" variant="primary" disabled={playLocked} onPress={() => addPoint(match.id, side, 1)} />
+        <BoardKey
+          label={`T/O ${left}/${timeoutMax}`}
+          disabled={playLocked || left <= 0}
+          onPress={() => addTimeout(match.id, side)}
+        />
+        <BoardKey label="경고" disabled={playLocked} onPress={() => addSanction(match.id, side, "yellow")} />
+        <BoardKey label="레드" disabled={playLocked} onPress={() => addSanction(match.id, side, "red")} />
+      </ArenaActionRow>
+    );
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScoreboardHeader
-        title={`${headerTitle} · ${volleyballSetLabel(snap)}`}
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ArenaBoardShell
+        home={teamPanel("home")}
+        away={teamPanel("away")}
+        centerTitle={`${headerTitle} · ${volleyballSetLabel(snap)}`}
+        centerMain={`${snap.setsWonHome} - ${snap.setsWonAway}`}
+        centerSub={historyLine}
+        notice={[notice, sanctionLine].filter(Boolean).join(" · ") || undefined}
         onLeave={leave}
         onMore={() => setMoreOpen(true)}
+        overlay={
+          !snap.started ? (
+            <View pointerEvents="box-none" style={arenaOverlayBox}>
+              <Text style={{ color: "#ffffffcc", fontSize: 14, fontWeight: "700" }}>선서브 · 고르지 않으면 홈</Text>
+              <Pressable onPress={() => startVolleyball(match.id, "home")} style={arenaStartBtn}>
+                <Text style={{ color: colors.primaryFg, fontSize: 18, fontWeight: "900" }}>홈 선서브로 시작</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => startVolleyball(match.id, "away")}
+                style={[arenaStartBtn, { backgroundColor: colors.surface2 }]}
+              >
+                <Text style={{ color: colors.text, fontSize: 16, fontWeight: "800" }}>어웨이 선서브로 시작</Text>
+              </Pressable>
+            </View>
+          ) : null
+        }
+        dock={
+          <>
+            <ArenaDockRow>
+              {actionRow("home")}
+              {actionRow("away")}
+            </ArenaDockRow>
+            <ArenaRecent
+              text={recent.length ? recent.map((event) => eventLine(event, players, match)).join(" · ") : ""}
+              onPress={() => router.push(`/match/${match.id}/timeline`)}
+            />
+            <ArenaDockRow>
+              <Pressable
+                onPress={() => changeServe(match.id)}
+                disabled={!snap.started || locked}
+                style={[arenaBottomGhost, !snap.started || locked ? { opacity: 0.35 } : null]}
+              >
+                <Text style={arenaBottomGhostText}>서브 변경</Text>
+              </Pressable>
+              <Pressable onPress={() => undo(match.id)} style={arenaBottomGhost}>
+                <Text style={arenaBottomGhostText}>실행 취소</Text>
+              </Pressable>
+            </ArenaDockRow>
+          </>
+        }
       />
 
-      <ScoreboardScrollBody compact={compact}>
-        <View style={{ alignItems: "center", gap: compact ? 4 : 6 }}>
-          <P muted>
-            세트 {snap.setsWonHome} - {snap.setsWonAway}
-          </P>
-          <P muted style={{ fontSize: 13 }}>
-            {historyLine}
-          </P>
-          {notice ? (
-            <P style={{ marginTop: 4, color: colors.primary, fontWeight: "700", textAlign: "center" }}>{notice}</P>
-          ) : null}
-          {sanctionLine ? <P muted>{sanctionLine}</P> : null}
-        </View>
-
-        <View style={scoreboardTeamsRow(stacked)}>
-          <SideBlock
-            label={match.homeLabel}
-            color={homeColor}
-            score={snap.homeSetPoints}
-            scoreSize={scoreSize}
-            serving={snap.serveSide === "home"}
-            rotation={rotationOn ? volleyballFrontLine(snap.rotationHome) : undefined}
-            compact={compact}
-            disabled={playLocked}
-            timeoutLeft={timeoutLeft("home")}
-            timeoutMax={timeoutMax}
-            onPoint={() => addPoint(match.id, "home", 1)}
-            onTimeout={() => addTimeout(match.id, "home")}
-            onYellow={() => addSanction(match.id, "home", "yellow")}
-            onRed={() => addSanction(match.id, "home", "red")}
-          />
-          <SideBlock
-            label={match.awayLabel}
-            color={awayColor}
-            score={snap.awaySetPoints}
-            scoreSize={scoreSize}
-            serving={snap.serveSide === "away"}
-            rotation={rotationOn ? volleyballFrontLine(snap.rotationAway) : undefined}
-            compact={compact}
-            disabled={playLocked}
-            timeoutLeft={timeoutLeft("away")}
-            timeoutMax={timeoutMax}
-            onPoint={() => addPoint(match.id, "away", 1)}
-            onTimeout={() => addTimeout(match.id, "away")}
-            onYellow={() => addSanction(match.id, "away", "yellow")}
-            onRed={() => addSanction(match.id, "away", "red")}
-          />
-        </View>
-
-        {!snap.started ? (
-          <View style={{ gap: 10 }}>
-            <P muted style={{ textAlign: "center" }}>
-              선서브 · 고르지 않으면 홈
-            </P>
-            <Btn label="홈 선서브로 시작" size="sm" onPress={() => startVolleyball(match.id, "home")} />
-            <Btn label="어웨이 선서브로 시작" size="sm" variant="ghost" onPress={() => startVolleyball(match.id, "away")} />
-          </View>
-        ) : null}
-      </ScoreboardScrollBody>
-
-      <View
-        style={{
-          gap: 10,
-          padding: 12,
-          borderTopWidth: 1,
-          borderTopColor: colors.line,
-        }}
-      >
-        <Pressable onPress={() => router.push(`/match/${match.id}/timeline`)}>
-          <P muted style={{ fontSize: 12 }} numberOfLines={1}>
-            최근: {recent.length ? recent.map((event) => eventLine(event, players, match)).join(" · ") : "없음"}
-          </P>
-        </Pressable>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Btn
-            label="서브 변경"
-            variant="ghost"
-            size="sm"
-            style={{ flex: 1 }}
-            disabled={!snap.started || locked}
-            onPress={() => changeServe(match.id)}
-          />
-          <Btn label="실행 취소" variant="ghost" size="sm" style={{ flex: 1 }} onPress={() => undo(match.id)} />
-        </View>
-      </View>
-
       <Modal visible={match.status === "confirm_period_end"} transparent animationType="fade">
-        <View style={{ flex: 1, backgroundColor: "#0008", justifyContent: "center", padding: 24 }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 20, gap: 12 }}>
-            <P style={{ fontSize: 20, fontWeight: "800" }}>세트 종료</P>
-            <P muted>
-              {match.homeLabel} {snap.homeSetPoints} - {snap.awaySetPoints} {match.awayLabel}
-            </P>
-            <P muted>
-              이 세트를 {snap.homeSetPoints > snap.awaySetPoints ? match.homeLabel : match.awayLabel} 승으로 확정할까요?
-            </P>
-            <Btn label="마지막 점수 취소" variant="ghost" onPress={() => undo(match.id)} />
-            <Btn label="확정" onPress={() => confirmPeriod(match.id)} />
-          </View>
-        </View>
+        <ArenaDialog>
+          <Text style={arenaDialogTitle}>세트 종료</Text>
+          <P muted>
+            {match.homeLabel} {snap.homeSetPoints} - {snap.awaySetPoints} {match.awayLabel}
+          </P>
+          <P muted>
+            이 세트를 {snap.homeSetPoints > snap.awaySetPoints ? match.homeLabel : match.awayLabel} 승으로 확정할까요?
+          </P>
+          <Btn label="마지막 점수 취소" variant="ghost" onPress={() => undo(match.id)} />
+          <Btn label="확정" onPress={() => confirmPeriod(match.id)} />
+        </ArenaDialog>
       </Modal>
 
       <Modal visible={match.status === "confirm_match_end"} transparent animationType="fade">
-        <View style={{ flex: 1, backgroundColor: "#0008", justifyContent: "center", padding: 24 }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 20, gap: 12 }}>
-            <P style={{ fontSize: 20, fontWeight: "800" }}>경기 종료</P>
-            <P muted>
-              {match.homeLabel} {snap.setsWonHome} - {snap.setsWonAway} {match.awayLabel}
-            </P>
-            <P muted>이 경기를 {snap.setsWonHome > snap.setsWonAway ? match.homeLabel : match.awayLabel} 승으로 확정할까요?</P>
-            <Btn label="마지막 점수 취소" variant="ghost" onPress={() => undo(match.id)} />
-            <Btn
-              label="확정"
-              onPress={() => {
-                confirmMatch(match.id);
-                router.replace(`/match/${match.id}/result`);
-              }}
-            />
-          </View>
-        </View>
+        <ArenaDialog>
+          <Text style={arenaDialogTitle}>경기 종료</Text>
+          <P muted>
+            {match.homeLabel} {snap.setsWonHome} - {snap.setsWonAway} {match.awayLabel}
+          </P>
+          <P muted>이 경기를 {snap.setsWonHome > snap.setsWonAway ? match.homeLabel : match.awayLabel} 승으로 확정할까요?</P>
+          <Btn label="마지막 점수 취소" variant="ghost" onPress={() => undo(match.id)} />
+          <Btn
+            label="확정"
+            onPress={() => {
+              confirmMatch(match.id);
+              router.replace(`/match/${match.id}/result`);
+            }}
+          />
+        </ArenaDialog>
       </Modal>
 
       <Modal visible={leaveOpen} transparent animationType="fade">
-        <View style={{ flex: 1, backgroundColor: "#0008", justifyContent: "center", padding: 24 }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 20, gap: 12 }}>
-            <P>경기 중 · 나가기</P>
-            <P muted>기록은 계속 저장됩니다.</P>
-            <Btn
-              label="나가기"
-              onPress={() => {
-                setLeaveOpen(false);
-                router.back();
-              }}
-            />
-            <Btn label="계속하기" variant="ghost" onPress={() => setLeaveOpen(false)} />
-          </View>
-        </View>
+        <ArenaDialog>
+          <Text style={arenaDialogTitle}>경기 중 · 나가기</Text>
+          <P muted>기록은 계속 저장됩니다.</P>
+          <Btn label="머무르기" variant="ghost" onPress={() => setLeaveOpen(false)} />
+          <Btn
+            label="나가기"
+            onPress={() => {
+              setLeaveOpen(false);
+              router.back();
+            }}
+          />
+        </ArenaDialog>
       </Modal>
 
       <Modal visible={moreOpen} transparent animationType="fade">
-        <View style={{ flex: 1, backgroundColor: "#0008", justifyContent: "center", padding: 24 }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 20, gap: 10 }}>
-            <P>더보기</P>
-            <Btn
-              label="홈 몰수승"
-              variant="ghost"
-              onPress={() => {
-                forfeit(match.id, "home");
-                setMoreOpen(false);
-                router.replace(`/match/${match.id}/result`);
-              }}
-            />
-            <Btn
-              label="어웨이 몰수승"
-              variant="ghost"
-              onPress={() => {
-                forfeit(match.id, "away");
-                setMoreOpen(false);
-                router.replace(`/match/${match.id}/result`);
-              }}
-            />
-            <Btn
-              label="경기 중단"
-              variant="ghost"
-              onPress={() => {
-                abandon(match.id);
-                setMoreOpen(false);
-                router.back();
-              }}
-            />
-            <Btn
-              label="룰 보기"
-              variant="ghost"
-              onPress={() => {
-                setMoreOpen(false);
-                setRulesOpen(true);
-              }}
-            />
-            <Btn
-              label="타임라인"
-              variant="ghost"
-              onPress={() => {
-                setMoreOpen(false);
-                router.push(`/match/${match.id}/timeline`);
-              }}
-            />
-            <Btn label="닫기" onPress={() => setMoreOpen(false)} />
-          </View>
-        </View>
+        <ArenaDialog>
+          <Text style={arenaDialogTitle}>더보기</Text>
+          <Btn
+            label="타임라인"
+            variant="ghost"
+            onPress={() => {
+              setMoreOpen(false);
+              router.push(`/match/${match.id}/timeline`);
+            }}
+          />
+          <Btn
+            label="룰 보기"
+            variant="ghost"
+            onPress={() => {
+              setMoreOpen(false);
+              setRulesOpen(true);
+            }}
+          />
+          <Btn
+            label={`${match.homeLabel} 몰수승`}
+            variant="danger"
+            onPress={() => {
+              forfeit(match.id, "home");
+              setMoreOpen(false);
+              router.replace(`/match/${match.id}/result`);
+            }}
+          />
+          <Btn
+            label={`${match.awayLabel} 몰수승`}
+            variant="danger"
+            onPress={() => {
+              forfeit(match.id, "away");
+              setMoreOpen(false);
+              router.replace(`/match/${match.id}/result`);
+            }}
+          />
+          <Btn
+            label="경기 중단"
+            variant="danger"
+            onPress={() => {
+              abandon(match.id);
+              setMoreOpen(false);
+              router.back();
+            }}
+          />
+          <Btn label="닫기" variant="ghost" onPress={() => setMoreOpen(false)} />
+        </ArenaDialog>
       </Modal>
 
       <Modal visible={rulesOpen} transparent animationType="fade">
-        <View style={{ flex: 1, backgroundColor: "#0008", justifyContent: "center", padding: 24 }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 20, gap: 12 }}>
-            <P style={{ fontWeight: "800" }}>룰</P>
-            <P muted>{volleyballRulesSummary(match.rules)}</P>
-            <Btn label="닫기" onPress={() => setRulesOpen(false)} />
-          </View>
-        </View>
+        <ArenaDialog>
+          <Text style={arenaDialogTitle}>룰</Text>
+          <P muted>{volleyballRulesSummary(match.rules)}</P>
+          <Btn label="닫기" onPress={() => setRulesOpen(false)} />
+        </ArenaDialog>
       </Modal>
-    </SafeAreaView>
-  );
-}
-
-function SideBlock({
-  label,
-  color,
-  score,
-  scoreSize,
-  serving,
-  rotation,
-  compact,
-  disabled,
-  timeoutLeft,
-  timeoutMax,
-  onPoint,
-  onTimeout,
-  onYellow,
-  onRed,
-}: {
-  label: string;
-  color: string;
-  score: number;
-  scoreSize: number;
-  serving: boolean;
-  rotation?: string;
-  compact: boolean;
-  disabled: boolean;
-  timeoutLeft: number;
-  timeoutMax: number;
-  onPoint: () => void;
-  onTimeout: () => void;
-  onYellow: () => void;
-  onRed: () => void;
-}) {
-  const gap = scoreboardSideGap(compact);
-  return (
-    <View style={{ flex: 1, alignItems: "center", gap, minWidth: compact ? 0 : 140, width: "100%" }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-        <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: color }} />
-        <P style={{ fontWeight: "800" }}>{label}</P>
-        {serving ? <P style={{ color: colors.primary, fontWeight: "800" }}>●서브</P> : null}
-      </View>
-      {rotation ? <P muted>전열 {rotation}</P> : null}
-      <P style={{ fontSize: scoreSize, fontWeight: "900", lineHeight: scoreSize * 1.02 }}>{score}</P>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
-        <BoardKey label="+1" variant="primary" disabled={disabled} onPress={onPoint} />
-        <BoardKey label={`T/O ${timeoutLeft}/${timeoutMax}`} disabled={disabled || timeoutLeft <= 0} onPress={onTimeout} />
-        <BoardKey label="경고" disabled={disabled} onPress={onYellow} />
-        <BoardKey label="레드" disabled={disabled} onPress={onRed} />
-      </View>
     </View>
   );
 }

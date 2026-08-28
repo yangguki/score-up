@@ -1,6 +1,7 @@
 import { Link } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 import { Card, H, P, Pill, Screen, SectionHead } from "@/components/ui";
+import { sportLabel } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
 import { space } from "@/theme/tokens";
 
@@ -26,7 +27,7 @@ export default function CompetitionsScreen() {
                   />
                 </View>
                 <P muted style={{ marginTop: 8 }}>
-                  농구 · {comp.format === "tournament" ? "토너먼트" : "리그"} · {comp.dateLabel}
+                  {sportLabel(comp.sportId)} · {comp.format === "tournament" ? "토너먼트" : "리그"} · {comp.dateLabel}
                 </P>
               </Card>
             </Pressable>

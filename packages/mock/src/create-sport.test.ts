@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { BADMINTON_CLUB_PRESET, SOCCER_CLUB_PRESET, TABLE_TENNIS_CLUB_PRESET, VOLLEYBALL_CLUB_PRESET } from "@score-up/domain";
-import { addTeam, createCompetition, createFriendly, createSeedState, generateBracket } from "./repo";
+import { addTeam, createCompetition, createFriendly, createSeedState, generateBracket, updateCompetitionRules } from "./repo";
 
 test("createCompetition volleyball then bracket makes volleyball matches", () => {
   let data = createSeedState();
@@ -59,4 +59,23 @@ test("createFriendly soccer uses pitch snapshot", () => {
   if (match?.sportId !== "soccer") throw new Error("expected soccer");
   assert.equal(match.snapshot.homeScore, 0);
   assert.equal(match.snapshot.started, false);
+});
+
+test("updateCompetitionRules is allowed in prep and locked after bracket", () => {
+  let data = createSeedState();
+  const { data: withComp, id } = createCompetition(data, {
+    name: "룰 편집",
+    dateLabel: "2026-08-28",
+    format: "tournament",
+    sportId: "volleyball",
+    rules: VOLLEYBALL_CLUB_PRESET.rules,
+    officialPreset: false,
+  });
+  const edited = { ...VOLLEYBALL_CLUB_PRESET.rules, setTarget: 21 };
+  data = updateCompetitionRules(withComp, id, edited, false);
+  assert.equal((data.competitions.find((row) => row.id === id)?.rules as typeof edited).setTarget, 21);
+  data = addTeam(data, id, "블루");
+  data = addTeam(data, id, "레드");
+  data = generateBracket(data, id);
+  assert.throws(() => updateCompetitionRules(data, id, VOLLEYBALL_CLUB_PRESET.rules, false), /경기가 생기면/);
 });
