@@ -292,7 +292,7 @@ export type SessionStatus =
   | "cancelled";
 export type VoteValue = "going" | "not_going" | "maybe" | "none";
 export type SessionSide = "home" | "away" | "bench";
-export type ClubSplitFormat = "5v5" | "4v4";
+export type ClubSplitFormat = "6v6" | "5v5" | "4v4";
 export type RallyClubFormat = "singles" | "doubles";
 export type ClubSessionFormat = ClubSplitFormat | RallyClubFormat;
 
@@ -335,7 +335,7 @@ export interface ClubSession {
   voteDeadlineLabel: string;
   status: SessionStatus;
   recurring: boolean;
-  /** 농구 5v5/4v4. 배드민턴 singles/doubles. */
+  /** 팀 종목 6v6/5v5/4v4. 랠리 종목 singles/doubles. */
   format: ClubSessionFormat;
   matchId?: string;
 }

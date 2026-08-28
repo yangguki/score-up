@@ -60,6 +60,7 @@ function cloneMatch(match: Match): Match {
 export function createBlankVolleyballMatch(input: {
   id?: string;
   competitionId?: string;
+  sessionId?: string;
   homeTeamId?: string;
   awayTeamId?: string;
   homeLabel: string;
@@ -77,6 +78,7 @@ export function createBlankVolleyballMatch(input: {
     id,
     sportId: "volleyball",
     competitionId: input.competitionId,
+    sessionId: input.sessionId,
     homeTeamId: input.homeTeamId,
     awayTeamId: input.awayTeamId,
     homeLabel: input.homeLabel,

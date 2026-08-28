@@ -38,6 +38,6 @@
 - 앱과 웹을 **한 코드베이스**로 만든다. 스택은 Expo (React Native) + Expo Router + TypeScript.
 - 패키지 매니저는 **pnpm**이다. 루트 workspace + `node-linker=hoisted`. `npm install` / `yarn`을 쓰지 않는다.
 - UX 확인이 목적이다. **mock 데이터로 프론트가 먼저 동작**해야 한다.
-- **1차 종목은 농구.** 구현 Phase 8까지 홈 8종목 대회·친선 mock, 이 기기 로그인, 농구·배드민턴 모임 1차가 닫혔다. 제품 홈은 **H1 Arena + 대회 만들기 Primary(A 잠금)**. H8 Lift · H9 Play는 비교만. 스코어보드는 **가로만**, 셸은 농구 Arena. 종목 타일 친선은 `?sport=`면 피커 숨김.
+- **1차 종목은 농구.** 구현 Phase 8까지 홈 8종목 대회·친선 mock, 이 기기 로그인, 농구·배드민턴 모임 1차가 닫혔다. 모임 mock은 **농구·배구·풋살·탁구·배드민턴**. 제품 홈은 **H1 Arena + 대회 만들기 Primary(A 잠금)**. H8 Lift · H9 Play는 비교만. 스코어보드는 **가로만**, 셸은 농구 Arena. 종목 타일 친선은 `?sport=`면 피커 숨김.
 - 종목에 없는 UI는 그리지 않는다. 농구에는 쿼터·시계·파울이 있고 서브권은 없다. 배구에는 세트·서브가 있고 시계·파울은 없다.
 - 스코어보드는 종목 경로로 분기한다. `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다.

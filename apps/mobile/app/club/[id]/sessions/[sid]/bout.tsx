@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
-import { accountName, canOperateClub, memberOf, rallySideSize, sessionRallyFormat, type SessionSide } from "@score-up/domain";
+import { accountName, canOperateClub, isRallyClubSport, memberOf, rallySideSize, sessionRallyFormat, type SessionSide } from "@score-up/domain";
 import { Btn, Card, H, P, Screen } from "@/components/ui";
 import { confirmAction } from "@/lib/confirm";
 import { scoreboardHref } from "@/lib/match-routes";
@@ -22,7 +22,7 @@ export default function BoutScreen() {
       </Screen>
     );
   }
-  if (club.sportId !== "badminton") return <Redirect href={`/club/${club.id}/sessions/${session.id}/split`} />;
+  if (!isRallyClubSport(club.sportId)) return <Redirect href={`/club/${club.id}/sessions/${session.id}/split`} />;
   const mine = memberOf(data.clubMembers, club.id, data.accountId);
   if (!canOperateClub(mine?.role)) return <Redirect href={`/club/${club.id}/sessions/${session.id}`} />;
 
@@ -61,7 +61,7 @@ export default function BoutScreen() {
     confirmAction("한 판 열기", "한 판을 만들고 보드로 갈까요?", () => {
       try {
         const matchId = data.confirmRallyBoutAt(session.id);
-        router.replace(scoreboardHref({ id: matchId, sportId: "badminton" }));
+        router.replace(scoreboardHref({ id: matchId, sportId: club.sportId }));
       } catch (err) {
         setError(err instanceof Error ? err.message : "한 판을 열지 못했습니다.");
       }

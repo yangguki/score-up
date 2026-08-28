@@ -11,6 +11,7 @@ import type {
   SessionAssignment,
   SessionSide,
   SessionStatus,
+  SportId,
   VoteValue,
 } from "./types";
 import { GRADE_RANK_ORDER, gradeLabel, memberGrade } from "./ladder";
@@ -154,6 +155,41 @@ export function canOperateClub(role?: ClubMember["role"]) {
   return role === "owner" || role === "operator";
 }
 
+export const CLUB_SPORT_IDS = ["basketball", "volleyball", "futsal", "table-tennis", "badminton"] as const;
+export type ClubSportId = (typeof CLUB_SPORT_IDS)[number];
+
+export function isClubSportId(id: string | undefined): id is ClubSportId {
+  return !!id && (CLUB_SPORT_IDS as readonly string[]).includes(id);
+}
+
+export function isRallyClubSport(sportId: SportId) {
+  return sportId === "badminton" || sportId === "table-tennis";
+}
+
+export function isSplitClubSport(sportId: SportId) {
+  return sportId === "basketball" || sportId === "volleyball" || sportId === "futsal";
+}
+
+export function defaultClubFormat(sportId: SportId): ClubSessionFormat {
+  if (isRallyClubSport(sportId)) return "doubles";
+  if (sportId === "volleyball") return "6v6";
+  return "5v5";
+}
+
+export function clubFullSplitFormat(sportId: SportId): ClubSplitFormat {
+  return sportId === "volleyball" ? "6v6" : "5v5";
+}
+
+export function clubVotingHintCopy(sportId: SportId) {
+  if (isRallyClubSport(sportId)) {
+    return "마감 후 단식 2명 또는 복식 4명이면 한 판을 열 수 있습니다.";
+  }
+  if (sportId === "volleyball") {
+    return "마감 후 참석 12명이면 6대6, 8~11명이면 4대4로 나눌 수 있습니다.";
+  }
+  return "마감 후 참석 10명이면 5대5, 8~9명이면 4대4로 나눌 수 있습니다.";
+}
+
 export type SplitCandidate = {
   accountId?: string;
   guestId?: string;
@@ -170,10 +206,12 @@ export type SplitProposal = {
   reason?: string;
 };
 
-const COURT = { "5v5": 5, "4v4": 4 } as const;
+const COURT = { "6v6": 6, "5v5": 5, "4v4": 4 } as const;
 
 export function sessionSplitFormat(session: Pick<ClubSession, "format"> | { format?: ClubSessionFormat }): ClubSplitFormat {
-  return session.format === "4v4" ? "4v4" : "5v5";
+  if (session.format === "6v6") return "6v6";
+  if (session.format === "4v4") return "4v4";
+  return "5v5";
 }
 
 export function isRallyClubFormat(format?: ClubSessionFormat | string): format is RallyClubFormat {
@@ -198,7 +236,7 @@ export function rallyBoutLockCopy(format: RallyClubFormat = "doubles") {
     : "복식은 참석 4명이 필요합니다. 게스트를 추가하세요.";
 }
 
-export function clubCourtSize(format: ClubSplitFormat = "5v5"): 5 | 4 {
+export function clubCourtSize(format: ClubSplitFormat = "5v5"): 6 | 5 | 4 {
   return COURT[format];
 }
 
@@ -211,11 +249,31 @@ export function canEnterFourOnFourSplit(candidates: number) {
   return candidates >= COURT["4v4"] * 2 && candidates < COURT["5v5"] * 2;
 }
 
+export function canEnterFullClubSplit(candidates: number, sportId: SportId) {
+  return candidates >= clubCourtSize(clubFullSplitFormat(sportId)) * 2;
+}
+
+export function canEnterShortClubSplit(candidates: number, sportId: SportId) {
+  const full = clubCourtSize(clubFullSplitFormat(sportId));
+  return candidates >= COURT["4v4"] * 2 && candidates < full * 2;
+}
+
 export function clubFiveOnFiveLockCopy(candidates: number) {
   if (canEnterFourOnFourSplit(candidates)) {
     return "5대5는 참석 10명이 필요합니다. 게스트를 추가하거나 4대4로 나누세요.";
   }
   return "5대5는 참석 10명이 필요합니다. 게스트를 추가하세요.";
+}
+
+export function clubSixOnSixLockCopy(candidates: number) {
+  if (candidates >= COURT["4v4"] * 2 && candidates < COURT["6v6"] * 2) {
+    return "6대6는 참석 12명이 필요합니다. 게스트를 추가하거나 4대4로 나누세요.";
+  }
+  return "6대6는 참석 12명이 필요합니다. 게스트를 추가하세요.";
+}
+
+export function clubFullSplitLockCopy(candidates: number, sportId: SportId) {
+  return sportId === "volleyball" ? clubSixOnSixLockCopy(candidates) : clubFiveOnFiveLockCopy(candidates);
 }
 
 export function clubFourOnFourLockCopy() {
@@ -230,12 +288,13 @@ function balanceScore(row: SplitCandidate) {
   return row.winRate ?? 0.5;
 }
 
-/** 농구 회차 자동 매칭 제안. 확정은 운영자. format 기본 5v5. */
+/** 팀 종목 회차 자동 매칭 제안. 확정은 운영자. format 기본 5v5. */
 export function proposeClubSplit(
   candidates: SplitCandidate[],
   options: { format?: ClubSplitFormat; balanceByWinRate?: boolean; random?: () => number } = {},
 ): SplitProposal {
-  const format: ClubSplitFormat = options.format === "4v4" ? "4v4" : "5v5";
+  const format: ClubSplitFormat =
+    options.format === "6v6" || options.format === "4v4" || options.format === "5v5" ? options.format : "5v5";
   const court = clubCourtSize(format);
   const min = court * 2;
   const balance = options.balanceByWinRate ?? false;
@@ -247,7 +306,12 @@ export function proposeClubSplit(
       away: [],
       bench: [...candidates],
       ok: false,
-      reason: format === "4v4" ? clubFourOnFourLockCopy() : clubFiveOnFiveLockCopy(candidates.length),
+      reason:
+        format === "4v4"
+          ? clubFourOnFourLockCopy()
+          : format === "6v6"
+            ? clubSixOnSixLockCopy(candidates.length)
+            : clubFiveOnFiveLockCopy(candidates.length),
     };
   }
 

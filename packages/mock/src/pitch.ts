@@ -80,6 +80,7 @@ export function createBlankPitchMatch(input: {
   id?: string;
   sportId: PitchSportId;
   competitionId?: string;
+  sessionId?: string;
   homeTeamId?: string;
   awayTeamId?: string;
   homeLabel: string;
@@ -97,6 +98,7 @@ export function createBlankPitchMatch(input: {
     id,
     sportId: input.sportId,
     competitionId: input.competitionId,
+    sessionId: input.sessionId,
     homeTeamId: input.homeTeamId,
     awayTeamId: input.awayTeamId,
     homeLabel: input.homeLabel,

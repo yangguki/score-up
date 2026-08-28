@@ -131,13 +131,41 @@ test("accept challenge then record result updates ranking source", () => {
   assert.equal(match?.winnerAccountId, "acc-minsu");
 });
 
-test("createClub badminton and rejects volleyball", () => {
+test("createClub opens volleyball futsal table-tennis and rejects soccer", () => {
   const data = createSeedState();
-  const created = createClub(data, { name: "수요일 민턴", sportId: "badminton" });
-  assert.equal(created.data.clubs.find((row) => row.id === created.id)?.sportId, "badminton");
-  assert.throws(() => createClub(data, { name: "배구", sportId: "volleyball" }), /농구 또는 배드민턴/);
+  const badminton = createClub(data, { name: "수요일 민턴", sportId: "badminton" });
+  assert.equal(badminton.data.clubs.find((row) => row.id === badminton.id)?.sportId, "badminton");
+  const volleyball = createClub(badminton.data, { name: "화요일 배구", sportId: "volleyball" });
+  assert.equal(volleyball.data.clubs.find((row) => row.id === volleyball.id)?.sportId, "volleyball");
+  const futsal = createClub(volleyball.data, { name: "목요일 풋살", sportId: "futsal" });
+  assert.equal(futsal.data.clubs.find((row) => row.id === futsal.id)?.sportId, "futsal");
+  const tableTennis = createClub(futsal.data, { name: "금요일 탁구", sportId: "table-tennis" });
+  assert.equal(tableTennis.data.clubs.find((row) => row.id === tableTennis.id)?.sportId, "table-tennis");
+  assert.throws(() => createClub(tableTennis.data, { name: "축구", sportId: "soccer" }), /농구·배구·풋살·탁구·배드민턴/);
 });
 
+test("createSessions volleyball defaults 6v6", () => {
+  const created = createClub(createSeedState(), { name: "배구", sportId: "volleyball" });
+  const result = createSessions(created.data, created.id, {
+    dateLabel: "2026-09-01",
+    timeLabel: "19:00",
+    venue: "",
+    kind: "once",
+  });
+  assert.equal(result.data.sessions.find((row) => row.id === result.firstId)?.format, "6v6");
+});
+
+test("seed volleyball futsal table-tennis clubs are voting", () => {
+  const data = createSeedState();
+  assert.equal(data.clubs.find((row) => row.id === "club-vb")?.sportId, "volleyball");
+  assert.equal(data.sessions.find((row) => row.id === "ses-vb-vote")?.format, "6v6");
+  assert.equal(data.sessionVotes.filter((row) => row.sessionId === "ses-vb-vote" && row.value === "going").length, 12);
+  assert.equal(data.clubs.find((row) => row.id === "club-ft")?.sportId, "futsal");
+  assert.equal(data.sessionVotes.filter((row) => row.sessionId === "ses-ft-vote" && row.value === "going").length, 8);
+  assert.equal(data.clubs.find((row) => row.id === "club-tt")?.sportId, "table-tennis");
+  assert.equal(data.sessions.find((row) => row.id === "ses-tt-vote")?.format, "doubles");
+  assert.equal(data.sessionVotes.filter((row) => row.sessionId === "ses-tt-vote" && row.value === "going").length, 4);
+});
 test("createSessions badminton defaults doubles", () => {
   const created = createClub(createSeedState(), { name: "민턴", sportId: "badminton" });
   const result = createSessions(created.data, created.id, {
@@ -158,6 +186,50 @@ test("seed badminton club is voting with 4 going", () => {
   assert.equal(data.sessionVotes.filter((row) => row.sessionId === "ses-bd-vote" && row.value === "going").length, 4);
 });
 
+test("confirmSplit volleyball writes a scheduled set match", () => {
+  let data = closeVoting(createSeedState(), "ses-vb-vote");
+  const proposed = applySplitProposal(data, "ses-vb-vote", { balanceByWinRate: false });
+  assert.equal(proposed.ok, true);
+  const { data: next, matchId } = confirmSplit(proposed.data, "ses-vb-vote");
+  const match = next.matches.find((row) => row.id === matchId);
+  assert.ok(match);
+  assert.equal(match.sportId, "volleyball");
+  assert.equal(match.sessionId, "ses-vb-vote");
+  assert.equal(match.status, "scheduled");
+  assert.equal(next.sessions.find((row) => row.id === "ses-vb-vote")?.status, "matched");
+});
+
+test("confirmSplit futsal 4v4 writes a scheduled pitch match", () => {
+  let data = closeVoting(createSeedState(), "ses-ft-vote");
+  data = setSessionFormat(data, "ses-ft-vote", "4v4");
+  const proposed = applySplitProposal(data, "ses-ft-vote", { balanceByWinRate: false });
+  assert.equal(proposed.ok, true);
+  const { data: next, matchId } = confirmSplit(proposed.data, "ses-ft-vote");
+  const match = next.matches.find((row) => row.id === matchId);
+  assert.ok(match);
+  assert.equal(match.sportId, "futsal");
+  assert.equal(match.sessionId, "ses-ft-vote");
+  assert.equal(match.status, "scheduled");
+});
+
+test("confirmRallyBout table-tennis writes slash labels onto the match", () => {
+  let data = closeVoting(createSeedState(), "ses-tt-vote");
+  data = setSessionFormat(data, "ses-tt-vote", "doubles");
+  const going = data.sessionVotes
+    .filter((row) => row.sessionId === "ses-tt-vote" && row.value === "going")
+    .map((row) => row.accountId as string);
+  data = setAssignment(data, "ses-tt-vote", { accountId: going[0] }, "home");
+  data = setAssignment(data, "ses-tt-vote", { accountId: going[1] }, "home");
+  data = setAssignment(data, "ses-tt-vote", { accountId: going[2] }, "away");
+  data = setAssignment(data, "ses-tt-vote", { accountId: going[3] }, "away");
+  const { data: next, matchId } = confirmRallyBout(data, "ses-tt-vote");
+  const match = next.matches.find((row) => row.id === matchId);
+  assert.ok(match);
+  assert.ok(isRallySetMatch(match));
+  assert.equal(match.sportId, "table-tennis");
+  assert.equal(match.sessionId, "ses-tt-vote");
+  assert.ok(match.homeLabel.includes(" / "));
+});
 test("confirmRallyBout doubles writes slash labels onto the match", () => {
   let data = closeVoting(createSeedState(), "ses-bd-vote");
   data = setSessionFormat(data, "ses-bd-vote", "doubles");

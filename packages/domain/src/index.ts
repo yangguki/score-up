@@ -68,17 +68,28 @@ export {
 } from "./types";
 export { ALL_SPORT_IDS, clubRulesFor, isSportId, sportRulesSummary } from "./sport";
 export {
+  CLUB_SPORT_IDS,
   accountName,
   canEnterFourOnFourSplit,
   canEnterFiveOnFiveSplit,
+  canEnterFullClubSplit,
+  canEnterShortClubSplit,
   canEnterRallyBout,
   canOperateClub,
   clubCourtSize,
   clubFourOnFourLockCopy,
   clubFiveOnFiveLockCopy,
+  clubFullSplitFormat,
+  clubFullSplitLockCopy,
+  clubSixOnSixLockCopy,
+  clubVotingHintCopy,
   computeClubRanking,
+  defaultClubFormat,
   groupClubRanking,
+  isClubSportId,
   isRallyClubFormat,
+  isRallyClubSport,
+  isSplitClubSport,
   memberOf,
   proposeClubSplit,
   rallyBoutLockCopy,
@@ -89,7 +100,7 @@ export {
   sessionStatusLabel,
   voteLabel,
 } from "./club";
-export type { ClubRankingRow, SplitCandidate, SplitProposal } from "./club";
+export type { ClubRankingRow, ClubSportId, SplitCandidate, SplitProposal } from "./club";
 export {
   GRADE_RANK_ORDER,
   MEMBER_GRADES,

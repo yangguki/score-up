@@ -19,7 +19,7 @@ description: Orchestrates SCORE UP work across sport and platform agents. Use wh
 4. 병렬 가능한 일은 Task로 동시에 맡긴다. 의존이 있으면 순서를 명시한다.
 5. 결정이 바뀌면 Planner가 원문+캐논을 같은 턴에 맞추고, Manager는 §8을 고친다.
 
-**지금 (2026-08-28):** 구현 Phase 8 닫힘. 제품 홈은 H1 Arena + CTA A 잠금. 보드는 가로만·농구 셸. 열린 일은 홈 시안 비교(H8/H9). 새 구현 Phase가 아니다.
+**지금 (2026-08-28):** 구현 Phase 8 닫힘. 제품 홈은 H1 Arena + CTA A 잠금. 보드는 가로만·농구 셸. 모임 mock은 농구·배구·풋살·탁구·배드민턴. 열린 일은 홈 시안 비교(H8/H9). 새 구현 Phase가 아니다.
 
 ## 라우팅
 

@@ -3,13 +3,16 @@ import { Link, Redirect, router, useLocalSearchParams } from "expo-router";
 import { ScrollView, TextInput, View } from "react-native";
 import {
   accountName,
-  canEnterFourOnFourSplit,
-  canEnterFiveOnFiveSplit,
+  canEnterFullClubSplit,
   canEnterRallyBout,
+  canEnterShortClubSplit,
   canOperateClub,
   clubCourtSize,
   clubFourOnFourLockCopy,
-  clubFiveOnFiveLockCopy,
+  clubFullSplitFormat,
+  clubFullSplitLockCopy,
+  clubVotingHintCopy,
+  isRallyClubSport,
   memberOf,
   rallyBoutLockCopy,
   rallySideSize,
@@ -81,10 +84,11 @@ export default function SessionDetailScreen() {
     data.setSessionFormatAt(session.id, format);
   };
 
-  const isBadminton = club.sportId === "badminton";
+  const isRally = isRallyClubSport(club.sportId);
   const splitFormat = sessionSplitFormat(session);
   const rallyFormat = sessionRallyFormat(session);
-  const court = isBadminton ? rallySideSize(rallyFormat) : clubCourtSize(splitFormat);
+  const court = isRally ? rallySideSize(rallyFormat) : clubCourtSize(splitFormat);
+  const fullFormat = clubFullSplitFormat(club.sportId);
 
   return (
     <Screen>
@@ -115,11 +119,7 @@ export default function SessionDetailScreen() {
             <P muted>
               참석 {goingCount} · 불참 {noCount} · 미정 {maybeCount} · 없음 {noneCount}
             </P>
-            <P muted>
-              {isBadminton
-                ? "마감 후 단식 2명 또는 복식 4명이면 한 판을 열 수 있습니다."
-                : "마감 후 참석 10명이면 5대5, 8~9명이면 4대4로 나눌 수 있습니다."}
-            </P>
+            <P muted>{clubVotingHintCopy(club.sportId)}</P>
             <H style={{ fontSize: 16 }}>참석</H>
             {grouped("going").map((row) => (
               <P key={row.id}>{accountName(data.accounts, row.accountId)}</P>
@@ -201,7 +201,7 @@ export default function SessionDetailScreen() {
                     }
                   }}
                 />
-                {isBadminton ? (
+                {isRally ? (
                   <>
                     <View style={{ flexDirection: "row", gap: 8 }}>
                       <View style={{ flex: 1 }}>
@@ -228,12 +228,12 @@ export default function SessionDetailScreen() {
                       </>
                     )}
                   </>
-                ) : canEnterFiveOnFiveSplit(candidates) ? (
-                  <Btn label="팀 나누기" onPress={() => enterSplit("5v5")} />
-                ) : canEnterFourOnFourSplit(candidates) ? (
+                ) : canEnterFullClubSplit(candidates, club.sportId) ? (
+                  <Btn label="팀 나누기" onPress={() => enterSplit(fullFormat)} />
+                ) : canEnterShortClubSplit(candidates, club.sportId) ? (
                   <>
                     <Btn label="팀 나누기" disabled />
-                    <P muted>{clubFiveOnFiveLockCopy(candidates)}</P>
+                    <P muted>{clubFullSplitLockCopy(candidates, club.sportId)}</P>
                     <Btn label="4대4로 나누기" onPress={() => enterSplit("4v4")} />
                   </>
                 ) : (
@@ -250,11 +250,13 @@ export default function SessionDetailScreen() {
 
         {session.status === "matched" || session.status === "in_play" ? (
           <>
-            {isBadminton ? (
+            {isRally ? (
               <P muted>{rallyFormat === "singles" ? "단식" : "복식"}</P>
-            ) : splitFormat === "4v4" ? (
-              <P muted>4대4 · 출전 팀당 {court}명</P>
-            ) : null}
+            ) : (
+              <P muted>
+                {splitFormat === "6v6" ? "6대6" : splitFormat === "4v4" ? "4대4" : "5대5"} · 출전 팀당 {court}명
+              </P>
+            )}
             {(["home", "away", "bench"] as const).map((side) => {
               const rows = data.sessionAssignments.filter((row) => row.sessionId === session.id && row.side === side);
               if (rows.length === 0 && side === "bench") return null;
@@ -287,7 +289,11 @@ export default function SessionDetailScreen() {
                   <Link href={matchHref(match)} asChild>
                     <Btn
                       label={
-                        session.status === "in_play" ? "이어하기" : isBadminton ? "보드로" : "출전 확인"
+                        session.status === "in_play"
+                          ? "이어하기"
+                          : isRally || club.sportId !== "basketball"
+                            ? "보드로"
+                            : "출전 확인"
                       }
                     />
                   </Link>

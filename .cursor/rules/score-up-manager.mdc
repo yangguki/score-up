@@ -22,4 +22,4 @@ alwaysApply: true
 8. 없는 종목 → Manager가 skill을 만든 뒤 분배.
 9. AWS/배포/호스팅/팀 공유 URL → `.cursor/skills/infra-agent/SKILL.md`. S3 정적 + GitHub Actions(`origin-hub`). GitLab Runner·Amplify·API·RDS 만들지 않는다.
 
-제약: Expo 단일 코드(앱+웹). mock 프론트 우선. 1차는 농구, Phase 8 닫힘. 홈은 H1 Arena + CTA A 잠금. H8/H9는 비교만. 보드는 가로만·농구 셸. 종목에 없는 UI를 그리지 않는다. 진도는 `docs/SCORE-UP-작업계획.md` §8. 제품 Phase와 구현 Phase를 섞지 않는다.
+제약: Expo 단일 코드(앱+웹). mock 프론트 우선. 1차는 농구, Phase 8 닫힘. 홈은 H1 Arena + CTA A 잠금. H8/H9는 비교만. 보드는 가로만·농구 셸. 모임 mock은 농구·배구·풋살·탁구·배드민턴. 종목에 없는 UI를 그리지 않는다. 진도는 `docs/SCORE-UP-작업계획.md` §8. 제품 Phase와 구현 Phase를 섞지 않는다.

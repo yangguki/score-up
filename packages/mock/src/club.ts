@@ -14,6 +14,9 @@ import type {
 import {
   BADMINTON_CLUB_PRESET,
   BASKETBALL_CLUB_PRESET,
+  FUTSAL_CLUB_PRESET,
+  TABLE_TENNIS_CLUB_PRESET,
+  VOLLEYBALL_CLUB_PRESET,
   canChallengeGrade,
   canOperateClub,
   canSendChallenge,
@@ -21,9 +24,12 @@ import {
   clampMonthDay,
   clubCourtSize,
   computeClubRanking,
+  defaultClubFormat,
   hasOpenChallenge,
   isBasketballMatch,
+  isClubSportId,
   isRallyClubFormat,
+  isRallyClubSport,
   memberGrade,
   memberOf,
   monthlyDayDates,
@@ -37,7 +43,9 @@ import {
   weeklyDates,
 } from "@score-up/domain";
 import { createBlankMatch } from "./basketball";
+import { createBlankPitchMatch } from "./pitch";
 import { createBlankTableTennisMatch } from "./table-tennis";
+import { createBlankVolleyballMatch } from "./volleyball";
 import { uid } from "./id";
 
 function requireAccount(data: AppData) {
@@ -66,8 +74,8 @@ export function createClub(
   const name = input.name.trim();
   if (!name) throw new Error("모임 이름을 입력하세요.");
   const sportId = input.sportId ?? "basketball";
-  if (sportId !== "basketball" && sportId !== "badminton") {
-    throw new Error("모임은 농구 또는 배드민턴만 만듭니다.");
+  if (!isClubSportId(sportId)) {
+    throw new Error("모임은 농구·배구·풋살·탁구·배드민턴만 만듭니다.");
   }
   const id = uid("club");
   const club: Club = {
@@ -189,7 +197,7 @@ export function createSessions(data: AppData, clubId: string, input: CreateSessi
     voteDeadlineLabel: deadlineBefore(timeLabel),
     status: "voting",
     recurring: input.kind !== "once",
-    format: club.sportId === "badminton" ? "doubles" : "5v5",
+    format: defaultClubFormat(club.sportId),
   }));
   const firstId = created[0]!.id;
   let clubs = data.clubs;
@@ -338,8 +346,8 @@ export function setSessionFormat(data: AppData, sessionId: string, format: ClubS
   if (!canOperateClub(me?.role)) return data;
   if (session.status !== "confirming") return data;
   const club = data.clubs.find((row) => row.id === session.clubId);
-  if (club?.sportId === "badminton" && !isRallyClubFormat(format)) return data;
-  if (club?.sportId !== "badminton" && isRallyClubFormat(format)) return data;
+  if (club && isRallyClubSport(club.sportId) && !isRallyClubFormat(format)) return data;
+  if (club && !isRallyClubSport(club.sportId) && isRallyClubFormat(format)) return data;
   return {
     ...data,
     sessions: data.sessions.map((row) => (row.id === sessionId ? { ...row, format } : row)),
@@ -358,8 +366,8 @@ export function applySplitProposal(
   const me = memberOf(data.clubMembers, session.clubId, operatorId);
   if (!canOperateClub(me?.role)) return { data, ok: false, reason: "팀 나누기는 모임장·운영만 할 수 있습니다." };
   const club = data.clubs.find((row) => row.id === session.clubId);
-  if (club?.sportId === "badminton") {
-    return { data, ok: false, reason: "배드민턴 회차는 한 판 열기를 쓰세요." };
+  if (club && isRallyClubSport(club.sportId)) {
+    return { data, ok: false, reason: "이 종목 회차는 한 판 열기를 쓰세요." };
   }
 
   const members = data.clubMembers
@@ -420,7 +428,7 @@ export function confirmSplit(data: AppData, sessionId: string): { data: AppData;
   if (!canOperateClub(me?.role)) throw new Error("팀 나누기는 모임장·운영만 할 수 있습니다.");
   const club = data.clubs.find((row) => row.id === session.clubId);
   if (!club) throw new Error("모임을 찾을 수 없습니다.");
-  if (club.sportId === "badminton") throw new Error("배드민턴 회차는 한 판 열기를 쓰세요.");
+  if (isRallyClubSport(club.sportId)) throw new Error("이 종목 회차는 한 판 열기를 쓰세요.");
   const home = data.sessionAssignments.filter((row) => row.sessionId === sessionId && row.side === "home");
   const away = data.sessionAssignments.filter((row) => row.sessionId === sessionId && row.side === "away");
   const format = sessionSplitFormat(session);
@@ -444,19 +452,50 @@ export function confirmSplit(data: AppData, sessionId: string): { data: AppData;
   }));
   const homeOn = players.filter((p) => p.teamId === homeTeam.id).map((p) => p.id);
   const awayOn = players.filter((p) => p.teamId === awayTeam.id).map((p) => p.id);
-  const match = createBlankMatch({
-    sessionId,
-    homeTeamId: homeTeam.id,
-    awayTeamId: awayTeam.id,
-    homeLabel: "A",
-    awayLabel: "B",
-    homeColor: homeTeam.color,
-    awayColor: awayTeam.color,
-    roundLabel: "회차",
-    scheduledLabel: `${session.dateLabel} ${session.timeLabel}`,
-    rules: { ...BASKETBALL_CLUB_PRESET.rules, starters: court },
-    status: "lineup",
-  });
+  const scheduledLabel = `${session.dateLabel} ${session.timeLabel}`;
+  const match =
+    club.sportId === "volleyball"
+      ? createBlankVolleyballMatch({
+          sessionId,
+          homeTeamId: homeTeam.id,
+          awayTeamId: awayTeam.id,
+          homeLabel: "A",
+          awayLabel: "B",
+          homeColor: homeTeam.color,
+          awayColor: awayTeam.color,
+          roundLabel: "회차",
+          scheduledLabel,
+          rules: VOLLEYBALL_CLUB_PRESET.rules,
+          status: "scheduled",
+        })
+      : club.sportId === "futsal"
+        ? createBlankPitchMatch({
+            sportId: "futsal",
+            sessionId,
+            homeTeamId: homeTeam.id,
+            awayTeamId: awayTeam.id,
+            homeLabel: "A",
+            awayLabel: "B",
+            homeColor: homeTeam.color,
+            awayColor: awayTeam.color,
+            roundLabel: "회차",
+            scheduledLabel,
+            rules: FUTSAL_CLUB_PRESET.rules,
+            status: "scheduled",
+          })
+        : createBlankMatch({
+            sessionId,
+            homeTeamId: homeTeam.id,
+            awayTeamId: awayTeam.id,
+            homeLabel: "A",
+            awayLabel: "B",
+            homeColor: homeTeam.color,
+            awayColor: awayTeam.color,
+            roundLabel: "회차",
+            scheduledLabel,
+            rules: { ...BASKETBALL_CLUB_PRESET.rules, starters: court },
+            status: "lineup",
+          });
   if (isBasketballMatch(match)) {
     match.snapshot.onCourtHome = homeOn;
     match.snapshot.onCourtAway = awayOn;
@@ -484,7 +523,9 @@ export function confirmRallyBout(data: AppData, sessionId: string): { data: AppD
   if (!canOperateClub(me?.role)) throw new Error("한 판 열기는 모임장·운영만 할 수 있습니다.");
   const club = data.clubs.find((row) => row.id === session.clubId);
   if (!club) throw new Error("모임을 찾을 수 없습니다.");
-  if (club.sportId !== "badminton") throw new Error("한 판 열기는 배드민턴 모임만 씁니다.");
+  if (club.sportId !== "badminton" && club.sportId !== "table-tennis") {
+    throw new Error("한 판 열기는 배드민턴·탁구 모임만 씁니다.");
+  }
   const format = sessionRallyFormat(session);
   const court = rallySideSize(format);
   const home = data.sessionAssignments.filter((row) => row.sessionId === sessionId && row.side === "home");
@@ -507,8 +548,12 @@ export function confirmRallyBout(data: AppData, sessionId: string): { data: AppD
     name: nameOf(row),
     number: index + 1,
   }));
+  const rallyRules =
+    club.sportId === "table-tennis"
+      ? { ...TABLE_TENNIS_CLUB_PRESET.rules, doubles: format === "doubles" }
+      : { ...BADMINTON_CLUB_PRESET.rules, doubles: format === "doubles" };
   const match = createBlankTableTennisMatch({
-    sportId: "badminton",
+    sportId: club.sportId,
     sessionId,
     homeTeamId: homeTeam.id,
     awayTeamId: awayTeam.id,
@@ -518,7 +563,7 @@ export function confirmRallyBout(data: AppData, sessionId: string): { data: AppD
     awayColor: awayTeam.color,
     roundLabel: format === "singles" ? "단식" : "복식",
     scheduledLabel: `${session.dateLabel} ${session.timeLabel}`,
-    rules: { ...BADMINTON_CLUB_PRESET.rules, doubles: format === "doubles" },
+    rules: rallyRules,
     status: "scheduled",
   });
 

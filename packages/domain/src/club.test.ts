@@ -82,6 +82,27 @@ test("proposeClubSplit locks under 10", () => {
   assert.match(proposal.reason ?? "", /10명/);
 });
 
+test("proposeClubSplit 6v6 locks under 12 and splits 12 into 6+6", () => {
+  const eleven = Array.from({ length: 11 }, (_, i) => ({
+    accountId: `a${i}`,
+    name: `P${i}`,
+    winRate: null as number | null,
+  }));
+  const locked = proposeClubSplit(eleven, { format: "6v6" });
+  assert.equal(locked.ok, false);
+  assert.match(locked.reason ?? "", /12명/);
+
+  const twelve = Array.from({ length: 12 }, (_, i) => ({
+    accountId: `a${i}`,
+    name: `P${i}`,
+    winRate: 1 - i * 0.08,
+  }));
+  const split = proposeClubSplit(twelve, { format: "6v6", balanceByWinRate: true });
+  assert.equal(split.ok, true);
+  assert.equal(split.home.length, 6);
+  assert.equal(split.away.length, 6);
+  assert.equal(split.bench.length, 0);
+});
 test("proposeClubSplit 4v4 locks under 8 and splits 8 into 4+4", () => {
   const seven = Array.from({ length: 7 }, (_, i) => ({
     accountId: `a${i}`,

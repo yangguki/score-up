@@ -374,8 +374,14 @@ export function createSeedState(): AppData {
 
 const CLUB = "club-weekend";
 const CLUB_BD = "club-bd";
+const CLUB_VB = "club-vb";
+const CLUB_FT = "club-ft";
+const CLUB_TT = "club-tt";
 const SES_VOTE = "ses-vote";
 const SES_BD_VOTE = "ses-bd-vote";
+const SES_VB_VOTE = "ses-vb-vote";
+const SES_FT_VOTE = "ses-ft-vote";
+const SES_TT_VOTE = "ses-tt-vote";
 const SES_DONE_1 = "ses-done-1";
 const SES_DONE_2 = "ses-done-2";
 const SES_DONE_3 = "ses-done-3";
@@ -487,6 +493,42 @@ function seedClubFields(): Pick<
         weeklyTime: "20:00",
         recurrenceKind: "weekly",
       },
+      {
+        id: CLUB_VB,
+        name: "화요일 배구",
+        sportId: "volleyball",
+        venue: "시민체육관 배구장",
+        inviteToken: "vb12cd",
+        ownerAccountId: "acc-minsu",
+        seasonLabel: "2026",
+        weekday: 2,
+        weeklyTime: "19:00",
+        recurrenceKind: "weekly",
+      },
+      {
+        id: CLUB_FT,
+        name: "목요일 풋살",
+        sportId: "futsal",
+        venue: "실내풋살장 A",
+        inviteToken: "ft12cd",
+        ownerAccountId: "acc-minsu",
+        seasonLabel: "2026",
+        weekday: 4,
+        weeklyTime: "21:00",
+        recurrenceKind: "weekly",
+      },
+      {
+        id: CLUB_TT,
+        name: "금요일 탁구",
+        sportId: "table-tennis",
+        venue: "시민체육관 탁구장",
+        inviteToken: "tt12cd",
+        ownerAccountId: "acc-minsu",
+        seasonLabel: "2026",
+        weekday: 5,
+        weeklyTime: "19:30",
+        recurrenceKind: "weekly",
+      },
     ],
     clubMembers: [
       ...active.map(([accountId], index) => ({
@@ -508,6 +550,30 @@ function seedClubFields(): Pick<
       ...active.slice(0, 6).map(([accountId], index) => ({
         id: `cm-bd-${index}`,
         clubId: CLUB_BD,
+        accountId,
+        role: index === 0 ? ("owner" as const) : index === 1 ? ("operator" as const) : ("member" as const),
+        status: "active" as const,
+        grade: CLUB_GRADES[accountId] ?? ("intermediate" as const),
+      })),
+      ...active.map(([accountId], index) => ({
+        id: `cm-vb-${index}`,
+        clubId: CLUB_VB,
+        accountId,
+        role: index === 0 ? ("owner" as const) : index === 1 ? ("operator" as const) : ("member" as const),
+        status: "active" as const,
+        grade: CLUB_GRADES[accountId] ?? ("intermediate" as const),
+      })),
+      ...active.slice(0, 10).map(([accountId], index) => ({
+        id: `cm-ft-${index}`,
+        clubId: CLUB_FT,
+        accountId,
+        role: index === 0 ? ("owner" as const) : index === 1 ? ("operator" as const) : ("member" as const),
+        status: "active" as const,
+        grade: CLUB_GRADES[accountId] ?? ("intermediate" as const),
+      })),
+      ...active.slice(0, 6).map(([accountId], index) => ({
+        id: `cm-tt-${index}`,
+        clubId: CLUB_TT,
         accountId,
         role: index === 0 ? ("owner" as const) : index === 1 ? ("operator" as const) : ("member" as const),
         status: "active" as const,
@@ -573,6 +639,39 @@ function seedClubFields(): Pick<
         recurring: true,
         format: "doubles",
       },
+      {
+        id: SES_VB_VOTE,
+        clubId: CLUB_VB,
+        dateLabel: "2026-09-01",
+        timeLabel: "19:00",
+        venue: "시민체육관 배구장",
+        voteDeadlineLabel: "17:00",
+        status: "voting",
+        recurring: true,
+        format: "6v6",
+      },
+      {
+        id: SES_FT_VOTE,
+        clubId: CLUB_FT,
+        dateLabel: "2026-09-03",
+        timeLabel: "21:00",
+        venue: "실내풋살장 A",
+        voteDeadlineLabel: "19:00",
+        status: "voting",
+        recurring: true,
+        format: "5v5",
+      },
+      {
+        id: SES_TT_VOTE,
+        clubId: CLUB_TT,
+        dateLabel: "2026-09-04",
+        timeLabel: "19:30",
+        venue: "시민체육관 탁구장",
+        voteDeadlineLabel: "17:30",
+        status: "voting",
+        recurring: true,
+        format: "doubles",
+      },
     ],
     sessionVotes: [
       ...going.map(([accountId], index) => ({
@@ -596,6 +695,24 @@ function seedClubFields(): Pick<
       ...active.slice(0, 4).map(([accountId], index) => ({
         id: `vote-bd-g-${index}`,
         sessionId: SES_BD_VOTE,
+        accountId,
+        value: "going" as const,
+      })),
+      ...active.map(([accountId], index) => ({
+        id: `vote-vb-g-${index}`,
+        sessionId: SES_VB_VOTE,
+        accountId,
+        value: "going" as const,
+      })),
+      ...active.slice(0, 8).map(([accountId], index) => ({
+        id: `vote-ft-g-${index}`,
+        sessionId: SES_FT_VOTE,
+        accountId,
+        value: "going" as const,
+      })),
+      ...active.slice(0, 4).map(([accountId], index) => ({
+        id: `vote-tt-g-${index}`,
+        sessionId: SES_TT_VOTE,
         accountId,
         value: "going" as const,
       })),
@@ -693,6 +810,12 @@ export const SEED_IDS = {
   WOLF,
   CLUB,
   CLUB_BD,
+  CLUB_VB,
+  CLUB_FT,
+  CLUB_TT,
   SES_VOTE,
   SES_BD_VOTE,
+  SES_VB_VOTE,
+  SES_FT_VOTE,
+  SES_TT_VOTE,
 };

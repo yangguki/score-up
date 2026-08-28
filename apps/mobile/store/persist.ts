@@ -1,9 +1,10 @@
 import type { AppData, ClubSessionFormat } from "@score-up/domain";
+import { defaultClubFormat } from "@score-up/domain";
 import type { StateStorage } from "zustand/middleware";
 import { createInnerStorage } from "./persist-storage";
 
 export const APP_PERSIST_NAME = "score-up-app";
-export const APP_PERSIST_VERSION = 6;
+export const APP_PERSIST_VERSION = 7;
 
 const WRITE_DEBOUNCE_MS = 500;
 
@@ -61,10 +62,17 @@ function sessionFormatOf(
   row: { format?: string; clubId: string },
   clubs: AppData["clubs"],
 ): ClubSessionFormat {
-  if (row.format === "4v4" || row.format === "5v5" || row.format === "singles" || row.format === "doubles") {
+  if (
+    row.format === "6v6" ||
+    row.format === "4v4" ||
+    row.format === "5v5" ||
+    row.format === "singles" ||
+    row.format === "doubles"
+  ) {
     return row.format;
   }
-  return clubs.find((club) => club.id === row.clubId)?.sportId === "badminton" ? "doubles" : "5v5";
+  const sportId = clubs.find((club) => club.id === row.clubId)?.sportId;
+  return sportId ? defaultClubFormat(sportId) : "5v5";
 }
 
 export function mergeMissingSeedClubs(data: AppData, seed: AppData): AppData {

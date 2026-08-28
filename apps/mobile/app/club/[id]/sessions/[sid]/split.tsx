@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { ScrollView, View } from "react-native";
-import { accountName, canOperateClub, clubCourtSize, memberOf, sessionSplitFormat, type SessionSide } from "@score-up/domain";
+import { accountName, canOperateClub, clubCourtSize, isRallyClubSport, memberOf, sessionSplitFormat, type SessionSide } from "@score-up/domain";
 import { Btn, Card, H, P, Screen } from "@/components/ui";
 import { confirmAction } from "@/lib/confirm";
+import { scoreboardHref } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
 import { space } from "@/theme/tokens";
 
@@ -22,7 +23,7 @@ export default function SplitScreen() {
       </Screen>
     );
   }
-  if (club.sportId === "badminton") return <Redirect href={`/club/${club.id}/sessions/${session.id}/bout`} />;
+  if (isRallyClubSport(club.sportId)) return <Redirect href={`/club/${club.id}/sessions/${session.id}/bout`} />;
   const mine = memberOf(data.clubMembers, club.id, data.accountId);
   if (!canOperateClub(mine?.role)) return <Redirect href={`/club/${club.id}/sessions/${session.id}`} />;
 
@@ -72,11 +73,17 @@ export default function SplitScreen() {
     const body =
       format === "4v4"
         ? "팀을 확정하고 경기를 만들까요? 출전은 팀당 4명입니다. 이후 변경은 다시 나누기입니다."
-        : "팀을 확정하고 경기를 만들까요? 이후 변경은 다시 나누기입니다.";
+        : format === "6v6"
+          ? "팀을 확정하고 경기를 만들까요? 출전은 팀당 6명입니다. 이후 변경은 다시 나누기입니다."
+          : "팀을 확정하고 경기를 만들까요? 이후 변경은 다시 나누기입니다.";
     confirmAction("매칭 확정", body, () => {
       try {
         const matchId = data.confirmSplitAt(session.id);
-        router.replace(`/match/${matchId}/lineup`);
+        if (club.sportId === "basketball") {
+          router.replace(`/match/${matchId}/lineup`);
+        } else {
+          router.replace(scoreboardHref({ id: matchId, sportId: club.sportId }));
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "확정하지 못했습니다.");
       }
