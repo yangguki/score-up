@@ -248,6 +248,7 @@ docs/                 기획·룰·화면·이 계획
 | H8 Lift | 비교. 세로 종목 **4열** compact / 가로 **8열** 폭 맞춤. 키트 `/kit/lift` | Frontend UX |
 | H9 Play | 비교. 세로 블롭 **작은 2열** / 가로 **4열×2줄** 폭 맞춤. 키트 `/kit/play` | Frontend UX |
 | 시안 전환 | 홈 상단·설정. `homeVersion` = `h1` \| `h8` \| `h9`. 기본 `h1` | Frontend UX |
+| 앱 크롬 | 탭 **홈 / 대회 / 모임 / 설정** | Frontend UX |
 | 종목 타일 탭 | H1·H8·H9 모두 `/friendly?sport=` (종목 피커 숨김). CTA만 `/friendly`에서 선택 | Planner |
 | 스코어보드 | **가로만**. 세로=안내. 8종목 `ArenaBoardShell`(농구 좌우 색면) | Frontend UX |
 | 대회 룰 편집 | prep만 `/competition/[id]/rules` | Frontend UX |

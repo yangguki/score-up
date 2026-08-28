@@ -39,15 +39,15 @@ export function myClubCards(
   votes: SessionVote[],
   accountId: string | null,
   memberships: { clubId: string; accountId: string; status: string }[],
+  options?: { limit?: number },
 ): HomeClubCard[] {
   if (!accountId) return [];
   const mine = new Set(
     memberships.filter((row) => row.accountId === accountId && row.status === "active").map((row) => row.clubId),
   );
-  return clubs
-    .filter((club) => mine.has(club.id))
-    .slice(0, 5)
-    .map((club) => {
+  const rows = clubs.filter((club) => mine.has(club.id));
+  const limited = options?.limit ? rows.slice(0, options.limit) : rows;
+  return limited.map((club) => {
       const next = nextClubSession(club.id, sessions);
       const vote = next?.status === "voting" ? voteLabel(myVoteValue(next.id, accountId, votes)) : undefined;
       return {

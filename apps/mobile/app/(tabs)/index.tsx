@@ -24,7 +24,7 @@ export default function HomeScreen() {
   const accountId = useAppStore((s) => s.accountId);
   const homeVersion = useUiPrefsStore((s) => s.homeVersion);
   const model = buildHomeModel(competitions, matches);
-  const clubCards = myClubCards(clubs, sessions, votes, accountId, members);
+  const clubCards = myClubCards(clubs, sessions, votes, accountId, members, { limit: 5 });
   const operatorName = accountName(accounts, accountId);
   const bg = homeVersion === "h9" ? play.bg : homeVersion === "h8" ? lift.bg : arena.bg;
   const bar = homeVersion === "h1" ? "light" : "dark";

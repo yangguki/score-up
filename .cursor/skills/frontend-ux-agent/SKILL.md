@@ -30,7 +30,7 @@ description: Builds SCORE UP Expo app+web screens that run on mock data for UX r
 
 ## 1차 그릴 화면 (농구만)
 
-준비: 홈, 대회 만들기 1~4단계(홈 8종목), 대회 개요, 참가 팀/선수, 대진 생성, 토너먼트 브래킷, 리그 순위, 출전 명단, 빠른 친선, 이 기기 로그인, 모임·회차·참석 투표(농구·배구·풋살·탁구·배드민턴).
+준비: 홈, 대회 만들기 1~4단계(홈 8종목), 대회 개요, 참가 팀/선수, 대진 생성, 토너먼트 브래킷, 리그 순위, 출전 명단, 빠른 친선, 이 기기 로그인, 모임 탭·회차·참석 투표(농구·배구·풋살·탁구·배드민턴).
 
 기록: 농구 스코어보드(`/match/[id]/basketball`), 배구 mock 보드(`/match/[id]/volleyball`), 탁구 mock 보드(`/match/[id]/table-tennis`), 배드민턴(`/match/[id]/badminton`), 스쿼시(`/match/[id]/squash`), 축구(`/match/[id]/soccer`), 풋살(`/match/[id]/futsal`), 야구(`/match/[id]/baseball`), 선수 피커, 교체 시트, 종료 확인 팝업, 타임라인, 결과.
 
