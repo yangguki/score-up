@@ -1,6 +1,8 @@
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { TEAM_COLOR_PRESETS } from "@score-up/domain";
-import { colors } from "@/theme/tokens";
+import { useAppKit } from "@/components/theme-provider";
+import { KitTextInput } from "@/components/form-fields";
+import { P } from "@/components/ui";
 
 export function TeamEditor({
   title,
@@ -17,28 +19,17 @@ export function TeamEditor({
 }) {
   return (
     <View style={{ gap: 10 }}>
-      {title ? <Text style={{ color: colors.text, fontSize: 16, fontWeight: "700" }}>{title}</Text> : null}
-      <TextInput
-        value={name}
-        onChangeText={onName}
-        placeholder="팀 이름"
-        placeholderTextColor={colors.muted}
-        style={{
-          backgroundColor: colors.surface,
-          color: colors.text,
-          borderRadius: 12,
-          padding: 14,
-          borderWidth: 1,
-          borderColor: colors.line,
-          fontSize: 16,
-        }}
-      />
+      {title ? (
+        <P style={{ fontSize: 16, fontWeight: "700" }}>{title}</P>
+      ) : null}
+      <KitTextInput value={name} onChangeText={onName} placeholder="팀 이름" autoCapitalize="none" autoCorrect={false} />
       <ColorSwatches value={color} onChange={onColor} />
     </View>
   );
 }
 
 export function ColorSwatches({ value, onChange }: { value: string; onChange: (hex: string) => void }) {
+  const kit = useAppKit();
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
       {TEAM_COLOR_PRESETS.map((preset) => {
@@ -53,7 +44,7 @@ export function ColorSwatches({ value, onChange }: { value: string; onChange: (h
               borderRadius: 18,
               backgroundColor: preset.hex,
               borderWidth: selected ? 3 : 1,
-              borderColor: selected ? colors.text : "#ffffff55",
+              borderColor: selected ? kit.text : "#ffffff55",
             }}
             accessibilityLabel={preset.label}
           />

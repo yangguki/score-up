@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
 import { Link, useLocalSearchParams } from "expo-router";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { computeLeagueStandings } from "@score-up/domain";
+import { ChoiceChips } from "@/components/form-fields";
+import { TournamentTree, type BracketDirection } from "@/components/tournament-bracket";
+import { useAppKit } from "@/components/theme-provider";
 import { Btn, Card, H, P, Pill, Screen } from "@/components/ui";
 import { copyText } from "@/lib/copy-text";
 import { matchDisplayScore } from "@/lib/home";
 import { matchHref, statusLabel } from "@/lib/labels";
 import { leagueShareText, tournamentShareText } from "@/lib/share-text";
 import { useAppStore } from "@/store/app-store";
-import { colors, space } from "@/theme/tokens";
+import { space } from "@/theme/tokens";
 
 export default function BracketScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const kit = useAppKit();
+  const { width, height } = useWindowDimensions();
+  const deviceLandscape = width > height;
+  const [direction, setDirection] = useState<BracketDirection | null>(null);
+  const treeDirection: BracketDirection = direction ?? (deviceLandscape ? "horizontal" : "vertical");
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -30,7 +38,7 @@ export default function BracketScreen() {
   const isLeague = competition?.format === "league";
   const hasSchedule = isLeague ? leagueMatches.length > 0 : slots.length > 0;
 
-  const nameOf = (teamId?: string) => teams.find((t) => t.id === teamId)?.name ?? (teamId ? "" : "—");
+  const nameOf = (teamId?: string) => (teamId ? (teams.find((t) => t.id === teamId)?.name ?? "") : "");
 
   if (!competition) {
     return (
@@ -64,7 +72,21 @@ export default function BracketScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
-        <H style={{ fontSize: 18 }}>{isLeague ? "일정 · 순위" : "대진표"}</H>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <H style={{ fontSize: 18, flex: 1 }}>{isLeague ? "일정 · 순위" : "대진표"}</H>
+          {!isLeague && hasSchedule ? (
+            <View style={{ width: 168 }}>
+              <ChoiceChips
+                value={treeDirection}
+                options={[
+                  { value: "vertical", label: "세로" },
+                  { value: "horizontal", label: "가로" },
+                ]}
+                onChange={setDirection}
+              />
+            </View>
+          ) : null}
+        </View>
         {hasSchedule ? (
           <>
             <Btn
@@ -136,7 +158,7 @@ export default function BracketScreen() {
                     alignItems: "center",
                     paddingVertical: 6,
                     borderTopWidth: 1,
-                    borderTopColor: colors.line,
+                    borderTopColor: kit.line,
                     gap: 4,
                   }}
                 >
@@ -190,49 +212,9 @@ export default function BracketScreen() {
           </>
         ) : null}
 
-        {!isLeague
-          ? ["sf", "final", "champion"].map((round) => {
-              const rows = slots.filter((s) => s.round === round);
-              if (rows.length === 0) return null;
-              return (
-                <View key={round} style={{ gap: 8 }}>
-                  <H style={{ fontSize: 16 }}>
-                    {round === "sf" ? "4강" : round === "final" ? "결승" : "우승"}
-                  </H>
-                  {rows.map((slot) => {
-                    const match = matches.find((m) => m.id === slot.matchId);
-                    return (
-                      <Link key={slot.id} href={match ? matchHref(match) : `/competition/${id}`} asChild>
-                        <Pressable>
-                          <Card>
-                            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                              <P>
-                                {slot.bye
-                                  ? `${nameOf(slot.homeTeamId)} · BYE`
-                                  : `${nameOf(slot.homeTeamId) || match?.homeLabel || "대기"} vs ${nameOf(slot.awayTeamId) || match?.awayLabel || "대기"}`}
-                              </P>
-                              {match ? (
-                                <Pill
-                                  label={statusLabel(match.status, match.sportId)}
-                                  tone={match.status === "in_progress" ? "live" : "muted"}
-                                />
-                              ) : null}
-                            </View>
-                            {match && (match.status === "in_progress" || match.status === "completed") ? (
-                              <H style={{ fontSize: 20, marginTop: 8 }}>
-                                {matchDisplayScore(match).home} - {matchDisplayScore(match).away}
-                              </H>
-                            ) : null}
-                            {match?.winnerLabel ? <P muted>승 {match.winnerLabel}</P> : null}
-                          </Card>
-                        </Pressable>
-                      </Link>
-                    );
-                  })}
-                </View>
-              );
-            })
-          : null}
+        {!isLeague && hasSchedule ? (
+          <TournamentTree slots={slots} matches={matches} nameOf={nameOf} direction={treeDirection} />
+        ) : null}
       </ScrollView>
     </Screen>
   );

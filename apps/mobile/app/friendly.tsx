@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { Pressable, ScrollView } from "react-native";
 import {
-  ALL_SPORT_IDS,
+  clubRulesFor,
   DEFAULT_AWAY_COLOR,
   DEFAULT_HOME_COLOR,
-  clubRulesFor,
   isSportId,
   type SportId,
   type SportRules,
@@ -13,11 +11,12 @@ import {
 } from "@score-up/domain";
 import { PlayerDraftList, type DraftPlayer } from "@/components/player-draft-list";
 import { SportRulesEditor } from "@/components/rules-editor";
+import { SportPickGrid } from "@/components/sport-pick-grid";
 import { TeamEditor } from "@/components/team-editor";
-import { Btn, Card, H, P, Screen, SectionHead } from "@/components/ui";
+import { H, P } from "@/components/ui";
+import { WizardShell } from "@/components/wizard-shell";
 import { scoreboardHref, sportLabel } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
-import { colors, space } from "@/theme/tokens";
 
 function toPlayers(drafts: DraftPlayer[]) {
   return drafts
@@ -25,11 +24,19 @@ function toPlayers(drafts: DraftPlayer[]) {
     .map((p) => ({ name: p.name.trim(), number: Number(p.number) || 0 }));
 }
 
-const CREATE_SPORTS: SportId[] = [...ALL_SPORT_IDS];
-
 function sportFromQuery(value?: string | string[]): SportId | null {
   const raw = Array.isArray(value) ? value[0] : value;
   return isSportId(raw) ? raw : null;
+}
+
+type FriendlyStep = "sport" | "rules" | "home" | "away" | "players";
+
+function stepsFor(sportLocked: boolean, sportId: SportId): FriendlyStep[] {
+  const steps: FriendlyStep[] = [];
+  if (!sportLocked) steps.push("sport");
+  steps.push("rules", "home", "away");
+  if (sportId === "basketball") steps.push("players");
+  return steps;
 }
 
 export default function FriendlyScreen() {
@@ -38,6 +45,7 @@ export default function FriendlyScreen() {
   const querySport = sportFromQuery(params.sport);
   const sportLocked = querySport != null;
   const initialSport = querySport ?? "basketball";
+  const [index, setIndex] = useState(0);
   const [sportId, setSportId] = useState<SportId>(initialSport);
   const [home, setHome] = useState("홈");
   const [away, setAway] = useState("어웨이");
@@ -47,11 +55,13 @@ export default function FriendlyScreen() {
   const [rules, setRules] = useState<SportRules>(clubRulesFor(initialSport));
   const [homePlayers, setHomePlayers] = useState<DraftPlayer[]>([]);
   const [awayPlayers, setAwayPlayers] = useState<DraftPlayer[]>([]);
+  const [error, setError] = useState("");
 
   const selectSport = (next: SportId) => {
     setSportId(next);
     setOfficial(false);
     setRules(clubRulesFor(next));
+    setError("");
   };
 
   useEffect(() => {
@@ -59,14 +69,26 @@ export default function FriendlyScreen() {
     setSportId(next);
     setOfficial(false);
     setRules(clubRulesFor(next));
+    setIndex(0);
   }, [params.sport]);
+
+  const steps = useMemo(() => stepsFor(sportLocked, sportId), [sportLocked, sportId]);
+  const stepIndex = Math.min(index, steps.length - 1);
+  const current = steps[stepIndex] ?? "rules";
+  const last = stepIndex === steps.length - 1;
 
   const rally = sportId === "table-tennis" || sportId === "badminton" || sportId === "squash";
   const doubles = rally && (rules as TableTennisRules).doubles;
   const homeTitle = rally ? (doubles ? "홈 페어" : "선수 A") : "홈 팀";
   const awayTitle = rally ? (doubles ? "어웨이 페어" : "선수 B") : "어웨이 팀";
+  const homeOk = home.trim().length > 0;
+  const awayOk = away.trim().length > 0;
 
   const start = () => {
+    if (!homeOk || !awayOk) {
+      setError("이름을 입력하세요.");
+      return;
+    }
     const parsedHome = toPlayers(homePlayers);
     const parsedAway = toPlayers(awayPlayers);
     const id = makeFriendly({
@@ -84,81 +106,96 @@ export default function FriendlyScreen() {
     router.replace(toLineup ? `/match/${id}/lineup` : scoreboardHref({ id, sportId }));
   };
 
+  const next = () => {
+    if (current === "home" && !homeOk) {
+      setError("이름을 입력하세요.");
+      return;
+    }
+    if (current === "away" && !awayOk) {
+      setError("이름을 입력하세요.");
+      return;
+    }
+    setError("");
+    if (last) {
+      start();
+      return;
+    }
+    setIndex((value) => value + 1);
+  };
+
+  const back = () => {
+    setError("");
+    if (stepIndex === 0) {
+      router.back();
+      return;
+    }
+    setIndex((value) => Math.max(0, value - 1));
+  };
+
+  const primaryDisabled = (current === "home" && !homeOk) || (current === "away" && !awayOk);
+
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.lg, paddingBottom: 48 }}>
-        <SectionHead
-          title="빠른 친선경기"
-          hint={
-            sportLocked
-              ? `${sportLabel(sportId)} · 룰을 정하고 팀을 만듭니다.`
-              : "종목과 룰을 정하고 팀을 만든 뒤, 필요하면 선수를 넣습니다."
-          }
-        />
+    <WizardShell
+      step={stepIndex + 1}
+      total={steps.length}
+      error={error}
+      primaryLabel={last ? "보드로 이동" : "다음"}
+      primaryDisabled={primaryDisabled}
+      onPrimary={next}
+      onBack={back}
+    >
+      {current === "sport" ? (
+        <>
+          <H>종목</H>
+          <P muted>한 종목만 고릅니다.</P>
+          <SportPickGrid selected={sportId} onSelect={selectSport} />
+        </>
+      ) : null}
 
-        {sportLocked ? null : (
-          <>
-            <H style={{ fontSize: 18 }}>종목</H>
-            {CREATE_SPORTS.map((id) => (
-              <Pressable key={id} onPress={() => selectSport(id)}>
-                <Card style={{ borderColor: sportId === id ? colors.primary : colors.line }}>
-                  <H style={{ fontSize: 18 }}>{sportLabel(id)}</H>
-                </Card>
-              </Pressable>
-            ))}
-          </>
-        )}
-
-        <H style={{ fontSize: 18 }}>룰</H>
-        <SportRulesEditor
-          sportId={sportId}
-          rules={rules}
-          official={official}
-          onRules={setRules}
-          onOfficial={setOfficial}
-        />
-
-        <Card>
-          <TeamEditor
-            title={homeTitle}
-            name={home}
-            color={homeColor}
-            onName={setHome}
-            onColor={setHomeColor}
+      {current === "rules" ? (
+        <>
+          <H>룰</H>
+          {sportLocked ? <P muted>{sportLabel(sportId)}</P> : null}
+          <SportRulesEditor
+            sportId={sportId}
+            rules={rules}
+            official={official}
+            onRules={setRules}
+            onOfficial={setOfficial}
+            compact
           />
-          {sportId === "basketball" ? (
-            <>
-              <P muted style={{ marginTop: 12, marginBottom: 8 }}>
-                선수
-              </P>
-              <PlayerDraftList players={homePlayers} onChange={setHomePlayers} />
-            </>
-          ) : null}
-        </Card>
-        <Card>
-          <TeamEditor
-            title={awayTitle}
-            name={away}
-            color={awayColor}
-            onName={setAway}
-            onColor={setAwayColor}
-          />
-          {sportId === "basketball" ? (
-            <>
-              <P muted style={{ marginTop: 12, marginBottom: 8 }}>
-                선수
-              </P>
-              <PlayerDraftList players={awayPlayers} onChange={setAwayPlayers} />
-            </>
-          ) : null}
-        </Card>
-        {doubles ? (
-          <P muted>복식은 이름에 슬래시로 두 명을 적습니다. 위치·서브 순서는 강제하지 않습니다.</P>
-        ) : null}
+        </>
+      ) : null}
 
-        <Btn label="보드로 이동" onPress={start} disabled={!home.trim() || !away.trim()} />
-        {!home.trim() || !away.trim() ? <P muted>이름을 입력하세요.</P> : null}
-      </ScrollView>
-    </Screen>
+      {current === "home" ? (
+        <>
+          <H>{homeTitle}</H>
+          <P muted>이름과 색만 정합니다.</P>
+          <TeamEditor name={home} color={homeColor} onName={setHome} onColor={setHomeColor} />
+        </>
+      ) : null}
+
+      {current === "away" ? (
+        <>
+          <H>{awayTitle}</H>
+          <P muted>이름과 색만 정합니다.</P>
+          <TeamEditor name={away} color={awayColor} onName={setAway} onColor={setAwayColor} />
+          {doubles ? (
+            <P muted>복식은 이름에 슬래시로 두 명을 적습니다. 위치·서브 순서는 강제하지 않습니다.</P>
+          ) : null}
+        </>
+      ) : null}
+
+      {current === "players" ? (
+        <>
+          <H>선수</H>
+          <P muted>없어도 됩니다. 비우면 팀 득점만으로 진행합니다.</P>
+          <P muted>{homeTitle}</P>
+          <PlayerDraftList players={homePlayers} onChange={setHomePlayers} />
+          <P muted>{awayTitle}</P>
+          <PlayerDraftList players={awayPlayers} onChange={setAwayPlayers} />
+        </>
+      ) : null}
+    </WizardShell>
   );
 }
