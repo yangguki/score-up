@@ -1,9 +1,11 @@
 import { Stack } from "expo-router";
-import { navScreenOptions } from "@/theme/arena";
+import { useAppKit } from "@/components/theme-provider";
+import { navOptionsForKit } from "@/theme/home-kits";
 
 export default function CompetitionIdLayout() {
+  const kit = useAppKit();
   return (
-    <Stack screenOptions={navScreenOptions}>
+    <Stack screenOptions={navOptionsForKit(kit)}>
       <Stack.Screen name="index" options={{ title: "대회" }} />
       <Stack.Screen name="rules" options={{ title: "룰" }} />
       <Stack.Screen name="roster" options={{ title: "참가 팀" }} />

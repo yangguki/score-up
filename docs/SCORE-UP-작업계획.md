@@ -9,7 +9,7 @@
 | 상태 | Phase 8 mock 닫힘. 홈 **H1 + CTA A 잠금**. 보드는 **가로만·농구 셸**. 모임 mock **농구·배구·풋살·탁구·배드민턴**. 열린 일=H8/H9 **비교**. 진도는 **§8** |
 | 목적 | Manager + 종목 agent 운영, 앱/웹 기술 조합, 구현 진도를 한곳에서 관리한다 |
 
-기준: 기획서 v0.3.3, 종목 룰 명세서 v0.2, 화면 기획 v0.4.10, 모임 기획 v0.8.3, 홈 상세 v0.3.3
+기준: 기획서 v0.3.3, 종목 룰 명세서 v0.2, 화면 기획 v0.4.13, 모임 기획 v0.8.3, 홈 상세 v0.3.5
 
 ---
 
@@ -247,10 +247,10 @@ docs/                 기획·룰·화면·이 계획
 | 제품 홈 톤 | **H1 Arena** | Planner |
 | H8 Lift | 비교. 세로 종목 **4열** compact / 가로 **8열** 폭 맞춤. 키트 `/kit/lift` | Frontend UX |
 | H9 Play | 비교. 세로 블롭 **작은 2열** / 가로 **4열×2줄** 폭 맞춤. 키트 `/kit/play` | Frontend UX |
-| 시안 전환 | 홈 상단·설정. `homeVersion` = `h1` \| `h8` \| `h9`. 기본 `h1` | Frontend UX |
+| 시안 전환 | 홈 상단·설정. `homeVersion` = `h1` \| `h8` \| `h9`. 기본 `h1`. **탭·스택·`ui.tsx` T&M 동기**. 보드는 Arena | Frontend UX |
 | 앱 크롬 | 탭 **홈 / 대회 / 모임 / 설정** | Frontend UX |
 | 종목 타일 탭 | H1·H8·H9 모두 `/friendly?sport=` (종목 피커 숨김). CTA만 `/friendly`에서 선택 | Planner |
-| 스코어보드 | **가로만**. 세로=안내. 8종목 `ArenaBoardShell`(농구 좌우 색면) | Frontend UX |
+| 스코어보드 | **가로만**. 세로=안내. 8종목 `ArenaBoardShell`(좌우 풀블리드 · 반투명 하단 독) | Frontend UX |
 | 대회 룰 편집 | prep만 `/competition/[id]/rules` | Frontend UX |
 | 모임 운영 | matched 명단·다시 나누기, 강퇴·역할 | Frontend UX |
 | 농구 룰 엔진 | Phase 5 적용 (`applyBasketballEvent`) | Rule Engine |

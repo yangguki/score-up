@@ -25,14 +25,14 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={{ padding: space.lg, gap: space.md }}>
-        <SectionHead title="설정" hint="Arena T&M · 이 기기 저장" />
+        <SectionHead title="설정" hint={`${current?.name ?? "H1 Arena"} T&M · 이 기기 저장`} />
         <Card>
           <H style={{ fontSize: 18 }}>홈 시안</H>
           <P muted style={{ marginTop: 8 }}>
-            제품 기본은 H1 Arena입니다. H8 Lift · H9 Play는 비교용입니다. 홈 상단에서도 바꿀 수 있습니다.
+            제품 기본은 H1 Arena입니다. H8 Lift · H9 Play는 비교용입니다. 바꾸면 탭·대회·모임·설정 화면 톤이 같이 바뀝니다. 스코어보드는 Arena 셸을 유지합니다.
           </P>
           <View style={{ marginTop: 12 }}>
-            <HomeVersionSwitch tone="dark" />
+            <HomeVersionSwitch />
           </View>
           <P style={{ marginTop: 10, fontWeight: "700" }}>
             지금 {homeVersionLabel(homeVersion)}

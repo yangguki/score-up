@@ -34,7 +34,7 @@ description: Builds SCORE UP Expo app+web screens that run on mock data for UX r
 
 기록: 농구 스코어보드(`/match/[id]/basketball`), 배구 mock 보드(`/match/[id]/volleyball`), 탁구 mock 보드(`/match/[id]/table-tennis`), 배드민턴(`/match/[id]/badminton`), 스쿼시(`/match/[id]/squash`), 축구(`/match/[id]/soccer`), 풋살(`/match/[id]/futsal`), 야구(`/match/[id]/baseball`), 선수 피커, 교체 시트, 종료 확인 팝업, 타임라인, 결과.
 
-빼는 것: 관중용 큰 보드, 실 API/Cognito, 배구 세트 승점제, 3x3. 리그 MVP는 승3/패0 순위표. `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다. 홈은 **H1 · 대회 만들기 Primary(A 잠금)**. **H8 Lift · H9 Play는 비교 시안** (홈 상단·설정에서 전환, 잠금 아님). H8 종목 그리드: 세로 4열 / 가로 8열. H9: 세로 작은 2열 / 가로 4열×2줄. 키트 `/kit/arena` `/kit/lift` `/kit/play`. 팀 종목 매칭은 5v5(배구 6v6)·인원 미달 시 4v4(운영자 확정). 월 정기는 매달 N번째 요일 또는 D일(1~28). 급수 시즌은 초급/중급/상급·도전·결과 넣기. 배드민턴·탁구 모임은 한 판 열기(단식/복식). 농구 1v1 보드·사진 업로드·ELO 없음. 설정 A/B/C 제품 방향 전환 없음.
+빼는 것: 관중용 큰 보드, 실 API/Cognito, 배구 세트 승점제, 3x3. 리그 MVP는 승3/패0 순위표. `/match/[id]/scoreboard` 는 `sportId`로 종목 보드에 보낸다. 홈은 **H1 · 대회 만들기 Primary(A 잠금)**. **H8 Lift · H9 Play는 비교 시안** (홈 상단·설정에서 전환, 잠금 아님). 전환 시 탭·대회·모임·설정 T&M이 같이 바뀐다. 보드는 Arena. H8 종목 그리드: 세로 4열 / 가로 8열. H9: 세로 작은 2열 / 가로 4열×2줄. 키트 `/kit/arena` `/kit/lift` `/kit/play`. 팀 종목 매칭은 5v5(배구 6v6)·인원 미달 시 4v4(운영자 확정). 월 정기는 매달 N번째 요일 또는 D일(1~28). 급수 시즌은 초급/중급/상급·도전·결과 넣기. 배드민턴·탁구 모임은 한 판 열기(단식/복식). 농구 1v1 보드·사진 업로드·ELO 없음. 설정 A/B/C 제품 방향 전환 없음.
 
 종목 레이아웃이 다르므로 스코어보드는 종목 컴포넌트 단위로 갈아끼운다. 버튼마다 종목 if문을 쓰지 않는다.
 
@@ -42,7 +42,7 @@ description: Builds SCORE UP Expo app+web screens that run on mock data for UX r
 
 - 대회 준비: 폰 세로
 - 스코어보드: **가로만**. 세로는 「가로로 돌려 주세요」. 짧은 가로는 compact. 웹도 폭>높이일 때만 보드
-- 셸은 농구: 좌우 팀 색 풀블리드, 거대 총점, 오버레이 헤더, 하단 독. 종목 키만 다름
+- 셸은 농구: 좌우 팀 색 풀블리드(화면 전체), 거대 총점, 오버레이 헤더·하단 독(세트 스코어와 같은 반투명). 종목 키만 다름
 - 총점이 가장 크다. 액션은 BoardKey/sm. 연한 회색 위 연한 숫자는 쓰지 않는다
 - 몰수/경기종료는 더보기 안
 

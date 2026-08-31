@@ -21,24 +21,24 @@ export function BoardKey({
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => ({
-        backgroundColor: primary ? colors.primary : colors.surface2,
+        backgroundColor: primary ? colors.primary : "rgba(255,255,255,0.12)",
         opacity: disabled ? 0.35 : pressed ? 0.88 : 1,
-        paddingVertical: primary ? 9 : 7,
-        paddingHorizontal: primary ? 14 : 10,
-        borderRadius: 8,
-        minHeight: primary ? 38 : 34,
-        minWidth: primary ? 64 : undefined,
+        paddingVertical: primary ? 4 : 3,
+        paddingHorizontal: primary ? 8 : 6,
+        borderRadius: 6,
+        minHeight: primary ? 26 : 24,
+        minWidth: primary ? 44 : undefined,
         justifyContent: "center",
         alignItems: "center",
         borderWidth: primary ? 0 : 1,
-        borderColor: colors.line,
+        borderColor: "rgba(255,255,255,0.18)",
       })}
     >
       <Text
         style={{
-          color: primary ? colors.primaryFg : colors.text,
+          color: primary ? colors.primaryFg : "#fff",
           fontWeight: "800",
-          fontSize: primary ? 14 : 12,
+          fontSize: primary ? 12 : 11,
           letterSpacing: -0.2,
         }}
       >

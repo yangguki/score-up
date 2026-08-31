@@ -1,9 +1,11 @@
 import { Stack } from "expo-router";
-import { navScreenOptions } from "@/theme/arena";
+import { useAppKit } from "@/components/theme-provider";
+import { navOptionsForKit } from "@/theme/home-kits";
 
 export default function ClubIdLayout() {
+  const kit = useAppKit();
   return (
-    <Stack screenOptions={navScreenOptions}>
+    <Stack screenOptions={navOptionsForKit(kit)}>
       <Stack.Screen name="index" options={{ title: "모임" }} />
       <Stack.Screen name="members" options={{ title: "멤버" }} />
       <Stack.Screen name="sessions/index" options={{ title: "회차" }} />

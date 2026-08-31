@@ -15,6 +15,7 @@ import {
   ArenaActionRow,
   ArenaBoardShell,
   ArenaDialog,
+  ArenaDockFooter,
   ArenaDockRow,
   ArenaMeta,
   ArenaRecent,
@@ -168,7 +169,7 @@ export function PitchScoreboard() {
           !snap.started ? (
             <View pointerEvents="box-none" style={arenaOverlayBox}>
               <Pressable onPress={() => startPitch(match.id)} style={arenaStartBtn}>
-                <Text style={{ color: colors.primaryFg, fontSize: 22, fontWeight: "900" }}>경기 시작</Text>
+                <Text style={{ color: colors.primaryFg, fontSize: 18, fontWeight: "800" }}>경기 시작</Text>
               </Pressable>
             </View>
           ) : null
@@ -179,11 +180,14 @@ export function PitchScoreboard() {
               {actionRow("home")}
               {actionRow("away")}
             </ArenaDockRow>
-            <ArenaRecent
-              text={recent.length ? recent.map((event) => eventLine(event, players, match)).join(" · ") : ""}
-              onPress={() => router.push(`/match/${match.id}/timeline`)}
-            />
-            <ArenaDockRow>
+            <ArenaDockFooter
+              recent={
+                <ArenaRecent
+                  text={recent.length ? recent.map((event) => eventLine(event, players, match)).join(" · ") : ""}
+                  onPress={() => router.push(`/match/${match.id}/timeline`)}
+                />
+              }
+            >
               <Pressable onPress={() => undo(match.id)} style={arenaBottomGhost}>
                 <Text style={arenaBottomGhostText}>실행 취소</Text>
               </Pressable>
@@ -194,7 +198,7 @@ export function PitchScoreboard() {
               >
                 <Text style={arenaBottomGhostText}>{clockLabel}</Text>
               </Pressable>
-            </ArenaDockRow>
+            </ArenaDockFooter>
           </>
         }
       />

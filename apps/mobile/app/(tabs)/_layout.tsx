@@ -1,33 +1,23 @@
 import { SymbolView } from "expo-symbols";
 import { Tabs } from "expo-router";
-import { useUiPrefsStore } from "@/store/ui-prefs";
-import { colors } from "@/theme/tokens";
-import { lift } from "@/theme/lift";
-import { play } from "@/theme/play";
+import { useAppKit } from "@/components/theme-provider";
+import { navOptionsForKit } from "@/theme/home-kits";
 
 export default function TabLayout() {
-  const homeVersion = useUiPrefsStore((s) => s.homeVersion);
-  const chrome =
-    homeVersion === "h9"
-      ? { bg: play.bg, line: play.line, muted: play.muted, active: play.navy }
-      : homeVersion === "h8"
-        ? { bg: lift.bg, line: lift.line, muted: lift.muted, active: lift.primary }
-        : { bg: colors.bg, line: colors.line, muted: colors.muted, active: colors.primary };
+  const kit = useAppKit();
+  const nav = navOptionsForKit(kit);
 
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: colors.bg },
-        headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: "800" },
-        headerShadowVisible: false,
+        ...nav,
         tabBarStyle: {
-          backgroundColor: chrome.bg,
-          borderTopColor: chrome.line,
+          backgroundColor: kit.bg,
+          borderTopColor: kit.line,
           borderTopWidth: 1,
         },
-        tabBarActiveTintColor: chrome.active,
-        tabBarInactiveTintColor: chrome.muted,
+        tabBarActiveTintColor: kit.primary,
+        tabBarInactiveTintColor: kit.muted,
         tabBarLabelStyle: { fontWeight: "700", fontSize: 11 },
       }}
     >

@@ -1,9 +1,11 @@
 import { Stack } from "expo-router";
-import { navScreenOptions } from "@/theme/arena";
+import { useAppKit } from "@/components/theme-provider";
+import { navOptionsForKit } from "@/theme/home-kits";
 
 export default function MatchLayout() {
+  const kit = useAppKit();
   return (
-    <Stack screenOptions={navScreenOptions}>
+    <Stack screenOptions={navOptionsForKit(kit)}>
       <Stack.Screen name="[id]" options={{ headerShown: false }} />
     </Stack>
   );

@@ -7,6 +7,7 @@ import {
   ArenaActionRow,
   ArenaBoardShell,
   ArenaDialog,
+  ArenaDockFooter,
   ArenaDockRow,
   ArenaMeta,
   arenaBottomGhost,
@@ -229,7 +230,7 @@ export function BasketballScoreboard() {
           ) : !snap.started && match.status === "in_progress" ? (
             <View pointerEvents="box-none" style={arenaOverlayBox}>
               <Pressable onPress={() => resume(match.id)} style={arenaStartBtn}>
-                <Text style={{ color: colors.primaryFg, fontSize: 22, fontWeight: "900" }}>경기 시작</Text>
+                <Text style={{ color: colors.primaryFg, fontSize: 18, fontWeight: "800" }}>경기 시작</Text>
               </Pressable>
             </View>
           ) : null
@@ -240,19 +241,22 @@ export function BasketballScoreboard() {
               {actionRow("home")}
               {actionRow("away")}
             </ArenaDockRow>
-            <Pressable onPress={() => router.push(`/match/${match.id}/timeline`)}>
-              <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
-                최근: {recent.length ? recent.map((e) => eventLine(e, players, match)).join(" · ") : "없음"}
-              </Text>
-            </Pressable>
-            <ArenaDockRow>
+            <ArenaDockFooter
+              recent={
+                <Pressable onPress={() => router.push(`/match/${match.id}/timeline`)}>
+                  <Text style={{ color: "#ffffffbb", fontSize: 11 }} numberOfLines={1}>
+                    최근: {recent.length ? recent.map((e) => eventLine(e, players, match)).join(" · ") : "없음"}
+                  </Text>
+                </Pressable>
+              }
+            >
               <Pressable onPress={() => undo(match.id)} style={arenaBottomGhost}>
                 <Text style={arenaBottomGhostText}>실행 취소</Text>
               </Pressable>
               <Pressable onPress={clockAction} style={arenaBottomGhost}>
                 <Text style={arenaBottomGhostText}>{clockLabel}</Text>
               </Pressable>
-            </ArenaDockRow>
+            </ArenaDockFooter>
           </>
         }
       />

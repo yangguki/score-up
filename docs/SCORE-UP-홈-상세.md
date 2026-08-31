@@ -3,11 +3,11 @@
 | 항목 | 내용 |
 | --- | --- |
 | 문서명 | 홈 화면 상세 와이어 |
-| 버전 | v0.3.4 |
-| 기준 | 화면 기획 v0.4.11, 기획서 v0.3 |
+| 버전 | v0.3.5 |
+| 기준 | 화면 기획 v0.4.13, 기획서 v0.3 |
 | 담당 | Frontend UX (카피·상태 검수는 Basketball) |
 | 디바이스 | 폰 세로 (대회 준비). 웹도 같은 레이아웃, 최대 폭 ~430 |
-| 상태 | **H1 Arena 제품 기본 · H8 Lift · H9 Play 비교** (2026-08-28). H7 기각. 제품 방향 A 잠금 |
+| 상태 | **H1 Arena 제품 기본 · H8 Lift · H9 Play 비교** (2026-08-31). H7 기각. 제품 방향 A 잠금 |
 | 기획 화면 | 현행 제품은 `HomeH1`. 비교 `HomeH8` · `HomeH9`. 키트 `/kit/arena` `/kit/lift` `/kit/play` |
 | 벤치마크 | `docs/SCORE-UP-홈-벤치마크.md` |
 
@@ -15,6 +15,7 @@ v0.3.1: H1 제품 기본. H8/H9 비교. 종목 8개.
 v0.3.2: 종목 타일 → `/friendly?sport=` (피커 숨김). CTA만 종목 선택. 헤더 서브 `지금 할 일과 만들 일`.  
 v0.3.3: 모임 mock 배구·풋살·탁구.  
 v0.3.4: 탭 홈 / 대회 / 모임 / 설정. 홈 `내 모임`은 바로가기.
+v0.3.5: 지금 할 일 카드 compact. 시안 전환 시 탭·대회·모임·설정·스택 헤더 T&M 동기. 보드는 Arena 셸.
 
 홈은 스코어보드가 아니다. **먼저 서비스가 무엇인지(브랜드·종목)를 보여 주고**, 이어서 30초 안에 ‘지금 기록할 경기’ 또는 ‘만들 일’을 고르게 한다.
 
@@ -26,7 +27,7 @@ v0.3.4: 탭 홈 / 대회 / 모임 / 설정. 홈 `내 모임`은 바로가기.
 4. Primary `대회 만들기` / Secondary `빠른 친선경기`  
 5. 지금 할 일 · 내 대회 · 내 모임  
 
-전역 토큰: `apps/mobile/theme/arena.ts` → `tokens.ts` / 공통 `ui.tsx`. 홈 키트는 `HOME_KIT`(H1) · `LIFT_KIT`(H8) · `PLAY_KIT`(H9).
+전역 토큰: `apps/mobile/theme/arena.ts` → `tokens.ts`. 비교 시안은 `ThemeProvider`가 `homeVersion` 키트를 `ui.tsx`·네비에 넣는다. 홈 키트는 `HOME_KIT`(H1) · `LIFT_KIT`(H8) · `PLAY_KIT`(H9). 스코어보드는 Arena.
 
 톤 비교: 제품 기본은 H1. **H8·H9는 잠금이 아니다.**
 
@@ -262,7 +263,7 @@ SCORE UP                         운영자
 
 홈 8종목 대회·친선 카드를 그린다. 친선은 라운드 자리에 `친선`.
 
-점수 크기: 라이브만 28pt 전후. 대기 카드는 팀명 20pt, `vs`는 muted. V3에서 가져올 수 있는 것은 라이브 점수만 32pt까지.
+점수 크기: 라이브만 **22pt** compact. 대기 카드는 팀명 15pt, `vs`는 muted. 카드 패딩 10. 홈/어웨이 라벨은 넣지 않는다.
 
 ### 5.2 대회 카드
 
@@ -347,6 +348,7 @@ Basketball: 홈 카드에 서브권·세트 점수를 넣지 않았는지 확인
 - 대기 카드 `0-0` 금지 — `MatchStackCard`가 라이브가 아니면 점수를 숨긴다.
 - `isLiveLike`가 `scheduled`/`lineup`만 대기로 본다. `paused` 등은 점수 표시.
 - 홈 버전: `useUiPrefsStore.homeVersion` (`h1` | `h8` | `h9`). 기본 `h1`. 키트 `/kit/arena` `/kit/lift` `/kit/play`.
+- 시안 전환은 **앱 크롬 전체**(탭 바·헤더·`Screen`/`Card`/`Btn`). 보드는 Arena 셸 유지.
 
 도메인 상태 키는 `packages/domain` 의 `MatchStatus`를 따른다. 본문 표의 `in_progress` 등은 기획 표현이고, 코드는 `in_progress` / `paused` / `period_break` / `confirm_period_end` / `confirm_match_end` 매핑을 `lib/home.ts`에 둔다.
 

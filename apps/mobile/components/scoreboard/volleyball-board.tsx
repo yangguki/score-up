@@ -16,6 +16,7 @@ import {
   ArenaActionRow,
   ArenaBoardShell,
   ArenaDialog,
+  ArenaDockFooter,
   ArenaDockRow,
   ArenaMeta,
   ArenaRecent,
@@ -154,13 +155,13 @@ export function VolleyballScoreboard() {
             <View pointerEvents="box-none" style={arenaOverlayBox}>
               <Text style={{ color: "#ffffffcc", fontSize: 14, fontWeight: "700" }}>선서브 · 고르지 않으면 홈</Text>
               <Pressable onPress={() => startVolleyball(match.id, "home")} style={arenaStartBtn}>
-                <Text style={{ color: colors.primaryFg, fontSize: 18, fontWeight: "900" }}>홈 선서브로 시작</Text>
+                <Text style={{ color: colors.primaryFg, fontSize: 16, fontWeight: "800" }}>홈 선서브로 시작</Text>
               </Pressable>
               <Pressable
                 onPress={() => startVolleyball(match.id, "away")}
                 style={[arenaStartBtn, { backgroundColor: colors.surface2 }]}
               >
-                <Text style={{ color: colors.text, fontSize: 16, fontWeight: "800" }}>어웨이 선서브로 시작</Text>
+                <Text style={{ color: colors.text, fontSize: 14, fontWeight: "800" }}>어웨이 선서브로 시작</Text>
               </Pressable>
             </View>
           ) : null
@@ -171,11 +172,14 @@ export function VolleyballScoreboard() {
               {actionRow("home")}
               {actionRow("away")}
             </ArenaDockRow>
-            <ArenaRecent
-              text={recent.length ? recent.map((event) => eventLine(event, players, match)).join(" · ") : ""}
-              onPress={() => router.push(`/match/${match.id}/timeline`)}
-            />
-            <ArenaDockRow>
+            <ArenaDockFooter
+              recent={
+                <ArenaRecent
+                  text={recent.length ? recent.map((event) => eventLine(event, players, match)).join(" · ") : ""}
+                  onPress={() => router.push(`/match/${match.id}/timeline`)}
+                />
+              }
+            >
               <Pressable
                 onPress={() => changeServe(match.id)}
                 disabled={!snap.started || locked}
@@ -186,7 +190,7 @@ export function VolleyballScoreboard() {
               <Pressable onPress={() => undo(match.id)} style={arenaBottomGhost}>
                 <Text style={arenaBottomGhostText}>실행 취소</Text>
               </Pressable>
-            </ArenaDockRow>
+            </ArenaDockFooter>
           </>
         }
       />

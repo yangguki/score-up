@@ -1,9 +1,11 @@
 import { Stack } from "expo-router";
-import { navScreenOptions } from "@/theme/arena";
+import { useAppKit } from "@/components/theme-provider";
+import { navOptionsForKit } from "@/theme/home-kits";
 
 export default function MatchIdLayout() {
+  const kit = useAppKit();
   return (
-    <Stack screenOptions={navScreenOptions}>
+    <Stack screenOptions={navOptionsForKit(kit)}>
       <Stack.Screen name="lineup" options={{ title: "출전 명단" }} />
       <Stack.Screen name="scoreboard" options={{ headerShown: false }} />
       <Stack.Screen name="basketball" options={{ headerShown: false, title: "농구 스코어보드" }} />

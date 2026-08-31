@@ -1,3 +1,4 @@
+import type { HomeVersion } from "@/store/ui-prefs";
 import { arena } from "@/theme/arena";
 import { lift } from "@/theme/lift";
 import { play } from "@/theme/play";
@@ -19,6 +20,8 @@ export type HomeKit = {
   ghostLine: string;
   live: string;
   liveFg: string;
+  ok: string;
+  danger: string;
   accent?: string;
   glow?: string;
   radius: number;
@@ -43,11 +46,13 @@ export const HOME_KIT: HomeKit = {
   ghostLine: arena.ghostLine,
   live: arena.live,
   liveFg: arena.liveFg,
+  ok: arena.ok,
+  danger: arena.danger,
   accent: arena.primary,
   glow: arena.glow,
   radius: arena.radius,
   heroRadius: arena.heroRadius,
-  scoreSize: 36,
+  scoreSize: 22,
   statusBar: "light",
 };
 
@@ -67,11 +72,13 @@ export const LIFT_KIT: HomeKit = {
   ghostLine: lift.ghostLine,
   live: lift.live,
   liveFg: lift.liveFg,
+  ok: lift.ok,
+  danger: lift.danger,
   accent: lift.primary,
   glow: lift.glow,
   radius: lift.radius,
   heroRadius: lift.heroRadius,
-  scoreSize: 36,
+  scoreSize: 22,
   statusBar: "dark",
 };
 
@@ -91,9 +98,27 @@ export const PLAY_KIT: HomeKit = {
   ghostLine: play.ghostLine,
   live: play.live,
   liveFg: play.liveFg,
+  ok: play.mintDeep,
+  danger: play.live,
   accent: play.mint,
   radius: play.radius,
   heroRadius: play.heroRadius,
-  scoreSize: 32,
+  scoreSize: 22,
   statusBar: "dark",
 };
+
+export function kitForVersion(version: HomeVersion) {
+  if (version === "h8") return LIFT_KIT;
+  if (version === "h9") return PLAY_KIT;
+  return HOME_KIT;
+}
+
+export function navOptionsForKit(kit: HomeKit) {
+  return {
+    headerStyle: { backgroundColor: kit.bg },
+    headerTintColor: kit.text,
+    headerTitleStyle: { fontWeight: "800" as const },
+    headerShadowVisible: false,
+    contentStyle: { backgroundColor: kit.bg },
+  };
+}

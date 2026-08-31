@@ -10,9 +10,10 @@ export function useScoreboardLayout() {
   const { width, height } = useWindowDimensions();
   const landscape = width > height;
   const compact = landscape && height < SHORT_HEIGHT;
+  /** 좌우 컬럼이 화면 전체를 쓰므로 독을 뺀 높이 기준보다 크게. */
   const scoreSize = compact
-    ? Math.min(120, height * 0.36, width * 0.2)
-    : Math.min(220, height * 0.42, width * 0.2);
+    ? Math.min(156, height * 0.5, width * 0.3)
+    : Math.min(300, height * 0.62, width * 0.34);
 
   return { width, height, landscape, compact, scoreSize };
 }

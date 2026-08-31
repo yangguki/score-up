@@ -2,7 +2,8 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { HydrateGate } from "@/components/hydrate-gate";
-import { navScreenOptions } from "@/theme/arena";
+import { ThemeProvider, useAppKit } from "@/components/theme-provider";
+import { navOptionsForKit } from "@/theme/home-kits";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -13,8 +14,19 @@ export const unstable_settings = {
 export default function RootLayout() {
   return (
     <HydrateGate>
-      <StatusBar style="light" />
-      <Stack screenOptions={navScreenOptions}>
+      <ThemeProvider>
+        <RootNav />
+      </ThemeProvider>
+    </HydrateGate>
+  );
+}
+
+function RootNav() {
+  const kit = useAppKit();
+  return (
+    <>
+      <StatusBar style={kit.statusBar} />
+      <Stack screenOptions={navOptionsForKit(kit)}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="competition" options={{ headerShown: false }} />
         <Stack.Screen name="match" options={{ headerShown: false }} />
@@ -23,6 +35,6 @@ export default function RootLayout() {
         <Stack.Screen name="friendly" options={{ title: "빠른 친선경기" }} />
         <Stack.Screen name="kit" options={{ headerShown: false }} />
       </Stack>
-    </HydrateGate>
+    </>
   );
 }
