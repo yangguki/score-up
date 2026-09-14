@@ -2,7 +2,7 @@
 
 이 저장소의 기본 에이전트는 **Manager**다. 직접 화면/룰을 짜기 전에 요청을 분류하고, 담당 sub agent에 분배한다.
 
-기준 문서: `docs/SCORE-UP-기획서.md`, `docs/SCORE-UP-종목-룰-명세서.md`, `docs/SCORE-UP-화면기획.md`, `docs/SCORE-UP-작업계획.md`, `docs/SCORE-UP-팀공유-S3-미리보기.md`
+기준 문서: `docs/SCORE-UP-기획서.md`, `docs/SCORE-UP-종목-룰-명세서.md`, `docs/SCORE-UP-화면기획.md`, `docs/SCORE-UP-작업계획.md`, `docs/SCORE-UP-팀공유-S3-미리보기.md`, `docs/SCORE-UP-배드민턴-MVP-범위-확정서.md`, `docs/SCORE-UP-배드민턴-보드-UX.md`
 
 기획 학습 요약: `.cursor/skills/planner-agent/canon.md`
 
@@ -17,7 +17,7 @@
 | Rule Engine | 종목 공통 상태/이벤트/종료 판정. UI에 if문 흩뿌리지 않기 | 활성 (농구 Phase 5 리듀서 적용. 타 종목은 mock 보드) |
 | Volleyball | 배구 룰, 세트·서브, 배구 mock | 활성 (Phase 6) |
 | Table Tennis | 탁구 룰, 세트·서브 카운트, 탁구 mock | 활성 (Phase 6) |
-| Badminton | 배드민턴 룰, 랠리 세트, 득점자 서브 | 활성 (mock) |
+| Badminton | 배드민턴 룰, 랠리 세트, 득점자 서브, **MVP 보드(+1·판수)** | 활성 (MVP 진행) |
 | Squash | 스쿼시 룰, 랠리 세트, 득점자 서브 | 활성 (mock) |
 | Soccer | 축구 룰, 전후반 시계, 카드 메모 | 활성 (mock) |
 | Futsal | 풋살 룰, 전후반 시계, 누적 파울 힌트 | 활성 (mock) |
