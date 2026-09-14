@@ -58,6 +58,7 @@ export {
   tableTennisNotice,
   tableTennisServeLine,
   undoTableTennisLast,
+  updateTableTennisRules,
 } from "./table-tennis";
 export {
   applyPitchPoint,

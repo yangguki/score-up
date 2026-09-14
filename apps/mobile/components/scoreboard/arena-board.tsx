@@ -10,6 +10,8 @@ export type ArenaSide = {
   color: string;
   score: number;
   meta?: ReactNode;
+  onTap?: () => void;
+  tapDisabled?: boolean;
 };
 
 export function ArenaBoardShell({
@@ -150,18 +152,36 @@ function TeamHalf({
   scoreSize: number;
   compact: boolean;
 }) {
+  const hasTap = side.onTap != null;
+  const Container = hasTap ? Pressable : View;
+  const containerProps = hasTap
+    ? {
+        onPress: side.tapDisabled ? undefined : side.onTap,
+        style: ({ pressed }: { pressed: boolean }) => ({
+          flex: 1,
+          backgroundColor: side.color,
+          justifyContent: "center" as const,
+          alignItems: "center" as const,
+          paddingTop: compact ? 44 : 56,
+          paddingBottom: compact ? 56 : 68,
+          paddingHorizontal: 8,
+          opacity: pressed && !side.tapDisabled ? 0.85 : side.tapDisabled ? 0.7 : 1,
+        }),
+      }
+    : {
+        style: {
+          flex: 1,
+          backgroundColor: side.color,
+          justifyContent: "center" as const,
+          alignItems: "center" as const,
+          paddingTop: compact ? 44 : 56,
+          paddingBottom: compact ? 56 : 68,
+          paddingHorizontal: 8,
+        },
+      };
+
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: side.color,
-        justifyContent: "center",
-        alignItems: "center",
-        paddingTop: compact ? 44 : 56,
-        paddingBottom: compact ? 56 : 68,
-        paddingHorizontal: 8,
-      }}
-    >
+    <Container {...(containerProps as any)}>
       <Text style={{ color: "#fff", fontSize: compact ? 18 : 22, fontWeight: "800", letterSpacing: 0.4 }} numberOfLines={2}>
         {side.label}
       </Text>
@@ -177,7 +197,10 @@ function TeamHalf({
         {side.score}
       </Text>
       {side.meta ? <View style={{ alignItems: "center", marginTop: 4 }}>{side.meta}</View> : null}
-    </View>
+      {hasTap && !side.tapDisabled && (
+        <Text style={{ color: "#ffffff55", fontSize: 11, marginTop: 6, fontWeight: "600" }}>터치하여 +1</Text>
+      )}
+    </Container>
   );
 }
 

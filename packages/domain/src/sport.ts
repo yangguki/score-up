@@ -9,7 +9,7 @@ import type {
   VolleyballRules,
 } from "./types";
 import { BASKETBALL_CLUB_PRESET, rulesSummary } from "./basketball";
-import { BADMINTON_CLUB_PRESET } from "./badminton";
+import { BADMINTON_CLUB_PRESET, BADMINTON_COMPETITION_PRESET } from "./badminton";
 import { BASEBALL_CLUB_PRESET, baseballRulesSummary } from "./baseball";
 import { FUTSAL_CLUB_PRESET, pitchRulesSummary, SOCCER_CLUB_PRESET } from "./pitch";
 import { SQUASH_CLUB_PRESET } from "./squash";
@@ -50,4 +50,9 @@ export function clubRulesFor(sportId: SportId): SportRules {
   if (sportId === "futsal") return FUTSAL_CLUB_PRESET.rules;
   if (sportId === "baseball") return BASEBALL_CLUB_PRESET.rules;
   return BASKETBALL_CLUB_PRESET.rules;
+}
+
+export function competitionRulesFor(sportId: SportId): SportRules {
+  if (sportId === "badminton") return BADMINTON_COMPETITION_PRESET.rules;
+  return clubRulesFor(sportId);
 }

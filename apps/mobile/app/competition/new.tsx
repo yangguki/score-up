@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import {
-  clubRulesFor,
+  competitionRulesFor,
   isPitchSport,
   isSportId,
   type BasketballRules,
@@ -56,7 +56,7 @@ export default function NewCompetitionScreen() {
   const [step, setStep] = useState(1);
   const [sportId, setSportId] = useState<SportId>(initialSport);
   const [official, setOfficial] = useState(false);
-  const [rules, setRules] = useState<SportRules>(clubRulesFor(initialSport));
+  const [rules, setRules] = useState<SportRules>(competitionRulesFor(initialSport));
   const [format, setFormat] = useState<"tournament" | "league">("tournament");
   const [name, setName] = useState(defaultName(initialSport));
   const [dateMode, setDateMode] = useState<"day" | "range">("day");
@@ -84,14 +84,14 @@ export default function NewCompetitionScreen() {
     const next = parseSport(params.sport);
     setSportId(next);
     setOfficial(false);
-    setRules(clubRulesFor(next));
+    setRules(competitionRulesFor(next));
     setName((current) => (names.includes(current) ? defaultName(next) : current));
   }, [params.sport, names]);
 
   const selectSport = (next: SportId) => {
     setSportId(next);
     setOfficial(false);
-    setRules(clubRulesFor(next));
+    setRules(competitionRulesFor(next));
     setName((current) => (names.includes(current) ? defaultName(next) : current));
     setError("");
   };

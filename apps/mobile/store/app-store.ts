@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { AppData, ClubSessionFormat, Match, MemberGrade, NthWeek, RecurrenceKind, SessionSide, Side, SportId, SportRules, VoteValue } from "@score-up/domain";
+import type { AppData, ClubSessionFormat, Match, MemberGrade, NthWeek, RecurrenceKind, SessionSide, Side, SportId, SportRules, TableTennisRules, VoteValue } from "@score-up/domain";
 import { APP_PERSIST_NAME, APP_PERSIST_VERSION, createAppPersistStorage, isAppData, mergeMissingSeedClubs, withClubDefaults } from "./persist";
 import { isBaseballMatch, isBasketballMatch, isPitchMatch, isRallySetMatch, isVolleyballMatch } from "@score-up/domain";
 import {
@@ -69,6 +69,7 @@ import {
   undoTableTennisLast,
   undoPitchLast,
   undoBaseballLast,
+  updateTableTennisRules,
   addGuest,
   cancelChallenge,
   cancelSession,
@@ -124,6 +125,7 @@ type Store = AppData & {
   changeServe: (matchId: string) => void;
   startVolleyball: (matchId: string, openingServe?: Side) => void;
   startTableTennis: (matchId: string, openingServe?: Side) => void;
+  updateRallyRules: (matchId: string, patch: Partial<TableTennisRules>) => { ok: boolean; reason?: string };
   startPitch: (matchId: string) => void;
   startBaseball: (matchId: string) => void;
   createComp: (input: {
@@ -492,6 +494,16 @@ export const useAppStore = create<Store>()(
     const match = getMatch(get(), matchId);
     if (!match || !isRallySetMatch(match)) return;
     set(replaceMatch(get(), startTableTennisMatch(match, openingServe)));
+  },
+  updateRallyRules: (matchId, patch) => {
+    const match = getMatch(get(), matchId);
+    if (!match || !isRallySetMatch(match)) return { ok: false, reason: "경기를 찾을 수 없습니다." };
+    const result = updateTableTennisRules(match, patch);
+    if (result.ok) {
+      set(replaceMatch(get(), result.match));
+      return { ok: true };
+    }
+    return { ok: false, reason: result.reason };
   },
   startPitch: (matchId) => {
     const match = getMatch(get(), matchId);

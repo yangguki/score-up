@@ -66,7 +66,7 @@ export {
   isTableTennisMatch,
   isVolleyballMatch,
 } from "./types";
-export { ALL_SPORT_IDS, clubRulesFor, isSportId, sportRulesSummary } from "./sport";
+export { ALL_SPORT_IDS, clubRulesFor, competitionRulesFor, isSportId, sportRulesSummary } from "./sport";
 export {
   CLUB_SPORT_IDS,
   accountName,
@@ -186,7 +186,17 @@ export {
   tableTennisSetLabel,
   tableTennisSetPointSide,
 } from "./table-tennis";
-export { BADMINTON_CLUB_PRESET } from "./badminton";
+export {
+  BADMINTON_CLUB_PRESET,
+  BADMINTON_COMPETITION_PRESET,
+  BADMINTON_SET_TARGET_MIN,
+  BADMINTON_SET_TARGET_MAX,
+  BADMINTON_SET_TARGET_PRESETS,
+  BADMINTON_SETS_TO_WIN_MIN,
+  BADMINTON_SETS_TO_WIN_MAX,
+  BADMINTON_SETS_TO_WIN_PRESETS,
+  badmintonSetsLabel,
+} from "./badminton";
 export { SQUASH_CLUB_PRESET } from "./squash";
 export {
   FUTSAL_CLUB_PRESET,

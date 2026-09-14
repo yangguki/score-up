@@ -343,3 +343,28 @@ export function tableTennisServeLine(match: Match, playerLabel: string): string 
   const limit = tableTennisServeLimit(match.snapshot, match.rules);
   return `${playerLabel} 서브 ${match.snapshot.serveCount}/${limit}`;
 }
+
+export function updateTableTennisRules(
+  match: Match,
+  patch: Partial<TableTennisRules>,
+): { ok: true; match: Match } | { ok: false; reason: string } {
+  if (!isRallySetMatch(match)) return { ok: false, reason: "세트 경기가 아닙니다." };
+  if (match.status !== "scheduled" && match.status !== "paused" && !match.snapshot.started) {
+    if (match.status !== "in_progress") {
+      return { ok: false, reason: "경기 중이거나 종료된 경기는 룰을 바꿀 수 없습니다." };
+    }
+    if (match.snapshot.started) {
+      return { ok: false, reason: "이미 시작된 경기는 일시정지 상태에서만 룰을 바꿀 수 있습니다." };
+    }
+  }
+  if (patch.setsToWin !== undefined) {
+    const minSets = Math.max(match.snapshot.setsWonHome, match.snapshot.setsWonAway);
+    if (patch.setsToWin <= minSets) {
+      return { ok: false, reason: `이미 ${minSets}세트를 이긴 팀이 있어 선승 ${patch.setsToWin}판으로 바꿀 수 없습니다.` };
+    }
+  }
+  const next = cloneMatch(match);
+  if (!isRallySetMatch(next)) return { ok: false, reason: "세트 경기가 아닙니다." };
+  next.rules = { ...next.rules, ...patch };
+  return { ok: true, match: next };
+}
