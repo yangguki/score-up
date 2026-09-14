@@ -1,12 +1,19 @@
-import { Children, type ReactNode } from "react";
-import { Pressable, View, Alert, Platform, Text } from "react-native";
+import { Children, useState, type ReactNode } from "react";
+import { Pressable, View, Alert, Platform, Text, TextInput } from "react-native";
 import {
+  BADMINTON_SET_TARGET_MAX,
+  BADMINTON_SET_TARGET_MIN,
+  BADMINTON_SET_TARGET_PRESETS,
+  BADMINTON_SETS_TO_WIN_MAX,
+  BADMINTON_SETS_TO_WIN_MIN,
+  BADMINTON_SETS_TO_WIN_PRESETS,
   BASKETBALL_CLUB_PRESET,
   BASKETBALL_OFFICIAL_PRESET,
   BASKETBALL_PERIOD_COUNT_MAX,
   BASKETBALL_PERIOD_COUNT_MIN,
   BASKETBALL_PERIOD_MINUTES,
   BASKETBALL_TIMEOUT_SECONDS,
+  badmintonSetsLabel,
   baseballRulesSummary,
   isPitchSport,
   pitchRulesSummary,
@@ -164,6 +171,9 @@ function TableTennisRulesEditor({
   onRules: (rules: TableTennisRules) => void;
   compact: boolean;
 }) {
+  if (sportId === "badminton") {
+    return <BadmintonRulesEditor rules={rules} onRules={onRules} compact={compact} />;
+  }
   return (
     <EditorFrame compact={compact} summary={compact ? undefined : tableTennisRulesSummary(rules)}>
       <ChoiceRow
@@ -196,7 +206,7 @@ function TableTennisRulesEditor({
         ]}
         onChange={(winBy) => onRules({ ...rules, winBy })}
       />
-      {sportId === "table-tennis" || sportId === "badminton" ? (
+      {sportId === "table-tennis" ? (
         <ChoiceRow
           compact={compact}
           label="복식"
@@ -208,6 +218,172 @@ function TableTennisRulesEditor({
           onChange={(doubles) => onRules({ ...rules, doubles })}
         />
       ) : null}
+    </EditorFrame>
+  );
+}
+
+function BadmintonRulesEditor({
+  rules,
+  onRules,
+  compact,
+}: {
+  rules: TableTennisRules;
+  onRules: (rules: TableTennisRules) => void;
+  compact: boolean;
+}) {
+  const kit = useAppKit();
+  const [customTarget, setCustomTarget] = useState(false);
+  const [customSets, setCustomSets] = useState(false);
+  const isPresetTarget = BADMINTON_SET_TARGET_PRESETS.includes(rules.setTarget);
+  const isPresetSets = BADMINTON_SETS_TO_WIN_PRESETS.includes(rules.setsToWin);
+
+  const setsOptions = [
+    ...BADMINTON_SETS_TO_WIN_PRESETS.map((v) => ({ value: v, label: badmintonSetsLabel(v) })),
+    { value: -1, label: "직접" },
+  ];
+  const targetOptions = [
+    ...BADMINTON_SET_TARGET_PRESETS.map((v) => ({ value: v, label: `${v}점` })),
+    { value: -1, label: "직접" },
+  ];
+
+  const handleSetsChoice = (v: number) => {
+    if (v === -1) {
+      setCustomSets(true);
+    } else {
+      setCustomSets(false);
+      onRules({ ...rules, setsToWin: v });
+    }
+  };
+
+  const handleTargetChoice = (v: number) => {
+    if (v === -1) {
+      setCustomTarget(true);
+    } else {
+      setCustomTarget(false);
+      onRules({ ...rules, setTarget: v });
+    }
+  };
+
+  const handleCustomSets = (text: string) => {
+    const n = parseInt(text, 10);
+    if (!isNaN(n) && n >= BADMINTON_SETS_TO_WIN_MIN && n <= BADMINTON_SETS_TO_WIN_MAX) {
+      onRules({ ...rules, setsToWin: n });
+    }
+  };
+
+  const handleCustomTarget = (text: string) => {
+    const n = parseInt(text, 10);
+    if (!isNaN(n) && n >= BADMINTON_SET_TARGET_MIN && n <= BADMINTON_SET_TARGET_MAX) {
+      onRules({ ...rules, setTarget: n });
+    }
+  };
+
+  return (
+    <EditorFrame compact={compact} summary={compact ? undefined : tableTennisRulesSummary(rules)}>
+      <ChoiceRow
+        compact={compact}
+        label="판수"
+        value={customSets || !isPresetSets ? -1 : rules.setsToWin}
+        options={setsOptions}
+        onChange={handleSetsChoice}
+      />
+      {(customSets || !isPresetSets) && (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingVertical: compact ? 8 : 12,
+            paddingHorizontal: 14,
+          }}
+        >
+          <P style={{ fontSize: compact ? 14 : 15, fontWeight: "700" }}>선승 판수</P>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <TextInput
+              style={{
+                backgroundColor: kit.surface2,
+                color: kit.text,
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                minWidth: 60,
+                textAlign: "center",
+                fontWeight: "700",
+                borderWidth: 1,
+                borderColor: kit.line,
+              }}
+              keyboardType="number-pad"
+              defaultValue={String(rules.setsToWin)}
+              onEndEditing={(e) => handleCustomSets(e.nativeEvent.text)}
+              placeholder={`${BADMINTON_SETS_TO_WIN_MIN}-${BADMINTON_SETS_TO_WIN_MAX}`}
+              placeholderTextColor={kit.muted}
+            />
+            <P muted style={{ fontSize: 12 }}>판 선승</P>
+          </View>
+        </View>
+      )}
+      <ChoiceRow
+        compact={compact}
+        label="목표 점수"
+        value={customTarget || !isPresetTarget ? -1 : rules.setTarget}
+        options={targetOptions}
+        onChange={handleTargetChoice}
+      />
+      {(customTarget || !isPresetTarget) && (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingVertical: compact ? 8 : 12,
+            paddingHorizontal: 14,
+          }}
+        >
+          <P style={{ fontSize: compact ? 14 : 15, fontWeight: "700" }}>세트 목표</P>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <TextInput
+              style={{
+                backgroundColor: kit.surface2,
+                color: kit.text,
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                minWidth: 60,
+                textAlign: "center",
+                fontWeight: "700",
+                borderWidth: 1,
+                borderColor: kit.line,
+              }}
+              keyboardType="number-pad"
+              defaultValue={String(rules.setTarget)}
+              onEndEditing={(e) => handleCustomTarget(e.nativeEvent.text)}
+              placeholder={`${BADMINTON_SET_TARGET_MIN}-${BADMINTON_SET_TARGET_MAX}`}
+              placeholderTextColor={kit.muted}
+            />
+            <P muted style={{ fontSize: 12 }}>점</P>
+          </View>
+        </View>
+      )}
+      <ChoiceRow
+        compact={compact}
+        label="승점 차"
+        value={rules.winBy}
+        options={[
+          { value: 1, label: "1점" },
+          { value: 2, label: "2점" },
+        ]}
+        onChange={(winBy) => onRules({ ...rules, winBy })}
+      />
+      <ChoiceRow
+        compact={compact}
+        label="복식"
+        value={rules.doubles}
+        options={[
+          { value: false, label: "단식" },
+          { value: true, label: "복식" },
+        ]}
+        onChange={(doubles) => onRules({ ...rules, doubles })}
+      />
     </EditorFrame>
   );
 }
