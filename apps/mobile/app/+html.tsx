@@ -7,12 +7,23 @@ import type { ReactNode } from 'react';
 // do not have access to the DOM or browser APIs.
 export default function Root({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <title>SCORE UP</title>
+
+        {/* PWA manifest and meta tags */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#121721" />
+        <meta name="description" content="스포츠 경기 스코어보드 & 모임 관리" />
+
+        {/* iOS PWA support */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="SCORE UP" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
 
         {/*
           Disable body scrolling on web. This makes ScrollView components work closer to how they do on native.
@@ -22,7 +33,9 @@ export default function Root({ children }: { children: ReactNode }) {
 
         {/* Using raw CSS styles as an escape-hatch to ensure the background color never flickers in dark-mode. */}
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
-        {/* Add any additional <head> elements that you want globally available on web... */}
+
+        {/* Service worker registration */}
+        <script dangerouslySetInnerHTML={{ __html: swRegistration }} />
       </head>
       <body>{children}</body>
     </html>
@@ -32,4 +45,18 @@ export default function Root({ children }: { children: ReactNode }) {
 const responsiveBackground = `
 body {
   background-color: #121721;
+}`;
+
+const swRegistration = `
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').then(
+      function(registration) {
+        console.log('ServiceWorker registration successful with scope:', registration.scope);
+      },
+      function(err) {
+        console.log('ServiceWorker registration failed:', err);
+      }
+    );
+  });
 }`;
