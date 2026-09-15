@@ -263,6 +263,20 @@ GitLab만 push하면 S3는 안 바뀐다. 워크플로가 Actions 탭에 안 보
 
 ---
 
-## 6. 나중에 (Phase 6+, 지금은 문서만)
+## 6. PWA 설치와 HTTPS
+
+S3 정적 웹 호스팅은 HTTP만 제공한다. **PWA 설치**(홈 화면에 추가)를 테스트하려면 HTTPS가 필요하다.
+
+| 방법 | 설명 |
+| --- | --- |
+| cloudflared 터널 | `cloudflared tunnel --url http://localhost:3000` — 무료, 임시 HTTPS |
+| CloudFront | S3 앞에 CloudFront 배포 — HTTPS 가능하지만 비용 발생 |
+| Vercel / Netlify | `dist` 폴더를 배포하면 무료 HTTPS |
+
+팀 UX 검수 목적이면 cloudflared 터널이 가장 간편하다. 자세한 내용은 `docs/SCORE-UP-PWA.md` 참조.
+
+---
+
+## 7. 나중에 (Phase 6+, 지금은 문서만)
 
 계정·이벤트 API가 생겨도 웹은 `expo export --platform web` 정적 파일이다. Metro/`pnpm web`을 EC2에 올리지 않는다.
