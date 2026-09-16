@@ -159,18 +159,49 @@ apps/mobile/
 
 ---
 
-## 8. 향후 계획
+## 8. 인앱 설치 UX
+
+### 8.1 설정 화면 — 「홈 화면에 추가」
+
+설정 탭(`/settings`)에 「홈 화면에 추가」 카드가 표시된다.
+
+| 상태 | 동작 |
+| --- | --- |
+| 이미 standalone으로 실행 중 | "이미 추가됨" (비활성) |
+| Android Chrome (beforeinstallprompt 지원) | 「홈 화면에 추가」 버튼 → 네이티브 설치 프롬프트 |
+| iOS Safari | 「설치 방법 보기」 → 단계별 안내 모달 |
+| 미지원 브라우저 | 카드 숨김 |
+
+### 8.2 브라우저 설치 권유 배너
+
+모바일 브라우저에서 처음 열면 하단에서 슬라이드업 배너가 표시된다.
+
+- **표시 조건**: 모바일 뷰포트(≤768px), standalone 아님, 미 dismiss
+- **내용**: "홈 화면에 추가하고 앱처럼 쓰세요"
+- **CTA**: Android는 바로 설치 프롬프트 / iOS는 안내 모달
+- **나중에**: dismiss하면 localStorage에 저장되어 재표시 안 함
+
+파일:
+- `components/pwa/install-prompt-banner.tsx` — 배너 컴포넌트
+- `components/pwa/ios-install-modal.tsx` — iOS Safari 안내 모달
+- `hooks/use-pwa-install.ts` — PWA 설치 상태 훅
+- `store/ui-prefs.ts` — dismiss 상태 persist
+
+---
+
+## 9. 향후 계획
 
 | 항목 | 상태 |
 | --- | --- |
 | PWA 설치 (웹) | ✅ 구현됨 |
+| 인앱 설치 UX (설정 + 권유 배너) | ✅ 구현됨 |
 | Expo 네이티브 빌드 (Android/iOS) | 예정 |
 | 오프라인 경기 데이터 동기화 | 범위 밖 (현재는 정적 캐시만) |
 | Push 알림 | 범위 밖 |
 
 ---
 
-## 9. 문제 해결
+## 10. 문제 해결
 
 | 증상 | 원인 / 해결 |
 | --- | --- |

@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { HydrateGate } from "@/components/hydrate-gate";
+import { InstallPromptBanner } from "@/components/pwa";
 import { ThemeProvider, useAppKit } from "@/components/theme-provider";
 import { navOptionsForKit } from "@/theme/home-kits";
 
@@ -35,6 +36,7 @@ function RootNav() {
         <Stack.Screen name="friendly" options={{ title: "빠른 친선경기" }} />
         <Stack.Screen name="kit" options={{ headerShown: false }} />
       </Stack>
+      <InstallPromptBanner />
     </>
   );
 }

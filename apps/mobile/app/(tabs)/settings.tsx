@@ -1,5 +1,6 @@
 import { Link, type Href } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { useState } from "react";
+import { Platform, ScrollView, View } from "react-native";
 import {
   ALL_SPORT_IDS,
   clubRulesFor,
@@ -7,7 +8,9 @@ import {
   accountName,
 } from "@score-up/domain";
 import { HomeVersionSwitch } from "@/components/home/home-version-switch";
+import { IosInstallModal } from "@/components/pwa";
 import { Btn, Card, H, P, Screen, SectionHead } from "@/components/ui";
+import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { sportLabel } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
 import { HOME_VERSIONS, homeVersionLabel, useUiPrefsStore } from "@/store/ui-prefs";
@@ -21,6 +24,19 @@ export default function SettingsScreen() {
   const name = accountName(accounts, accountId);
   const homeVersion = useUiPrefsStore((s) => s.homeVersion);
   const current = HOME_VERSIONS.find((row) => row.id === homeVersion);
+
+  const { state, triggerPrompt, isStandalone, canPrompt, isIosSafari } = usePwaInstall();
+  const [iosModalVisible, setIosModalVisible] = useState(false);
+
+  const handleAddToHome = async () => {
+    if (canPrompt) {
+      await triggerPrompt();
+    } else if (isIosSafari) {
+      setIosModalVisible(true);
+    }
+  };
+
+  const isWeb = Platform.OS === "web";
 
   return (
     <Screen>
@@ -39,6 +55,31 @@ export default function SettingsScreen() {
             {current ? ` · ${current.note}` : ""}
           </P>
         </Card>
+        {isWeb && state !== "unsupported" ? (
+          <Card>
+            <H style={{ fontSize: 18 }}>홈 화면에 추가</H>
+            <P muted style={{ marginTop: 8 }}>
+              {isStandalone
+                ? "이미 앱으로 설치되었습니다."
+                : "앱처럼 홈 화면에서 바로 실행할 수 있습니다."}
+            </P>
+            {!isStandalone && (
+              <Btn
+                label={canPrompt ? "홈 화면에 추가" : "설치 방법 보기"}
+                style={{ marginTop: 12 }}
+                onPress={handleAddToHome}
+              />
+            )}
+            {isStandalone && (
+              <Btn
+                label="이미 추가됨"
+                variant="ghost"
+                style={{ marginTop: 12 }}
+                disabled
+              />
+            )}
+          </Card>
+        ) : null}
         <Card>
           <H style={{ fontSize: 18 }}>디자인 키트</H>
           <P muted style={{ marginTop: 8 }}>
@@ -103,6 +144,10 @@ export default function SettingsScreen() {
         </Card>
         <Btn label="시드 데이터로 되돌리기" variant="ghost" onPress={reset} />
       </ScrollView>
+      <IosInstallModal
+        visible={iosModalVisible}
+        onClose={() => setIosModalVisible(false)}
+      />
     </Screen>
   );
 }

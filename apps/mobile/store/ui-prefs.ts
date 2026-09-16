@@ -17,6 +17,9 @@ export function homeVersionLabel(id: HomeVersion) {
 type UiPrefs = {
   homeVersion: HomeVersion;
   setHomeVersion: (homeVersion: HomeVersion) => void;
+  pwaPromptDismissedAt: number | null;
+  dismissPwaPrompt: () => void;
+  resetPwaPrompt: () => void;
 };
 
 export const useUiPrefsStore = create<UiPrefs>()(
@@ -24,6 +27,9 @@ export const useUiPrefsStore = create<UiPrefs>()(
     (set) => ({
       homeVersion: "h1",
       setHomeVersion: (homeVersion) => set({ homeVersion }),
+      pwaPromptDismissedAt: null,
+      dismissPwaPrompt: () => set({ pwaPromptDismissedAt: Date.now() }),
+      resetPwaPrompt: () => set({ pwaPromptDismissedAt: null }),
     }),
     {
       name: "score-up-ui-prefs",
