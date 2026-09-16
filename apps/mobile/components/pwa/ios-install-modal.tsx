@@ -28,11 +28,11 @@ export function IosInstallModal({ visible, onClose }: IosInstallModalProps) {
           ]}
         >
           <Text style={[styles.title, { color: kit.text }]}>
-            홈 화면에 추가하기
+            홈 화면에 추가
           </Text>
 
-          <Text style={[styles.description, { color: kit.muted }]}>
-            Safari에서 아래 단계를 따라 SCORE UP을 홈 화면에 추가하세요.
+          <Text style={[styles.policyNote, { color: kit.muted }]}>
+            iPhone에서는 브라우저 정책상 앱이 대신 추가할 수 없어요.
           </Text>
 
           <View style={styles.steps}>
@@ -42,7 +42,7 @@ export function IosInstallModal({ visible, onClose }: IosInstallModalProps) {
           </View>
 
           <Text style={[styles.hint, { color: kit.muted }]}>
-            홈 화면에 추가하면 앱처럼 전체 화면으로 사용할 수 있습니다.
+            홈 화면에 추가하면 앱처럼 전체 화면으로 사용할 수 있어요.
           </Text>
 
           <Pressable
@@ -112,9 +112,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: space.sm,
   },
-  description: {
-    fontSize: 14,
-    lineHeight: 20,
+  policyNote: {
+    fontSize: 13,
+    lineHeight: 19,
     textAlign: "center",
     marginBottom: space.lg,
   },

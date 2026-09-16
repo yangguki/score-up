@@ -89,7 +89,7 @@ export function InstallPromptBanner() {
                   ]}
                 >
                   <Text style={[styles.primaryButtonText, { color: kit.primaryFg }]}>
-                    {state === "can-prompt" ? "홈 화면에 추가" : "추가 방법 보기"}
+                    홈 화면에 추가
                   </Text>
                 </Pressable>
 

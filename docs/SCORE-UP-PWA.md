@@ -168,8 +168,8 @@ apps/mobile/
 | 상태 | 동작 |
 | --- | --- |
 | 이미 standalone으로 실행 중 | "이미 추가됨" (비활성) |
-| Android Chrome (beforeinstallprompt 지원) | 「홈 화면에 추가」 버튼 → 네이티브 설치 프롬프트 |
-| iOS Safari | 「설치 방법 보기」 → 단계별 안내 모달 |
+| Android Chrome (beforeinstallprompt 지원) | 「홈 화면에 추가」 버튼 → 네이티브 설치 프롬프트 즉시 호출 |
+| iOS Safari | 「홈 화면에 추가」 버튼 → 단계별 안내 모달 (브라우저 정책상 앱이 대신 추가할 수 없음) |
 | 미지원 브라우저 | 카드 숨김 |
 
 ### 8.2 브라우저 설치 권유 배너
@@ -178,7 +178,7 @@ apps/mobile/
 
 - **표시 조건**: 모바일 뷰포트(≤768px), standalone 아님, 미 dismiss
 - **내용**: "홈 화면에 추가하고 앱처럼 쓰세요"
-- **CTA**: Android는 바로 설치 프롬프트 / iOS는 안내 모달
+- **CTA**: 항상 「홈 화면에 추가」 — Android는 즉시 네이티브 설치 프롬프트, iOS는 안내 모달
 - **나중에**: dismiss하면 localStorage에 저장되어 재표시 안 함
 
 파일:
