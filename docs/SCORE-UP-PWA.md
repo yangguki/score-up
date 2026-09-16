@@ -210,3 +210,30 @@ apps/mobile/
 | SW 등록 실패 | Console 에러 확인, `sw.js` 파일 존재 여부 |
 | 빌드 후 SW 없음 | `pnpm export:web` 대신 `export:web:no-sw` 실행함 |
 | 오프라인 안 됨 | 캐시된 페이지만 동작, 동적 API는 네트워크 필요 |
+
+### 10.1 Android 경고 — "안전하지 않은 앱 차단" / "오래된 개인정보 보호 기능"
+
+**원인**: S3 정적 웹 호스팅은 **HTTP**만 제공한다. Android는 HTTP에서 PWA 설치를 차단하거나 경고를 표시한다.
+
+**해결**:
+
+1. **CloudFront HTTPS 사용**: S3 앞에 CloudFront 배포를 두면 HTTPS를 사용할 수 있다. 자세한 내용은 `docs/SCORE-UP-CloudFront-HTTPS.md` 참조.
+
+2. **앱에서 HTTP 감지**: 코드는 `window.isSecureContext`를 체크한다.
+   - HTTP에서는 서비스 워커 등록을 건너뛴다.
+   - 설정 화면에서 "HTTPS 필요" 메시지를 표시한다.
+   - 설치 권유 배너가 표시되지 않는다.
+
+3. **기존 HTTP 바로가기 삭제 후 재설치**:
+   ```
+   1. 홈 화면에서 HTTP로 설치한 SCORE UP 바로가기 삭제
+   2. Chrome 설정 → 사이트 설정 → 저장용량 → score-up... 사이트 데이터 삭제
+   3. CloudFront HTTPS URL로 접속
+   4. 주소창 또는 메뉴 → "앱 설치"
+   ```
+
+**관련 코드**:
+
+- `app/+html.tsx`: `isSecureContext` 체크 후 SW 등록
+- `hooks/use-pwa-install.ts`: `insecure-context` 상태 추가
+- `app/(tabs)/settings.tsx`: HTTPS 필요 메시지 표시

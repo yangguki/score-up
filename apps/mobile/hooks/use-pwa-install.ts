@@ -12,7 +12,16 @@ export type PwaInstallState =
   | "standalone"
   | "can-prompt"
   | "ios-safari"
+  | "insecure-context"
   | "unsupported";
+
+export const PWA_HTTPS_REQUIRED_MESSAGE =
+  "PWA 설치는 HTTPS 환경에서만 가능합니다. CloudFront HTTPS URL을 사용해주세요.";
+
+function isSecureContext(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.isSecureContext === true;
+}
 
 function isStandalone(): boolean {
   if (Platform.OS !== "web") return false;
@@ -54,6 +63,11 @@ export function usePwaInstall() {
 
     if (isStandalone()) {
       setState("standalone");
+      return;
+    }
+
+    if (!isSecureContext()) {
+      setState("insecure-context");
       return;
     }
 
@@ -114,8 +128,9 @@ export function usePwaInstall() {
     isStandalone: state === "standalone",
     canPrompt: state === "can-prompt",
     isIosSafari: state === "ios-safari",
+    isInsecureContext: state === "insecure-context",
     isMobileViewport,
   };
 }
 
-export { isStandalone, isIosSafari, isMobileViewport };
+export { isStandalone, isIosSafari, isMobileViewport, isSecureContext, PWA_HTTPS_REQUIRED_MESSAGE };
