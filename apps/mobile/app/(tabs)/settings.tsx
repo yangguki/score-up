@@ -65,7 +65,7 @@ export default function SettingsScreen() {
             </P>
             {!isStandalone && (
               <Btn
-                label={canPrompt ? "홈 화면에 추가" : "설치 방법 보기"}
+                label="홈 화면에 추가"
                 style={{ marginTop: 12 }}
                 onPress={handleAddToHome}
               />
