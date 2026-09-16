@@ -19,6 +19,7 @@ export function InstallPromptBanner() {
     if (Platform.OS !== "web") return;
     if (isStandalone) return;
     if (state === "unsupported") return;
+    if (state === "insecure-context") return;
     if (pwaPromptDismissedAt !== null) return;
     if (!isMobileViewport()) return;
 

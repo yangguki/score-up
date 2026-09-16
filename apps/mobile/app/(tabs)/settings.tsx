@@ -10,7 +10,7 @@ import {
 import { HomeVersionSwitch } from "@/components/home/home-version-switch";
 import { IosInstallModal } from "@/components/pwa";
 import { Btn, Card, H, P, Screen, SectionHead } from "@/components/ui";
-import { usePwaInstall } from "@/hooks/use-pwa-install";
+import { usePwaInstall, PWA_HTTPS_REQUIRED_MESSAGE } from "@/hooks/use-pwa-install";
 import { sportLabel } from "@/lib/match-routes";
 import { useAppStore } from "@/store/app-store";
 import { HOME_VERSIONS, homeVersionLabel, useUiPrefsStore } from "@/store/ui-prefs";
@@ -25,7 +25,7 @@ export default function SettingsScreen() {
   const homeVersion = useUiPrefsStore((s) => s.homeVersion);
   const current = HOME_VERSIONS.find((row) => row.id === homeVersion);
 
-  const { state, triggerPrompt, isStandalone, canPrompt, isIosSafari } = usePwaInstall();
+  const { state, triggerPrompt, isStandalone, canPrompt, isIosSafari, isInsecureContext } = usePwaInstall();
   const [iosModalVisible, setIosModalVisible] = useState(false);
 
   const handleAddToHome = async () => {
@@ -61,9 +61,11 @@ export default function SettingsScreen() {
             <P muted style={{ marginTop: 8 }}>
               {isStandalone
                 ? "이미 앱으로 설치되었습니다."
+                : isInsecureContext
+                ? PWA_HTTPS_REQUIRED_MESSAGE
                 : "앱처럼 홈 화면에서 바로 실행할 수 있습니다."}
             </P>
-            {!isStandalone && (
+            {!isStandalone && !isInsecureContext && (
               <Btn
                 label="홈 화면에 추가"
                 style={{ marginTop: 12 }}
@@ -73,6 +75,14 @@ export default function SettingsScreen() {
             {isStandalone && (
               <Btn
                 label="이미 추가됨"
+                variant="ghost"
+                style={{ marginTop: 12 }}
+                disabled
+              />
+            )}
+            {isInsecureContext && (
+              <Btn
+                label="HTTPS 필요"
                 variant="ghost"
                 style={{ marginTop: 12 }}
                 disabled

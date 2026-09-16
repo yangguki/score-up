@@ -14,6 +14,10 @@ export default function Root({ children }: { children: ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <title>SCORE UP</title>
 
+        {/* Security and privacy headers */}
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
+        <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+
         {/* PWA manifest and meta tags */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#121721" />
@@ -34,7 +38,7 @@ export default function Root({ children }: { children: ReactNode }) {
         {/* Using raw CSS styles as an escape-hatch to ensure the background color never flickers in dark-mode. */}
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
 
-        {/* Service worker registration */}
+        {/* Service worker registration (HTTPS/localhost only) */}
         <script dangerouslySetInnerHTML={{ __html: swRegistration }} />
       </head>
       <body>{children}</body>
@@ -48,7 +52,7 @@ body {
 }`;
 
 const swRegistration = `
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && window.isSecureContext) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('/sw.js').then(
       function(registration) {
@@ -59,4 +63,6 @@ if ('serviceWorker' in navigator) {
       }
     );
   });
+} else if ('serviceWorker' in navigator && !window.isSecureContext) {
+  console.log('ServiceWorker skipped: insecure context (HTTP). Use HTTPS or localhost for PWA features.');
 }`;
